@@ -1,5 +1,7 @@
-import type { Lang } from "./model";
+import type { Edition, Lang } from "./model";
 import { L } from "./model";
+import { routeAssist } from "./assist";
+import { copyTE } from "./guides";
 
 export type CopilotMsg = { role: "user" | "ai"; text: string; cites?: { label: string; href?: string }[] };
 
@@ -7,8 +9,8 @@ export function copilotIntro(lang: Lang): CopilotMsg {
   return {
     role: "ai",
     text: lang === "th"
-      ? "LAW24 อ้างหลักฐานทุกข้อสรุป — ข้อสัญญา playbook หรือฐานกฎหมาย ถามเรื่อง Nimbus Cloud, Charoen Logistics หรือพอร์ตได้เลย"
-      : "LAW24 cites every material conclusion — clause, playbook or legal authority. Ask about Nimbus Cloud, Charoen Logistics, or the portfolio.",
+      ? "LAW24 อ้างหลักฐานทุกข้อสรุป — ข้อสัญญา playbook หรือฐานกฎหมาย อ่านวิธีใช้ในคู่มือ อธิบายงานในผู้ช่วยเพื่อให้ชี้โมดูล หรือถามเรื่อง Nimbus, Charoen, พอร์ตได้เลย"
+      : "LAW24 cites every material conclusion — clause, playbook or legal authority. Read Help for how to use and the house books. Describe a job in Assist to be routed, or ask about Nimbus, Charoen, or the portfolio.",
   };
 }
 
@@ -26,7 +28,7 @@ export const SUGGESTIONS_TH = [
   "ลูกค้าเลิกสัญญาได้โดยไม่ต้องชำระหรือไม่",
 ];
 
-export function answerCopilot(q: string, lang: Lang): CopilotMsg {
+export function answerCopilot(q: string, lang: Lang, edition: Edition = "corporate"): CopilotMsg {
   const t = q.toLowerCase();
   const th = lang === "th";
   if (t.includes("exposure") || t.includes("maximum") || t.includes("ความเสี่ยง") || t.includes("เพดาน")) {
@@ -37,7 +39,7 @@ export function answerCopilot(q: string, lang: Lang): CopilotMsg {
         : "The general cap is 12 months of fees (THB 8.2M), but clause 12.4 carves out data claims, so data-breach exposure is unlimited while the provider controls the environment. Playbook IT & Cloud v4.2 requires a 2× cap including personal-data claims.",
       cites: [
         { label: "cl.12.4 · p.18", href: "/review?s=find" },
-        { label: "Playbook IT & Cloud v4.2", href: "/review?s=pb" },
+        { label: "Playbook IT & Cloud v4.2", href: "/help?s=book&b=itcloud" },
         { label: "F-01", href: "/review?s=find" },
       ],
     };
@@ -70,6 +72,118 @@ export function answerCopilot(q: string, lang: Lang): CopilotMsg {
         ? "ผู้ให้บริการเลิกได้ตามสะดวกใน 30 วัน ฝ่ายเราเลิกได้เมื่อผิดสัญญาเท่านั้น และผูกพันขั้นต่ำ 36 เดือน ไม่มีข้อช่วยเหลือช่วงเปลี่ยนผ่าน — F-03"
         : "The provider may terminate for convenience on 30 days; we may terminate for cause only, remaining bound to a 36-month minimum with no exit assistance — finding F-03.",
       cites: [{ label: "cl.11.2 · p.16", href: "/review?s=find" }],
+    };
+  }
+  if (t.includes("pdpa") || t.includes("transfer") || t.includes("โอน") || t.includes("ม.28") || t.includes("s.28") || t.includes("dpa")) {
+    return {
+      role: "ai",
+      text: th
+        ? "ข้อมูลถูกโอนไปสิงคโปร์และสหรัฐโดยยังไม่มีมาตรการตาม PDPA มาตรา 28 ไม่มี DPA และไม่มีรายชื่อผู้ประมวลผลช่วง — F-02 ต้องปิดก่อนวันเริ่มใช้งาน"
+        : "Personal data moves to Singapore and the US without PDPA s.28 safeguards, no executed DPA, and no sub-processor list — F-02. That must close before go-live.",
+      cites: [
+        { label: "F-02", href: "/review?s=find" },
+        { label: "Playbook IT & Cloud v4.2", href: "/help?s=book&b=itcloud" },
+      ],
+    };
+  }
+  if (t.includes("annex") || t.includes("ภาคผนวก") || t.includes("escrow")) {
+    return {
+      role: "ai",
+      text: th
+        ? "ภาคผนวก A–C ถูกอ้างถึงแต่ไม่แนบ ระบบถูกระบุว่าสำคัญแต่ไม่มี escrow และแผนเปลี่ยนผ่าน — สองช่องว่างนี้ทำให้ร่างยังลงนามไม่ได้"
+        : "Annexes A–C are incorporated but never delivered. The system is business-critical with no escrow or transition plan. Either gap is enough to withhold signature.",
+      cites: [
+        { label: "F-05 / F-06", href: "/review?s=find" },
+        { label: "Decision memo", href: "/holistic?s=memo" },
+      ],
+    };
+  }
+  if (t.includes("bangkok") || t.includes("กรุงเทพ") || t.includes("charoen") || t.includes("เจริญ") || t.includes("kill") || t.includes("ธงแดง")) {
+    return {
+      role: "ai",
+      text: th
+        ? "เจริญโลจิสติกส์: สินเชื่อธนาคารกรุงเทพ ฿640 ล้านผิดนัดทันทีเมื่อเปลี่ยนอำนาจควบคุม (DK-01) ลูกค้า 7 รายเลิกได้ คิดเป็นรายได้ 22% (DK-02) ทั้งสองเป็นประเด็นล้มดีล"
+        : "Charoen Logistics: Bangkok Bank facility THB 640M defaults on change of control (DK-01). Seven customers may exit — 22% of revenue (DK-02). Both are deal-kill items.",
+      cites: [
+        { label: "DK-01", href: "/diligence?s=dflags" },
+        { label: "Deal Map", href: "/diligence?s=dmap" },
+      ],
+    };
+  }
+  if (t.includes("renew") || t.includes("ต่ออายุ") || t.includes("notice") || t.includes("บอกกล่าว") || t.includes("overdue") || t.includes("เลยกำหนด")) {
+    return {
+      role: "ai",
+      text: th
+        ? "สัญญาบริหารอาคารเหลือ 6 วันก่อนกำหนดบอกกล่าว ถ้าไม่ส่งจะต่ออัตโนมัติ 12 เดือน ใบแจ้งหนี้ Nimbus ค้าง 2 วันและดอกเบี้ยผิดนัดเริ่มเดินแล้ว"
+        : "Facilities management: six days to the notice deadline, then it auto-renews for 12 months. The Nimbus invoice is two days overdue and default interest is already accruing.",
+      cites: [{ label: "Alerts", href: "/obligations?s=oalert" }],
+    };
+  }
+  if (t.includes("memo") || t.includes("บันทึก") || t.includes("board") || t.includes("คณะ") || t.includes("sign") || t.includes("ลงนาม") || t.includes("recommend")) {
+    return {
+      role: "ai",
+      text: th
+        ? "คณะทบทวนเจ็ดคนไม่ผ่านร่างนี้ คำแนะนำในบันทึกผู้บริหารคือเจรจาใหม่ — ไม่ลงนามจนกว่าเพดานข้อมูล DPA/SCC สิทธิเลิกสมมาตร และภาคผนวกจะปิด"
+        : "The seven-member board fails this draft. The management memo recommends renegotiate — no signature until the data cap, DPA/SCCs, symmetric termination and annexes close.",
+      cites: [
+        { label: "Review Board", href: "/review?s=board" },
+        { label: "Decision memo", href: "/holistic?s=memo" },
+      ],
+    };
+  }
+  if (t.includes("playbook") || t.includes("เพลย์") || t.includes("os flow") || t.includes("เส้นทางระบบ") || t.includes("this menu") || t.includes("เมนูนี้")) {
+    return {
+      role: "ai",
+      text: th
+        ? "ทุกโมดูลมีเพลย์บุ๊กติดมา และทุกเมนูมีคำอธิบายเส้นทางใต้แท็บ Assemble ใช้เพลย์บุ๊กประกอบสัญญา Review ใช้ IT & Cloud v4.2 Holistic ใช้เพลย์บุ๊กตัดสินใจ Diligence ใช้ฝั่งผู้ซื้อ v3.1 Negotiate ใช้อำนาจเจรจา Obligations ใช้กำกับหลังลงนาม Intelligence ใช้ระเบียบความจำ สำนักงานใช้วิธีปฏิบัติ v1.0 เปิดแถบคำอธิบายใต้เมนูเพื่ออ่านกฎที่ใช้บังคับกับหน้านี้"
+        : "Every module carries an attached playbook, and every menu has a flow explain under the tabs. Assemble uses the assembly book; Review uses IT & Cloud v4.2; Holistic the decision book; Diligence buy-side v3.1; Negotiate the mandate; Obligations post-signature control; Intelligence the memory protocol; Practice the SOP. Open the explain strip under the menus to read the rule in force on this screen.",
+      cites: [
+        { label: "IT & Cloud v4.2", href: "/help?s=book&b=itcloud" },
+        { label: "Assembly playbook", href: "/help?s=book&b=assembly" },
+        { label: "Practice SOP", href: "/help?s=book&b=practice" },
+      ],
+    };
+  }
+  if (t.includes("how to use") || t.includes("วิธีใช้") || t.includes("คู่มือ") || t.includes("playbook") || t.includes("เพลย์บุ๊ก") || t.includes("house book")) {
+    return {
+      role: "ai",
+      text: th
+        ? "LAW24 เป็นระบบปฏิบัติการ ไม่ใช่แชตบอท ข้อสรุปต้องมีหลักฐาน และทนายเป็นผู้ตัดสิน เพลย์บุ๊กบ้านอยู่ในโมดูลคู่มือ — เปิดเล่มที่กำกับงาน แล้วเข้าเครื่องยนต์ตามโมดูลนั้น ถ้ายังไม่รู้โมดูล ให้เริ่มที่ผู้ช่วย"
+        : "LAW24 is an operating system, not a chatbot. Conclusions need evidence, and the lawyer decides. House playbooks live in Help — open the volume that governs the work, then enter that module. If the module is not obvious, start in Assist.",
+      cites: [
+        { label: th ? "วิธีใช้ LAW24" : "How to use LAW24", href: "/help?s=use" },
+        { label: th ? "คลังเพลย์บุ๊ก" : "Playbook library", href: "/help?s=books" },
+        { label: th ? "ผู้ช่วย" : "Assist", href: "/assist?s=ask" },
+      ],
+    };
+  }
+  if (t.includes("which module") || t.includes("which function") || t.includes("โมดูลไหน") || t.includes("ฟังก์ชัน") || t.includes("ช่วยงาน") || t.includes("ควรใช้") || t.includes("assist") || t.includes("ผู้ช่วย")) {
+    const r = routeAssist(q, q, edition);
+    if (r) {
+      const top = r.functions.slice(0, 4).map((f) => `${f.mode} · ${copyTE(lang, f.label)}`).join("; ");
+      return {
+        role: "ai",
+        text: th
+          ? `จากงานที่อธิบาย เริ่มที่ ${r.start.mode} · ${copyTE(lang, r.start.label)} — ${copyTE(lang, r.start.why)} โมดูลที่ช่วยได้: ${top}`
+          : `From that assignment, start in ${r.start.mode} · ${copyTE(lang, r.start.label)} — ${copyTE(lang, r.start.why)} Also useful: ${top}.`,
+        cites: [
+          { label: th ? "ผู้ช่วย AI" : "AI Assist", href: "/assist?s=ask" },
+          ...r.functions.slice(0, 3).map((f) => ({ label: copyTE(lang, f.label), href: f.href })),
+        ],
+      };
+    }
+  }
+  if (t.includes("assignment") || t.includes("client") || t.includes("งาน") || t.includes("ลูกค้า") || t.includes("trail") || t.includes("เส้นทาง") || t.includes("a-2481") || t.includes("dashboard") || t.includes("แดช")) {
+    return {
+      role: "ai",
+      text: th
+        ? "งาน A-2481 ของสยามดิจิทัลเริ่ม 4 ส.ค. จากคำสั่ง GC ปรีชา เส้นทางครบ: รับเรื่อง → ตรวจผลประโยชน์ทับซ้อน → CT-291 → สัมภาษณ์ → กฎหมายไทย → 8 ข้อค้นพบ → F-01 แก้ → คณะกรรมการเจรจาใหม่ → บันทึกถึงลูกค้า → รอบ 2 ยึดเพดาน ปัจจุบันรอร่างแก้จากนิมบัส จุดควบคุมถัดไป 5 ก.ย."
+        : "Assignment A-2481 for Siam Digital opened 4 Aug on instruction from GC Preecha. The trail is complete: intake → conflict check → CT-291 → interview → Thai law → 8 findings → F-01 amend → board renegotiate → memo to client → Round 2 hold on the cap. Current control: awaiting Nimbus markup, next board 5 Sep.",
+      cites: [
+        { label: "A-2481 trail", href: "/practice?s=trace" },
+        { label: "Dashboard", href: "/practice?s=dash" },
+        { label: "F-01", href: "/review?s=find" },
+      ],
     };
   }
   return {

@@ -8,6 +8,16 @@ import { Chip, Kicker, Title } from "@/components/ui";
 import { L } from "@/lib/model";
 import { BILINGUAL } from "@/lib/wow";
 import { T } from "@/lib/i18n";
+import { DEMO_TYPE_ID, downloadText, packText } from "@/lib/demo";
+import { Dropzone } from "@/components/Dropzone";
+import { StandardClause } from "@/components/StandardClause";
+import { houseStandard } from "@/lib/clauses";
+
+function pinDemo(rows: typeof TAX_LIST, sel: string) {
+  const pinned = rows.find((r) => r.id === sel) || rows.find((r) => r.id === DEMO_TYPE_ID);
+  if (!pinned) return rows;
+  return [pinned, ...rows.filter((r) => r.id !== pinned.id)];
+}
 
 export function AssembleScreen({ screen }: { screen: string }) {
   if (screen === "lib") return <Library />;
@@ -32,7 +42,7 @@ function Library() {
     const q = s.q.toLowerCase();
     rows = rows.filter((r) => (r.id + " " + r.nameTh + " " + r.nameEn + " " + r.tags).toLowerCase().includes(q));
   }
-  const shown = rows.slice(0, 200);
+  const shown = pinDemo(rows.slice(0, 200), s.sel);
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "264px 1fr", alignItems: "start" }}>
@@ -73,6 +83,11 @@ function Library() {
         <button type="button" className="btn btn-secondary" onClick={s.resetFilters}><T en="Clear filters" th="ล้างตัวกรอง" /></button>
       </aside>
       <div className="pad-page">
+        {s.demoOn && (
+          <div className="callout" style={{ marginBottom: 16 }}>
+            <T en="Live matter: Nimbus Cloud uses type CT-284 (SaaS). The counterparty paper you will review is CT-291." th="เรื่องสด: Nimbus Cloud ใช้ประเภท CT-284 (SaaS) ฉบับคู่สัญญาที่จะตรวจคือ CT-291" />
+          </div>
+        )}
         <div style={{ display: "flex", alignItems: "flex-end", gap: 18, borderBottom: "2px solid var(--color-divider)", paddingBottom: 14, marginBottom: 8, flexWrap: "wrap" }}>
           <div>
             <Kicker>assemble · template library</Kicker>
@@ -84,6 +99,12 @@ function Library() {
             ))}
           </div>
         </div>
+        <Dropzone
+          bucket="assemble"
+          compact
+          title={<T en="Drop a draft, term sheet or source paper" th="ลากร่าง ข้อเสนอ หรือเอกสารต้นทางมาวาง" />}
+          hint={<T en="PDF or DOCX. LAW24 will map it to a type in this library. Nothing is signed." th="PDF หรือ DOCX ระบบจะจับคู่ประเภทในคลังนี้ ไม่มีการลงนามแทน" />}
+        />
         <div style={{ fontSize: 12, color: "var(--color-neutral-600)", padding: "10px 0" }}>
           {th ? `แสดง ${shown.length} จาก ${TAX_LIST.length} ประเภท` : `Showing ${shown.length} of ${TAX_LIST.length} types`}
         </div>
@@ -142,7 +163,15 @@ function TypeDetail() {
         <h5><T en="Principal parties" th="คู่สัญญาหลัก" /></h5>
         <p>{trParties(s.lang, c.parties)}</p>
         <h5><T en="Minimum clause set" th="ชุดข้อกำหนดขั้นต่ำ" /></h5>
-        <ul>{clauses.map((k) => <li key={k}>{k}</li>)}</ul>
+        <p className="text-muted" style={{ fontSize: 13, margin: "0 0 8px" }}>
+          <T
+            en="These are the house standard clauses for this type. Adjust each one manually, or ask Leio for a playbook-backed proposal. Counsel applies."
+            th="นี่คือข้อมาตรฐานบ้านของประเภทนี้ ปรับทีละข้อด้วยมือ หรือให้เลโอเสนอเทียบเพลย์บุ๊ก ทนายเป็นผู้ใช้ข้อ"
+          />
+        </p>
+        {clauses.filter(Boolean).map((k) => (
+          <StandardClause key={k} id={`${c.id}:${k}`} kicker={k} original={houseStandard(k)} />
+        ))}
         <h5><T en="Statutory form" th="รูปแบบและพิธีการ" /></h5>
         <p>{trFormality(s.lang, c.formality)}</p>
         <h5><T en="Legal basis" th="ฐานกฎหมาย" /></h5>
@@ -151,6 +180,19 @@ function TypeDetail() {
         <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
           <Link href="/assemble?s=iv" className="btn btn-primary"><T en="Start guided interview" th="เริ่มสัมภาษณ์นำทาง" /></Link>
           <Link href="/review?s=rsetup" className="btn btn-secondary"><T en="Review an existing contract" th="ส่งไปตรวจสัญญาที่มีอยู่" /></Link>
+        </div>
+        {c.id === DEMO_TYPE_ID && (
+          <p className="text-muted" style={{ marginTop: 16, fontSize: 13 }}>
+            <T en="This type maps to the live Nimbus matter. The paper under review is CT-291, counterparty draft, THB 24.6M." th="ประเภทนี้ผูกกับเรื่อง Nimbus ที่สาธิต ฉบับที่กำลังตรวจคือ CT-291 ร่างคู่สัญญา มูลค่า ฿24.6 ล้าน" />
+          </p>
+        )}
+        <div style={{ marginTop: 20 }}>
+          <Dropzone
+            bucket="assemble"
+            compact
+            title={<T en="Attach intake papers" th="แนบเอกสารนำเข้า" />}
+            hint={<T en="SOW, RFQ, emails, or an existing draft of this type." th="SOW, RFQ, อีเมล หรือร่างที่มีอยู่ของประเภทนี้" />}
+          />
         </div>
       </div>
       <aside>
@@ -204,7 +246,16 @@ function Interview() {
               <div className="tag tag-accent" style={{ marginTop: 8 }}><T en="Rule fired" th="กฎที่ทำงาน" /> · {L(s.lang, q.rule)}</div>
             </div>
           ))}
-          <Link href="/assemble?s=asm" className="btn btn-primary" style={{ marginTop: 16 }}><T en="Continue to assembly" th="ไปประกอบข้อสัญญา" /></Link>
+          <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className={`btn ${s.interviewDone ? "btn-secondary" : "btn-primary"}`}
+              onClick={() => { s.confirmInterview(); s.flash(th ? "ยืนยันคำตอบแล้ว — กฎถูกบันทึก" : "Answers confirmed — rules locked"); }}
+            >
+              {s.interviewDone ? <T en="Answers confirmed" th="ยืนยันคำตอบแล้ว" /> : <T en="Confirm fixture answers" th="ยืนยันคำตอบจากข้อมูลจริง" />}
+            </button>
+            <Link href="/assemble?s=asm" className="btn btn-primary"><T en="Continue to assembly" th="ไปประกอบข้อสัญญา" /></Link>
+          </div>
         </div>
         <div>
           <h5><T en="Resolved clause modules" th="โมดูลข้อสัญญาที่ถูกเลือก" /></h5>
@@ -227,13 +278,14 @@ function Interview() {
 
 function Assembly() {
   const s = useStore();
+  const router = useRouter();
   const th = s.lang === "th";
   const IV = FX.interview;
   return (
     <div className="pad-page">
       <Kicker>assemble · clause engine</Kicker>
       <Title><T en="Rule-driven clause assembly" th="ประกอบข้อสัญญาจากกฎ" /></Title>
-      <p className="page-sub"><T en="Every module traces to an interview answer and the governing playbook." th="ทุกโมดูลผูกกับคำตอบในแบบสัมภาษณ์และ playbook ที่บังคับใช้" /></p>
+      <p className="page-sub"><T en="Every module traces to an interview answer and the governing playbook. Adjust a standard clause only with a recorded reason." th="ทุกโมดูลผูกกับคำตอบในแบบสัมภาษณ์และ playbook ที่บังคับใช้ การปรับข้อมาตรฐานต้องมีเหตุในบันทึก" /></p>
       <div className="callout" style={{ margin: "18px 0" }}>
         <strong><T en="1 conflict needs a decision" th="ต้องตัดสินใจ 1 ข้อขัดกัน" /></strong>
         <p style={{ margin: "8px 0 12px" }}><T en="The foreign-arbitration module conflicts with the company Thai-law policy." th="โมดูลอนุญาโตตุลาการต่างประเทศขัดกับนโยบายกฎหมายไทยของบริษัท" /></p>
@@ -250,12 +302,31 @@ function Assembly() {
               <td>{String(i + 1).padStart(2, "0")}</td>
               <td style={{ fontWeight: 700 }}>{L(s.lang, m.k)}</td>
               <td>{L(s.lang, m.w)}</td>
-              <td><span className={m.s === "in" ? "tag tag-accent" : m.s === "conflict" ? "tag tag-outline" : "tag tag-neutral"}>{m.s}</span></td>
+              <td>
+                <span className={m.s === "in" ? "tag tag-accent" : m.s === "conflict" ? "tag tag-outline" : "tag tag-neutral"}>
+                  {m.s === "conflict" && s.conflictChoice
+                    ? (s.conflictChoice === "thai" ? (th ? "ใช้กฎหมายไทย" : "Thai law") : (th ? "ขอยกเว้น" : "Waiver"))
+                    : m.s}
+                </span>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <Link href="/assemble?s=draft" className="btn btn-primary" style={{ marginTop: 20 }}><T en="Generate DOCX + PDF" th="สร้างเอกสาร DOCX + PDF" /></Link>
+      <button
+        type="button"
+        className="btn btn-primary"
+        style={{ marginTop: 20 }}
+        onClick={() => {
+          if (!s.conflictChoice) {
+            s.flash(th ? "ตัดสินข้อขัดกันก่อนสร้างเอกสาร" : "Resolve the conflict before generating");
+            return;
+          }
+          router.push("/assemble?s=draft");
+        }}
+      >
+        <T en="Generate DOCX + PDF" th="สร้างเอกสาร DOCX + PDF" />
+      </button>
     </div>
   );
 }
@@ -269,11 +340,14 @@ function Draft() {
       <div>
         <Kicker>assemble · draft</Kicker>
         <Title><T en="Assembled draft" th="ร่างสัญญาที่ประกอบแล้ว" /></Title>
+        <p className="page-sub">
+          <T
+            en="Each block is a house standard clause. Adjust manually, or ask Leio — the engine never applies a rewrite by itself."
+            th="แต่ละบล็อกคือข้อมาตรฐานบ้าน ปรับด้วยมือ หรือถามเลโอ — เครื่องยนต์ไม่ใช้ข้อที่เขียนใหม่เอง"
+          />
+        </p>
         {draft.map((x) => (
-          <div key={x.n} className="clause-block">
-            <div style={{ font: "800 12px/1 var(--font-heading)", color: "var(--color-accent)" }}>{x.n} {L(s.lang, x.h)}</div>
-            <p style={{ marginTop: 8 }}>{L(s.lang, x.b)}</p>
-          </div>
+          <StandardClause key={x.n} id={`draft:${x.n}`} kicker={`${x.n} ${L(s.lang, x.h)}`} original={x.b} />
         ))}
       </div>
       <aside>
@@ -281,14 +355,62 @@ function Draft() {
         {[{ k: th ? "สัญญาหลัก — บริการ SaaS" : "Main agreement — SaaS", v: "14 pp." }, { k: "Annex A — SLA", v: "4 pp." }, { k: "Annex B — DPA", v: "6 pp." }, { k: "Annex C — transfer", v: "3 pp." }].map((p) => (
           <div key={p.k} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--color-divider)" }}><span>{p.k}</span><span className="mono">{p.v}</span></div>
         ))}
+        <div style={{ marginTop: 16 }}>
+          <Dropzone
+            bucket="assemble"
+            compact
+            title={<T en="Drop missing annexes A–C" th="ลากภาคผนวก A–C ที่ยังขาด" />}
+            hint={<T en="SLA, DPA and transfer schedule. These are incorporated but not attached." th="SLA, DPA และตารางโอนข้อมูล อ้างถึงแล้วแต่ยังไม่แนบ" />}
+          />
+        </div>
         <h5 style={{ marginTop: 24 }}><T en="Internal approvals" th="การอนุมัติภายใน" /></h5>
-        {[{ k: "General Counsel", v: th ? "อนุมัติแล้ว" : "Approved" }, { k: "DPO", v: th ? "รออนุมัติ" : "Pending" }, { k: "CIO", v: th ? "อนุมัติแล้ว" : "Approved" }].map((a) => (
-          <div key={a.k} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0" }}><span>{a.k}</span><span className={a.v.includes("Pend") || a.v.includes("รอ") ? "tag tag-accent" : "tag tag-neutral"}>{a.v}</span></div>
+        {[
+          { k: "General Counsel", v: th ? "อนุมัติแล้ว" : "Approved", pending: false },
+          { k: "DPO", v: s.dpoApproved ? (th ? "อนุมัติแล้ว" : "Approved") : (th ? "รออนุมัติ" : "Pending"), pending: !s.dpoApproved },
+          { k: "CIO", v: th ? "อนุมัติแล้ว" : "Approved", pending: false },
+        ].map((a) => (
+          <div key={a.k} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0" }}>
+            <span>{a.k}</span>
+            <span className={a.pending ? "tag tag-accent" : "tag tag-neutral"}>{a.v}</span>
+          </div>
         ))}
+        {!s.dpoApproved && (
+          <button type="button" className="btn btn-secondary btn-block" onClick={() => { s.approveDpo(); s.flash(th ? "DPO อนุมัติแล้ว" : "DPO approved"); }}>
+            <T en="Approve as DPO" th="อนุมัติในฐานะ DPO" />
+          </button>
+        )}
+        <button
+          type="button"
+          className="btn btn-primary btn-block"
+          onClick={() => {
+            if (!s.dpoApproved) {
+              s.flash(th ? "ต้องได้อนุมัติ DPO ก่อน" : "DPO approval is still required");
+              return;
+            }
+            s.generatePack();
+            downloadText("LAW24_Nimbus_pack.txt", packText(s.lang));
+            s.flash(th ? "สร้างชุด DOCX + PDF แล้ว" : "DOCX + PDF pack generated");
+          }}
+        >
+          {s.packGenerated ? <T en="Pack ready — download again" th="ชุดพร้อมแล้ว — ดาวน์โหลดอีกครั้ง" /> : <T en="Generate DOCX + PDF pack" th="สร้างชุด DOCX + PDF" />}
+        </button>
         <div className="callout" style={{ marginTop: 20 }}>
           <T en="e-Sign is suitable provided ET Act evidence is retained and both signatories are identity-assured." th="เหมาะกับ e-Sign หากเก็บหลักฐานตาม พ.ร.บ.ธุรกรรมทางอิเล็กทรอนิกส์ และยืนยันตัวตนผู้ลงนามทั้งสองฝ่าย" />
         </div>
-        <button className="btn btn-primary btn-block" onClick={() => s.flash(th ? "ส่งเส้นทางลงนามแล้ว" : "Signing pack issued")}><T en="Identity-assured e-signature" th="ลงนามอิเล็กทรอนิกส์ระดับยืนยันตัวตน" /></button>
+        <button
+          type="button"
+          className="btn btn-primary btn-block"
+          onClick={() => {
+            if (!s.packGenerated) {
+              s.flash(th ? "สร้างชุดเอกสารก่อนส่งลงนาม" : "Generate the pack before issuing signature");
+              return;
+            }
+            s.issueSigning();
+            s.flash(th ? "ส่งเส้นทางลงนามแล้ว" : "Signing pack issued");
+          }}
+        >
+          {s.signingIssued ? <T en="Signing path issued" th="ส่งเส้นทางลงนามแล้ว" /> : <T en="Identity-assured e-signature" th="ลงนามอิเล็กทรอนิกส์ระดับยืนยันตัวตน" />}
+        </button>
       </aside>
     </div>
   );

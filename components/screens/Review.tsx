@@ -6,6 +6,9 @@ import { Chip, Kicker, Sev, Stats, Title } from "@/components/ui";
 import { L } from "@/lib/model";
 import { BOARD, DIFF } from "@/lib/wow";
 import { T } from "@/lib/i18n";
+import { statusLabel, type FindingStatus } from "@/lib/demo";
+import { Dropzone } from "@/components/Dropzone";
+import Link from "next/link";
 
 const REC: Record<string, [string, string]> = {
   amend: ["Amend", "แก้ไข"], docs: ["Request documents", "ขอเอกสาร"], reject: ["Reject", "ปฏิเสธ"],
@@ -13,7 +16,10 @@ const REC: Record<string, [string, string]> = {
   escalate: ["Escalate", "ส่งต่อผู้เชี่ยวชาญ"], accept: ["Accept", "ยอมรับ"],
 };
 
+import { XRayScreen } from "./XRay";
+
 export function ReviewScreen({ screen }: { screen: string }) {
+  if (screen === "xray") return <XRayScreen />;
   if (screen === "rsetup") return <Setup />;
   if (screen === "quick") return <Quick />;
   if (screen === "find") return <Findings />;
@@ -36,7 +42,12 @@ function Setup() {
       <Kicker>review · context</Kicker>
       <Title>{L(s.lang, r.doc.title)}</Title>
       <p className="page-sub">{L(s.lang, r.doc.client)} · {L(s.lang, r.doc.cp)} · {r.doc.ref} · {L(s.lang, r.doc.value)}</p>
-      <div className="grid-2" style={{ marginTop: 24 }}>
+      <Dropzone
+        bucket="review"
+        title={<T en="Drop the contract to review" th="ลากสัญญาที่ต้องการตรวจมาวาง" />}
+        hint={<T en="Counterparty paper, PDF or DOCX. LAW24 extracts terms and opens issue cards — the lawyer keeps the decision." th="ฉบับคู่สัญญา PDF หรือ DOCX ระบบสกัดข้อกำหนดและเปิดบัตรประเด็น — ทนายเป็นผู้ตัดสิน" />}
+      />
+      <div className="grid-2" style={{ marginTop: 8 }}>
         {r.setup.map((x) => (
           <div key={L(s.lang, x.k)} style={{ padding: 14, border: "2px solid var(--color-divider)" }}>
             <div className="page-kicker">{L(s.lang, x.k)}</div>
@@ -63,10 +74,10 @@ function Quick() {
       </p>
       <div className="grid-2">
         {r.terms.map((t) => (
-          <div key={L(s.lang, t.k)} style={{ padding: 14, border: `2px solid ${t.f === "high" ? "var(--color-accent)" : t.f === "flag" ? "var(--color-accent-300)" : "var(--color-divider)"}` }}>
+          <div key={L(s.lang, t.k)} style={{ padding: 14, border: `2px solid ${t.f === "high" ? "var(--color-hot)" : t.f === "flag" ? "var(--color-accent-300)" : "var(--color-divider)"}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
               <strong>{L(s.lang, t.k)}</strong>
-              {t.f === "high" && <span className="sev-pill" style={{ background: "var(--color-accent)", color: "var(--color-bg)" }}>{th ? "ต้องแก้" : "Must fix"}</span>}
+              {t.f === "high" && <span className="sev-pill" style={{ background: "var(--color-hot)", color: "#f3f2f2" }}>{th ? "ต้องแก้" : "Must fix"}</span>}
               {t.f === "flag" && <span className="tag tag-accent">{th ? "ตรวจ" : "Check"}</span>}
             </div>
             <div style={{ marginTop: 6 }}>{L(s.lang, t.v)}</div>
@@ -82,15 +93,21 @@ function Findings() {
   const th = s.lang === "th";
   const r = R();
   const list = r.findings.filter((f) => !s.gsev || f.sev === s.gsev);
+  const stOf = (id: string, fallback: string) => s.findingStatus[id] || fallback;
+  const high = r.findings.filter((f) => f.sev === "high").length;
+  const acted = r.findings.filter((f) => {
+    const st = stOf(f.id, f.status);
+    return st === "accepted" || st === "amended" || st === "escalated";
+  }).length;
   return (
     <div className="pad-page">
       <Kicker>review · LAW24 issue cards</Kicker>
       <Title><T en="Findings" th="ข้อค้นพบ" /></Title>
       <Stats items={[
-        { v: "3", k: th ? "ความเสี่ยงสูง" : "High severity" },
-        { v: "4", k: th ? "ปานกลาง" : "Medium" },
-        { v: "1", k: th ? "ต่ำ" : "Low" },
-        { v: "2", k: th ? "ความเชื่อมั่นต่ำ" : "Low confidence" },
+        { v: String(high), k: th ? "ความเสี่ยงสูง" : "High severity" },
+        { v: String(r.findings.length), k: th ? "ข้อค้นพบทั้งหมด" : "All findings" },
+        { v: String(acted), k: th ? "ดำเนินการแล้ว" : "Acted on" },
+        { v: String(r.findings.length - acted), k: th ? "ยังเปิดอยู่" : "Still open" },
       ]} />
       <div style={{ display: "flex", gap: 6, margin: "16px 0" }}>
         {[["", th ? "ทั้งหมด" : "All"], ["high", th ? "สูง" : "High"], ["med", th ? "ปานกลาง" : "Medium"], ["low", th ? "ต่ำ" : "Low"]].map(([v, lb]) => (
@@ -100,6 +117,7 @@ function Findings() {
       {list.map((f) => {
         const open = s.openF === f.id;
         const rec = REC[f.rec] || REC.amend;
+        const st = stOf(f.id, f.status) as FindingStatus | string;
         return (
           <div key={f.id} className={`issue-card${open ? " open" : ""}`} style={{ marginBottom: 8 }}>
             <button className="issue-head" onClick={() => s.setOpenF(open ? "" : f.id)}>
@@ -109,6 +127,7 @@ function Findings() {
                 <div style={{ fontWeight: 700 }}>{L(s.lang, f.issue)}</div>
                 <div className="text-muted" style={{ fontSize: 12 }}>{L(s.lang, f.cat)} · {L(s.lang, f.src)} · {f.conf}%</div>
               </div>
+              <span className="tag tag-outline">{statusLabel(s.lang, String(st))}</span>
               <span className="tag tag-outline">{th ? rec[1] : rec[0]}</span>
             </button>
             {open && (
@@ -118,7 +137,12 @@ function Findings() {
                 <p><strong><T en="Redline" th="ข้อความแก้ไข" /></strong> {L(s.lang, f.word)}</p>
                 <p><strong><T en="Fallback" th="ข้อสำรอง" /></strong> {L(s.lang, f.alt)}</p>
                 <p><strong><T en="Evidence" th="หลักฐาน" /></strong> {L(s.lang, f.src)} · {L(s.lang, f.inter)} · {L(s.lang, f.pb)}</p>
-                <p><strong><T en="Owner" th="ผู้รับผิดชอบ" /></strong> {L(s.lang, f.appr)} · {f.status} · {f.conf}%</p>
+                <p><strong><T en="Owner" th="ผู้รับผิดชอบ" /></strong> {L(s.lang, f.appr)} · {statusLabel(s.lang, String(st))} · {f.conf}%</p>
+                <div className="issue-actions">
+                  <button type="button" className="btn btn-secondary" onClick={() => { s.setFindingStatus(f.id, "accepted"); s.flash(th ? `ยอมรับ ${f.id}` : `${f.id} accepted`); }}><T en="Accept" th="ยอมรับ" /></button>
+                  <button type="button" className="btn btn-primary" onClick={() => { s.setFindingStatus(f.id, "amended"); s.flash(th ? `แก้ ${f.id} เข้าชุดแล้ว` : `${f.id} amended into the pack`); }}><T en="Amend into pack" th="แก้เข้าชุด" /></button>
+                  <button type="button" className="btn btn-secondary" onClick={() => { s.setFindingStatus(f.id, "escalated"); s.flash(th ? `ส่ง ${f.id} ถึงทนาย` : `${f.id} escalated to counsel`); }}><T en="Escalate to counsel" th="ส่งต่อทนาย" /></button>
+                </div>
               </div>
             )}
           </div>
@@ -135,6 +159,9 @@ function Playbook() {
     <div className="pad-page">
       <Kicker>review · organization playbook</Kicker>
       <Title><T en="Playbook comparison — IT & Cloud v4.2" th="เทียบ playbook — IT & Cloud v4.2" /></Title>
+      <p className="page-sub">
+        <Link href="/help?s=book&b=itcloud"><T en="Open the full house book in Help" th="เปิดเล่มเต็มในคู่มือ" /> →</Link>
+      </p>
       <table className="table">
         <thead><tr><th><T en="Position" th="จุดยืน" /></th><th><T en="Policy" th="นโยบาย" /></th><th><T en="Got" th="ได้มา" /></th><th><T en="Fit" th="ผล" /></th><th><T en="Action" th="การกระทำ" /></th></tr></thead>
         <tbody>
@@ -195,6 +222,16 @@ function Board() {
       <div className="callout" style={{ marginTop: 24 }}>
         <T en="Agreement: data cap, DPA/SCCs, and asymmetric termination must close. Disagreement: tax reviewer would sign with an FX clause; commercial reviewer would not." th="จุดที่เห็นพ้อง: เพดานข้อมูล DPA/SCC และสิทธิเลิกที่ไม่สมมาตรต้องปิด จุดที่เห็นต่าง: ฝ่ายภาษียอมลงนามได้ถ้ามีข้อ FX ฝ่ายพาณิชย์ไม่ยอม" />
       </div>
+      <button
+        type="button"
+        className="btn btn-primary"
+        style={{ marginTop: 16 }}
+        onClick={() => { s.acceptBoard(); s.flash(s.lang === "th" ? "รับคำแนะนำ: เจรจาใหม่ สี่ข้อต้องได้" : "Board taken: renegotiate the four must-haves"); }}
+      >
+        {s.boardAccepted
+          ? <T en="Board recommendation recorded" th="บันทึกคำแนะนำของคณะแล้ว" />
+          : <T en="Take board recommendation — renegotiate" th="รับคำแนะนำคณะ — เจรจาใหม่" />}
+      </button>
     </div>
   );
 }

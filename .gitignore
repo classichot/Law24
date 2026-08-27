@@ -11,3 +11,5 @@ Thumbs.db
 *.zip
 _design
 _convert.mjs
+
+.vercel

@@ -4,8 +4,8 @@ import { ThemeWrap } from "@/components/ThemeWrap";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LAW24 — AI Legal Operating System",
-  description: "From business intention to contract, decision and control. Thai–English AI contract intelligence and legal due diligence.",
+  title: "LAW24 — The AI Legal Operating System for Thai Business",
+  description: "Turn contracts into decisions, actions, approvals, and institutional knowledge. LAW24 Firm and LAW24 Corporate share one engine.",
   applicationName: "LAW24",
   icons: { icon: [{ url: "/favicon.svg", type: "image/svg+xml" }] },
 };

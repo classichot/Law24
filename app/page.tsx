@@ -2,13 +2,18 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Building2, Scale } from "lucide-react";
+import { ArrowRight, Briefcase, Building2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { ModeToggle } from "@/components/ModeToggle";
+import { LangToggle } from "@/components/LangToggle";
 import type { Edition } from "@/lib/model";
+import { L } from "@/lib/model";
+import { landingHref, WORK_HREF } from "@/lib/nav";
+import { ENTRANCES, POSITION, TRUST_STRIP, WEDGE_TYPES } from "@/lib/product";
+import { T } from "@/lib/i18n";
 
 export default function LoginPage() {
-  const { login, authed, ready } = useStore();
+  const { login, authed, ready, startDemo, startXray, edition: storedEdition, lang } = useStore();
   const router = useRouter();
   const [email, setEmail] = useState("preecha@siamdigital.co.th");
   const [password, setPassword] = useState("demo1234");
@@ -16,80 +21,104 @@ export default function LoginPage() {
   const [err, setErr] = useState("");
 
   useEffect(() => {
-    if (ready && authed) router.replace("/home");
-  }, [ready, authed, router]);
+    if (ready && authed) router.replace(landingHref(storedEdition));
+  }, [ready, authed, storedEdition, router]);
 
-  function onSubmit(e: FormEvent) {
-    e.preventDefault();
+  function enter(ed: Edition, opts?: { demo?: boolean; xray?: boolean }) {
     if (password !== "demo1234") {
-      setErr(edition === "firm" ? "Use demo1234 for this workspace." : "Use demo1234 for this workspace.");
+      setErr("Use demo1234 for this workspace.");
       return;
     }
     setErr("");
-    login(edition);
-    router.push("/home");
+    login(ed);
+    if (opts?.demo) startDemo();
+    if (opts?.xray) startXray();
+    router.push(opts?.xray ? WORK_HREF : opts?.demo ? WORK_HREF : landingHref(ed));
+  }
+
+  function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    enter(edition);
   }
 
   return (
-    <div className="login-split">
-      <section className="login-pane login-hero">
-        <header className="login-pane-head">
-          <div>
-            <div className="login-mark">LAW24<span /></div>
-            <span className="login-kicker">AI legal operating system</span>
-          </div>
+    <div className="gate">
+      <section className="gate-hero">
+        <header className="gate-head">
+          <div className="login-mark">LAW<span className="os-brand-24">24</span></div>
+          <p className="gate-line">{L(lang, POSITION.line)}</p>
         </header>
-        <div className="login-pane-body">
-          <h1 className="login-headline">From business intention to contract, decision and control.</h1>
-          <p className="login-lede">
-            LAW24 is not a template generator. Assemble, review clause-by-clause, understand the whole transaction, investigate a data room, and control obligations — with evidence on every material conclusion.
-          </p>
+        <h1>{L(lang, POSITION.hook)}</h1>
+        <p className="gate-lede">{L(lang, POSITION.hookLede)}</p>
+        <p className="gate-promise">{L(lang, POSITION.promise)}</p>
+        <div className="stack-actions" style={{ marginTop: 28 }}>
+          <button type="button" className="btn btn-primary" onClick={() => enter("corporate", { xray: true })}>
+            <T en="Analyse a Contract" th="วิเคราะห์สัญญา" /> <ArrowRight size={16} />
+          </button>
+          <button type="button" className="btn btn-ghost" onClick={() => { setEdition("firm"); setEmail("kanit@7l-advisory.com"); }}>
+            <T en="Explore LAW24 for Firms" th="สำรวจ LAW24 สำหรับสำนักงาน" />
+          </button>
+          <button type="button" className="btn btn-ghost" onClick={() => { setEdition("corporate"); setEmail("preecha@siamdigital.co.th"); }}>
+            <T en="Explore LAW24 for Companies" th="สำรวจ LAW24 สำหรับบริษัท" />
+          </button>
         </div>
-        <footer className="login-pane-foot">
-          <div className="login-stats">
-            <div><strong>500</strong><span>Thai contract types</span></div>
-            <div><strong>8</strong><span>Issue cards · Nimbus</span></div>
-            <div><strong>3,418</strong><span>DD documents</span></div>
-          </div>
-        </footer>
+        <p className="gate-wedge">{WEDGE_TYPES.map((x) => L(lang, x)).join(" · ")}</p>
+        <div className="gate-trust">
+          {TRUST_STRIP.slice(0, 2).map((x) => <span key={x.e}>{L(lang, x)}</span>)}
+        </div>
       </section>
-      <section className="login-pane login-auth">
+
+      <section className="gate-auth">
         <header className="login-pane-head">
-          <div className="login-kicker-ghost">Sign in</div>
-          <ModeToggle compact />
+          <div className="login-kicker-ghost"><T en="Two entrances · one engine" th="สองทางเข้า · เครื่องยนต์ชุดเดียว" /></div>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <LangToggle />
+            <ModeToggle compact />
+          </div>
         </header>
-        <div className="login-pane-body">
-          <form className="login-card" onSubmit={onSubmit}>
-            <h2>Choose edition</h2>
-            <p className="text-muted login-card-note">The engine does not change. Corporate and advisory share one playbook, one evidence trail, and one tenant wall.</p>
-            <div className="login-modes">
-              <button type="button" className={`login-mode${edition === "corporate" ? " on" : ""}`} onClick={() => { setEdition("corporate"); setEmail("preecha@siamdigital.co.th"); }}>
-                <Building2 size={18} />
-                <strong>Corporate</strong>
-                <span>In-house legal, procurement, HR and commercial teams.</span>
-              </button>
-              <button type="button" className={`login-mode${edition === "firm" ? " on" : ""}`} onClick={() => { setEdition("firm"); setEmail("kanit@7l-advisory.com"); }}>
-                <Scale size={18} />
-                <strong>Law firm / advisory</strong>
-                <span>Client-matter workspace, white-label packs, partner review.</span>
-              </button>
-            </div>
-            <div className="field">
-              <label>Work email</label>
-              <input className="input" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" />
-            </div>
-            <div className="field">
-              <label>Password</label>
-              <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
-            </div>
-            {err && <p className="text-muted" style={{ color: "var(--color-accent)", fontSize: 13 }}>{err}</p>}
-            <button className="btn btn-primary btn-block" type="submit">
-              Enter LAW24 OS <ArrowRight size={18} />
+        <form className="login-card" onSubmit={onSubmit}>
+          <h2><T en="Choose your entrance" th="เลือกทางเข้า" /></h2>
+          <p className="text-muted login-card-note">
+            <T en="Not ChatGPT for lawyers. Not generic AI contract review. Same engine — different fears, different value." th="ไม่ใช่ ChatGPT สำหรับทนาย และไม่ใช่แค่ตรวจสัญญาด้วย AI เครื่องยนต์ชุดเดียวกัน — ความกลัวต่างกัน มูลค่าต่างกัน" />
+          </p>
+          <div className="login-modes">
+            <button type="button" className={`login-mode${edition === "corporate" ? " on" : ""}`} onClick={() => { setEdition("corporate"); setEmail("preecha@siamdigital.co.th"); }}>
+              <Building2 size={18} />
+              <strong>LAW24 Corporate</strong>
+              <span>{L(lang, ENTRANCES.corporate.help)}</span>
+              <em>{L(lang, ENTRANCES.corporate.fear)}</em>
             </button>
-          </form>
-        </div>
-        <footer className="login-pane-foot login-meta">
-          <span>SSO · MFA · tenant isolation · PDPA</span>
+            <button type="button" className={`login-mode${edition === "firm" ? " on" : ""}`} onClick={() => { setEdition("firm"); setEmail("kanit@7l-advisory.com"); }}>
+              <Briefcase size={18} />
+              <strong>LAW24 Firm</strong>
+              <span>{L(lang, ENTRANCES.firm.help)}</span>
+              <em>{L(lang, ENTRANCES.firm.fear)}</em>
+            </button>
+          </div>
+          <ul className="gate-points">
+            {(edition === "firm" ? ENTRANCES.firm.points : ENTRANCES.corporate.points).map((p) => (
+              <li key={p.e}>{L(lang, p)}</li>
+            ))}
+          </ul>
+          <div className="field">
+            <label>Work email</label>
+            <input className="input" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" />
+          </div>
+          <div className="field">
+            <label>Password</label>
+            <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+          </div>
+          {err && <p className="text-muted" style={{ color: "var(--color-hot)", fontSize: 13 }}>{err}</p>}
+          <button className="btn btn-primary btn-block" type="submit">
+            {edition === "firm" ? <T en="Enter LAW24 Firm" th="เข้า LAW24 Firm" /> : <T en="Enter LAW24 Corporate" th="เข้า LAW24 Corporate" />}
+            <ArrowRight size={18} />
+          </button>
+          <button className="btn btn-secondary btn-block" type="button" onClick={() => enter(edition, { demo: true, xray: true })}>
+            <T en="Enter and run Contract X-Ray" th="เข้าแล้วเปิด Contract X-Ray" />
+          </button>
+        </form>
+        <footer className="login-meta" style={{ marginTop: 20 }}>
+          <span>SSO · MFA · PDPA · tenant isolation</span>
           <span>Demo / demo1234</span>
         </footer>
       </section>

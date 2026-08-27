@@ -14,8 +14,8 @@ export function Title({ children }: { children: ReactNode }) {
 
 export function Sev({ sv, lang }: { sv: string; lang: Lang }) {
   const map: Record<string, { l: string; bg: string; fg: string; bd: string }> = {
-    vhigh: { l: lang === "th" ? "สูงมาก" : "Very high", bg: "var(--color-accent)", fg: "var(--color-bg)", bd: "transparent" },
-    high: { l: lang === "th" ? "สูง" : "High", bg: "var(--color-accent-200)", fg: "var(--color-accent-800)", bd: "transparent" },
+    vhigh: { l: lang === "th" ? "สูงมาก" : "Very high", bg: "var(--color-hot)", fg: "#f3f2f2", bd: "transparent" },
+    high: { l: lang === "th" ? "สูง" : "High", bg: "var(--color-signal-200)", fg: "var(--color-hot)", bd: "transparent" },
     med: { l: lang === "th" ? "ปานกลาง" : "Medium", bg: "var(--color-neutral-200)", fg: "var(--color-neutral-900)", bd: "transparent" },
     low: { l: lang === "th" ? "ต่ำ" : "Low", bg: "transparent", fg: "var(--color-neutral-600)", bd: "var(--color-divider)" },
   };

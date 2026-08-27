@@ -1,6 +1,6 @@
 export type Lang = "en" | "th";
 export type Edition = "corporate" | "firm";
-export type ModeKey = "home" | "assemble" | "review" | "holistic" | "diligence" | "negotiate" | "obligations" | "intel";
+export type ModeKey = "home" | "practice" | "command" | "assist" | "help" | "assemble" | "review" | "holistic" | "diligence" | "negotiate" | "obligations" | "intel";
 export type ScreenKey = string;
 
 export const CORPORATE_USER = { name: "P. Rojana", nameTh: "ปรีชา โรจนา", role: "General Counsel", roleTh: "ที่ปรึกษากฎหมายอาวุโส", initials: "PR", email: "preecha@siamdigital.co.th" };

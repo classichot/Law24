@@ -5,13 +5,15 @@ import { FX } from "@/lib/taxonomy";
 import { Kicker, Stats, Title } from "@/components/ui";
 import { L } from "@/lib/model";
 import { MEMORY } from "@/lib/wow";
+import { TWIN_ASKS, TWIN_LAYERS } from "@/lib/product";
 import { T } from "@/lib/i18n";
 
 export function IntelScreen({ screen }: { screen: string }) {
+  if (screen === "twin") return <Twin />;
   if (screen === "ipf") return <Port />;
   if (screen === "ikg") return <Kg />;
   if (screen === "memory") return <Mem />;
-  return <Port />;
+  return <Twin />;
 }
 
 function I() {
@@ -82,10 +84,15 @@ function Kg() {
       </div>
       <h5><T en="Questions it answers" th="ตัวอย่างคำถามที่ตอบได้" /></h5>
       {intel.queries.map((q, i) => (
-        <div key={i} style={{ display: "flex", gap: 16, padding: "15px 0", borderBottom: "1px solid var(--color-divider)" }}>
+        <button
+          key={i}
+          type="button"
+          onClick={() => s.ask(L(s.lang, q))}
+          style={{ display: "flex", gap: 16, padding: "15px 0", border: 0, borderBottom: "1px solid var(--color-divider)", width: "100%", background: "transparent", cursor: "pointer", textAlign: "left", color: "inherit", font: "inherit" }}
+        >
           <span style={{ color: "var(--color-accent)", font: "800 14px/1 var(--font-heading)" }}>?</span>
           <span style={{ fontSize: 16 }}>{L(s.lang, q)}</span>
-        </div>
+        </button>
       ))}
     </div>
   );
@@ -111,6 +118,38 @@ function Mem() {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function Twin() {
+  const s = useStore();
+  return (
+    <div className="pad-page">
+      <Kicker>twin · living legal position</Kicker>
+      <Title><T en="Living Legal Twin" th="ฝาแฝดกฎหมายที่มีชีวิต" /></Title>
+      <p className="page-sub">
+        <T
+          en="The Contract X-Ray attracts users. The Legal Twin makes LAW24 difficult to replace — a continually updated representation of this company's legal position."
+          th="X-Ray ดึงผู้ใช้เข้ามา ฝาแฝดกฎหมายทำให้ LAW24 แทนที่ได้ยาก — ภาพตำแหน่งกฎหมายของบริษัทที่อัปเดตต่อเนื่อง"
+        />
+      </p>
+      <div className="twin-tags">
+        {TWIN_LAYERS.map((x) => <span key={x.e} className="tag tag-outline">{L(s.lang, x)}</span>)}
+      </div>
+      <h5 style={{ marginTop: 28 }}><T en="Ask management questions" th="ถามคำถามฝ่ายบริหาร" /></h5>
+      {TWIN_ASKS.map((q) => (
+        <button
+          key={q.q.e}
+          type="button"
+          className="twin-ask"
+          onClick={() => s.ask(s.lang === "th" ? q.q.t : q.q.e)}
+        >
+          <strong>{L(s.lang, q.q)}</strong>
+          <span>{L(s.lang, q.a)}</span>
+          <em>{L(s.lang, q.src)}</em>
+        </button>
+      ))}
     </div>
   );
 }
