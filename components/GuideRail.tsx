@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { BookOpen, ChevronDown, ChevronUp } from "lucide-react";
 import { useStore, modeHref } from "@/lib/store";
 import {
   MODULE_GUIDES,
   OS_FLOW,
+  PLAYBOOKS,
   copyTE,
   helpBookHref,
   moduleFlowSteps,
@@ -18,22 +19,55 @@ import { isMode } from "@/lib/nav";
 import { T } from "@/lib/i18n";
 import type { ModeKey } from "@/lib/model";
 
+function editionFlow(edition: "firm" | "corporate") {
+  return edition === "firm"
+    ? OS_FLOW.filter((x) => x.k !== "command")
+    : OS_FLOW.filter((x) => x.k !== "practice");
+}
+
 export function GuideRail({ mode, screen }: { mode: string; screen: string }) {
-  const { lang, matter, edition, demoOn } = useStore();
+  const { lang, matter, edition } = useStore();
   const [open, setOpen] = useState(true);
-  useEffect(() => {
-    if (demoOn) setOpen(false);
-  }, [demoOn]);
-  if (!isMode(mode)) return null;
   const th = lang === "th";
+  const os = editionFlow(edition);
+
+  if (mode === "home") {
+    return (
+      <section className="guide-rail no-print">
+        <div className="guide-compact">
+          <Link href="/help?s=books" className="guide-book">
+            <BookOpen size={14} />
+            <span>
+              <em><T en="Playbook" th="เพลย์บุ๊ก" /></em>
+              {th ? "คลังเพลย์บุ๊กบ้าน — ทุกโมดูลมีเล่มที่ใช้บังคับ" : "House library — every module carries a book in force"}
+            </span>
+          </Link>
+          <ol className="guide-flow">
+            {os.map((m) => {
+              const key = playbookKeyFor(m.k);
+              return (
+                <li key={m.k}>
+                  <Link href={helpBookHref(key)} title={copyTE(lang, PLAYBOOKS[key].name)}>
+                    {PLAYBOOKS[key].id}
+                  </Link>
+                </li>
+              );
+            })}
+          </ol>
+          <Link href="/help?s=books" className="guide-open" style={{ marginLeft: 8 }}>
+            <T en="Open library" th="เปิดคลัง" /> →
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  if (!isMode(mode)) return null;
   const pb = playbookOf(mode, matter);
   const pbKey = playbookKeyFor(mode, matter);
   const mod = MODULE_GUIDES[mode];
   const sc = screenGuide(mode, screen);
   const steps = moduleFlowSteps(mode);
-  const os = edition === "firm"
-    ? OS_FLOW.filter((x) => x.k !== "command")
-    : OS_FLOW.filter((x) => x.k !== "practice");
 
   return (
     <section className="guide-rail no-print">

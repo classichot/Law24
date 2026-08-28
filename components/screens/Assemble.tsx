@@ -8,7 +8,8 @@ import { Chip, Kicker, Title } from "@/components/ui";
 import { L } from "@/lib/model";
 import { BILINGUAL } from "@/lib/wow";
 import { T } from "@/lib/i18n";
-import { DEMO_TYPE_ID, downloadText, packText } from "@/lib/demo";
+import { DEMO_TYPE_ID } from "@/lib/demo";
+import { downloadAssemblePack } from "@/lib/pack";
 import { Dropzone } from "@/components/Dropzone";
 import { StandardClause } from "@/components/StandardClause";
 import { houseStandard } from "@/lib/clauses";
@@ -108,6 +109,20 @@ function Library() {
         <div style={{ fontSize: 12, color: "var(--color-neutral-600)", padding: "10px 0" }}>
           {th ? `แสดง ${shown.length} จาก ${TAX_LIST.length} ประเภท` : `Showing ${shown.length} of ${TAX_LIST.length} types`}
         </div>
+        {shown.length === 0 && (
+          <div className="callout" style={{ marginBottom: 16 }}>
+            <T en="No types match these filters." th="ไม่มีประเภทที่ตรงตัวกรองนี้" />
+            <div className="stack-actions" style={{ marginTop: 10 }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => { s.resetFilters(); s.setQ("SaaS"); s.setCat("C15"); s.setSel(DEMO_TYPE_ID); s.flash(th ? "เปิด CT-284 นิมบัสแล้ว" : "Opened CT-284 Nimbus"); }}
+              >
+                <T en="Run demo on Nimbus (CT-284)" th="ทดลองกับนิมบัส (CT-284)" />
+              </button>
+            </div>
+          </div>
+        )}
         <div style={{ maxHeight: "calc(100vh - 280px)", overflow: "auto", borderTop: "2px solid var(--color-divider)" }}>
           <table className="table">
             <thead>
@@ -387,13 +402,53 @@ function Draft() {
               s.flash(th ? "ต้องได้อนุมัติ DPO ก่อน" : "DPO approval is still required");
               return;
             }
-            s.generatePack();
-            downloadText("LAW24_Nimbus_pack.txt", packText(s.lang));
-            s.flash(th ? "สร้างชุด DOCX + PDF แล้ว" : "DOCX + PDF pack generated");
+            s.flash(th ? "กำลังสร้างชุด Word + PDF…" : "Generating Word + PDF pack…");
+            void downloadAssemblePack({
+              lang: s.lang,
+              conflictChoice: s.conflictChoice,
+              clauseEdits: s.clauseEdits,
+            }).then(() => {
+              s.generatePack();
+              s.flash(th ? "ดาวน์โหลด .docx และ .pdf แล้ว" : "Downloaded .docx and .pdf");
+            }).catch(() => {
+              s.flash(th ? "สร้างชุดไม่สำเร็จ" : "Pack generation failed");
+            });
           }}
         >
-          {s.packGenerated ? <T en="Pack ready — download again" th="ชุดพร้อมแล้ว — ดาวน์โหลดอีกครั้ง" /> : <T en="Generate DOCX + PDF pack" th="สร้างชุด DOCX + PDF" />}
+          {s.packGenerated ? <T en="Download Word + PDF again" th="ดาวน์โหลด Word + PDF อีกครั้ง" /> : <T en="Generate Word + PDF pack" th="สร้างชุด Word + PDF" />}
         </button>
+        <div className="stack-actions" style={{ marginTop: 8 }}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => {
+              if (!s.dpoApproved) {
+                s.flash(th ? "ต้องได้อนุมัติ DPO ก่อน" : "DPO approval is still required");
+                return;
+              }
+              void downloadAssemblePack({ lang: s.lang, conflictChoice: s.conflictChoice, clauseEdits: s.clauseEdits }, "docx")
+                .then(() => { s.generatePack(); s.flash(th ? "ดาวน์โหลด Word แล้ว" : "Word downloaded"); })
+                .catch(() => s.flash(th ? "สร้าง Word ไม่สำเร็จ" : "Word generation failed"));
+            }}
+          >
+            <T en="Word (.docx)" th="Word (.docx)" />
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => {
+              if (!s.dpoApproved) {
+                s.flash(th ? "ต้องได้อนุมัติ DPO ก่อน" : "DPO approval is still required");
+                return;
+              }
+              void downloadAssemblePack({ lang: s.lang, conflictChoice: s.conflictChoice, clauseEdits: s.clauseEdits }, "pdf")
+                .then(() => { s.generatePack(); s.flash(th ? "ดาวน์โหลด PDF แล้ว" : "PDF downloaded"); })
+                .catch(() => s.flash(th ? "สร้าง PDF ไม่สำเร็จ" : "PDF generation failed"));
+            }}
+          >
+            <T en="PDF" th="PDF" />
+          </button>
+        </div>
         <div className="callout" style={{ marginTop: 20 }}>
           <T en="e-Sign is suitable provided ET Act evidence is retained and both signatories are identity-assured." th="เหมาะกับ e-Sign หากเก็บหลักฐานตาม พ.ร.บ.ธุรกรรมทางอิเล็กทรอนิกส์ และยืนยันตัวตนผู้ลงนามทั้งสองฝ่าย" />
         </div>
@@ -435,6 +490,10 @@ function Bilingual() {
           </div>
         </div>
       ))}
+      <div className="stack-actions" style={{ marginTop: 18 }}>
+        <Link href="/review?s=xray" className="btn btn-primary">X-Ray</Link>
+        <Link href="/assemble?s=draft" className="btn btn-secondary"><T en="Back to draft" th="กลับร่าง" /></Link>
+      </div>
     </div>
   );
 }

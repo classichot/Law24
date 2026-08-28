@@ -1,7 +1,7 @@
 import type { Edition, Lang } from "./model";
-import { L } from "./model";
 import { routeAssist } from "./assist";
 import { copyTE } from "./guides";
+import { askLiveChat } from "./ai/client";
 
 export type CopilotMsg = { role: "user" | "ai"; text: string; cites?: { label: string; href?: string }[] };
 
@@ -31,6 +31,18 @@ export const SUGGESTIONS_TH = [
 export function answerCopilot(q: string, lang: Lang, edition: Edition = "corporate"): CopilotMsg {
   const t = q.toLowerCase();
   const th = lang === "th";
+  if (/\bhost desk\b|\bbhd\b|demo (invite|link)|review link|mint (a )?link|โต๊ะโฮสต์|ลิงก์สาธิต/.test(t)) {
+    return {
+      role: "ai",
+      text: th
+        ? "โต๊ะโฮสต์สร้าง URL สาธิต LAW24 ที่มีกำหนดเวลา เปิด /host ตั้งจำนวนวัน (1–14 ค่าเริ่มต้น 3) กดสร้าง แล้วส่งเฉพาะ URL นั้น\n\nวันหมดอายุถูกเซ็นใน /review/{token} ผู้รับบนเครื่องอื่นเปิดสาธิตได้จนกว่านาฬิกาจะหมด หลังจากนั้น URL เดิมแสดงว่าสิ้นสุดการเข้าถึง\n\nคีย์โฮสต์ใช้ปลดล็อก Firm บนเบราว์เซอร์นี้เท่านั้น ไม่แสดงบนหน้าเข้าสู่ระบบสาธารณะ ถ้าจะตัดลิงก์ที่ยังใช้ได้ทั้งหมด ให้เพิ่ม INVITE_EPOCH แล้ว redeploy เครื่องยนต์ไม่ลงนามแทน"
+        : "Host desk mints a time-limited LAW24 demo URL. Open /host, set days (1–14, default 3), Generate, then send only that URL.\n\nThe expiry is signed into /review/{token}, so a recipient on another device can open the demo until the clock runs out. After that the same URL shows Access ended.\n\nThe host key unlocks Firm on this browser. It is never shown on public login. To kill every live link at once, bump INVITE_EPOCH and redeploy. The engine never signs.",
+      cites: [
+        { label: th ? "โต๊ะโฮสต์" : "Host desk", href: "/host" },
+        { label: th ? "วิธีใช้ LAW24" : "How to use LAW24", href: "/help?s=use" },
+      ],
+    };
+  }
   if (t.includes("exposure") || t.includes("maximum") || t.includes("ความเสี่ยง") || t.includes("เพดาน")) {
     return {
       role: "ai",
@@ -193,4 +205,18 @@ export function answerCopilot(q: string, lang: Lang, edition: Edition = "corpora
       : `No evidence-linked answer yet for “${q}”. Try liability cap, PDPA transfer, termination, or Charoen Logistics red flags.`,
     cites: [{ label: "Findings", href: "/review?s=find" }, { label: "Red flags", href: "/diligence?s=dflags" }],
   };
+}
+
+/** Live Copilot shares Leio. Twin stays on canned answers. */
+export async function askCopilot(
+  q: string,
+  lang: Lang,
+  edition: Edition = "corporate",
+  source: "leio" | "twin" = "leio"
+): Promise<CopilotMsg> {
+  if (source === "twin") return answerCopilot(q, lang, edition);
+  const canned = answerCopilot(q, lang, edition);
+  const ans = await askLiveChat("/api/ai/leio", { q, lang, edition });
+  if (!ans) return canned;
+  return { role: "ai", text: ans.text, cites: ans.cites };
 }

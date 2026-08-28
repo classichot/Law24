@@ -3,6 +3,7 @@ import { NAV } from "./nav";
 import { seedPractice, type PracticeState } from "./firm";
 import { PLAYBOOKS, copyTE, helpBookHref, type PlaybookKey } from "./guides";
 import type { ClauseEdit } from "./clauses";
+import type { DdLive, NegotiateLive, ReviewLive, XrayView } from "./ai/types";
 
 export type MatterId = "nimbus" | "charoen" | "portfolio";
 export type FindingStatus = "pending" | "accepted" | "amended" | "escalated";
@@ -27,6 +28,13 @@ export const DEMO_DOC_REF = "CT-291";
 export const DEMO_FINDING = "F-01";
 export const DEMO_FLAG = "DK-01";
 export const DEMO_ALERT = "0";
+
+export const NIMBUS_FILE: UploadFile = { name: "Nimbus_Cloud_SaaS_CT-291.pdf", size: 842_110, bucket: "xray" };
+export const CHAROEN_FILES: UploadFile[] = [
+  { name: "Charoen_VDR_index.xlsx", size: 210_400, bucket: "diligence" },
+  { name: "Bangkok_Bank_Facility_CoC.pdf", size: 1_204_110, bucket: "diligence" },
+  { name: "Related_party_schedule.xlsx", size: 88_200, bucket: "diligence" },
+];
 
 export const MATTERS: Record<MatterId, {
   id: MatterId;
@@ -209,6 +217,10 @@ export type LiveState = {
   clauseEdits: Record<string, ClauseEdit>;
   practice: PracticeState;
   xrayReady: boolean;
+  xrayLive: XrayView | null;
+  reviewLive: ReviewLive | null;
+  ddLive: DdLive | null;
+  negotiateLive: NegotiateLive | null;
   lawyerSent: boolean;
   roomVotes: Record<string, "approve" | "reject">;
   quotePkg: string;
@@ -238,6 +250,10 @@ export function defaultLive(): LiveState {
     clauseEdits: {},
     practice: seedPractice(),
     xrayReady: false,
+    xrayLive: null,
+    reviewLive: null,
+    ddLive: null,
+    negotiateLive: null,
     lawyerSent: false,
     roomVotes: {},
     quotePkg: "nda",
@@ -346,14 +362,107 @@ export function packText(lang: Lang) {
   ].join("\n");
 }
 
-export function downloadText(filename: string, text: string) {
-  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+export function ddReportText(lang: Lang) {
+  if (lang === "th") {
+    return [
+      "LAW24 · รายงานตรวจสอบสถานะฝั่งผู้ซื้อ",
+      "เป้าหมาย: เจริญโลจิสติกส์ · มูลค่า ฿1,850 ล้าน",
+      "",
+      "ประเด็นล้มดีล",
+      "DK-01  สินเชื่อธนาคารกรุงเทพผิดนัดเมื่อเปลี่ยนอำนาจควบคุม · ฿640 ล้าน",
+      "DK-02  ความหนาแน่นบุคคลเกี่ยวโยง 38% ของรายได้",
+      "",
+      "เอกสารที่ขาด: กรมธรรม์ D&O, สัญญาลูกค้า 3 ราย, ตารางผู้ประมวลผลช่วง",
+      "คำแนะนำ: ห้ามปิดรายงานจนกว่า DK-01 จะถึงพาร์ทเนอร์และชุด IC",
+      "หลักฐาน: ห้องข้อมูล Charoen · PB-DD v3.1",
+      "",
+      "เครื่องยนต์ไม่ลงนามแทน",
+    ].join("\n");
+  }
+  return [
+    "LAW24 · Buy-side diligence report",
+    "Target: Charoen Logistics · THB 1,850M",
+    "",
+    "Kill items",
+    "DK-01  Bangkok Bank facility defaults on change of control · THB 640M",
+    "DK-02  Related-party concentration at 38% of revenue",
+    "",
+    "Missing: D&O policy, 3 customer contracts, sub-processor schedule",
+    "Recommendation: Do not close the report until DK-01 reaches partner and the IC pack",
+    "Evidence: Charoen data room · PB-DD v3.1",
+    "",
+    "The engine never signs.",
+  ].join("\n");
+}
+
+export function boardPackText(lang: Lang) {
+  if (lang === "th") {
+    return [
+      "LAW24 · ชุดรายงานคณะกรรมการ",
+      "องค์กร: สยามดิจิทัล",
+      "",
+      "X-Ray นิมบัส CT-291 — คำตัดสิน: เจรจา  สี่ข้อต้องได้ยังไม่ปิด",
+      "ฝาแฝด: 212 ฉบับไม่จำกัดความรับผิด",
+      "ข้อผูกพัน: 47 เลยกำหนด · สัญญาอาคารเหลือ 6 วันก่อนบอกกล่าว",
+      "DD เจริญ: 2 ประเด็นล้มดีล รอชุด IC",
+      "",
+      "ท่าทีที่แนะนำ: ห้ามลงนามนิมบัสจนกว่าเพดานข้อมูล DPA และสิทธิเลิกจะปิด",
+      "เครื่องยนต์ไม่ลงนามแทน",
+    ].join("\n");
+  }
+  return [
+    "LAW24 · Board pack",
+    "Tenant: Siam Digital",
+    "",
+    "Nimbus CT-291 X-Ray — verdict: Negotiate. Four must-haves still open.",
+    "Twin: 212 uncapped-liability contracts",
+    "Obligations: 47 overdue · facilities notice in 6 days",
+    "Charoen DD: 2 kill items pending IC pack",
+    "",
+    "Recommended posture: no Nimbus signature until data cap, DPA and termination close.",
+    "The engine never signs.",
+  ].join("\n");
+}
+
+export function noticeLetterText(lang: Lang) {
+  if (lang === "th") {
+    return [
+      "หนังสือบอกกล่าวไม่ต่ออายุ",
+      "ถึง: ผู้ให้บริการบริหารอาคาร",
+      "จาก: สยามดิจิทัล จำกัด",
+      "",
+      "ตามสัญญาบริหารอาคาร ข้อ 14.2 บริษัทขอใช้สิทธิไม่ต่ออายุ",
+      "วันสิ้นสุดที่มีผล: ตามกำหนดในสัญญา — ห้ามต่ออัตโนมัติ 12 เดือน",
+      "",
+      "ร่างโดย LAW24 · ทนายเป็นผู้ลงนามในท่าที · เครื่องยนต์ไม่ลงนามแทน",
+    ].join("\n");
+  }
+  return [
+    "Notice of non-renewal",
+    "To: Facilities management provider",
+    "From: Siam Digital Co., Ltd.",
+    "",
+    "Under clause 14.2 we exercise the right not to renew.",
+    "Effective expiry: as stated — do not auto-renew for a further 12 months.",
+    "",
+    "Drafted in LAW24 · counsel signs the posture · the engine never signs.",
+  ].join("\n");
+}
+
+export function downloadBlob(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
+  a.rel = "noopener";
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2_000);
+}
+
+export function downloadText(filename: string, text: string) {
+  downloadBlob(filename, new Blob([text], { type: "text/plain;charset=utf-8" }));
 }
 
 export function copyText(text: string) {
@@ -374,6 +483,7 @@ export function catalogHits(lang: Lang): SearchHit[] {
   const hits: SearchHit[] = [
     { id: "home", href: "/home", kind: th ? "หน้า" : "Screen", title: th ? "หน้าแรกโมดูล" : "Module home" },
     { id: "demo", href: "/review?s=xray", kind: th ? "สาธิต" : "Demo", title: th ? "เริ่มสาธิตสด" : "Start live demo" },
+    { id: "host", href: "/host", kind: th ? "โต๊ะโฮสต์" : "Host desk", title: th ? "สร้างลิงก์สาธิต" : "Mint a demo link" },
   ];
   (Object.entries(NAV) as [Exclude<ModeKey, "home">, [string, string, string][]][]).forEach(([mode, screens]) => {
     screens.forEach(([k, t, e]) => {

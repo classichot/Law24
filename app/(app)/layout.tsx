@@ -4,16 +4,22 @@ import { useEffect, type ReactNode, Suspense } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { AppShell } from "@/components/AppShell";
+import { isInviteAuth, readInviteSession } from "@/lib/invite";
 
 function Guard({ children }: { children: ReactNode }) {
-  const { ready, authed } = useStore();
+  const { ready, authed, logout } = useStore();
   const router = useRouter();
   const path = usePathname();
 
   useEffect(() => {
     if (!ready) return;
+    if (isInviteAuth() && !readInviteSession()) {
+      logout();
+      router.replace("/review/ended");
+      return;
+    }
     if (!authed) router.replace("/");
-  }, [ready, authed, router, path]);
+  }, [ready, authed, logout, router, path]);
 
   if (!ready || !authed) {
     return <div style={{ minHeight: "100vh", background: "var(--color-bg)" }} />;

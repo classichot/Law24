@@ -9,6 +9,9 @@ import { T } from "@/lib/i18n";
 import { statusLabel, type FindingStatus } from "@/lib/demo";
 import { Dropzone } from "@/components/Dropzone";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { CONTRACT_ACCEPT } from "@/lib/ai/files";
+import { AiLiveMark } from "@/components/AiLiveMark";
 
 const REC: Record<string, [string, string]> = {
   amend: ["Amend", "แก้ไข"], docs: ["Request documents", "ขอเอกสาร"], reject: ["Reject", "ปฏิเสธ"],
@@ -36,6 +39,7 @@ function R() {
 
 function Setup() {
   const s = useStore();
+  const router = useRouter();
   const r = R();
   return (
     <div className="pad-page">
@@ -43,10 +47,22 @@ function Setup() {
       <Title>{L(s.lang, r.doc.title)}</Title>
       <p className="page-sub">{L(s.lang, r.doc.client)} · {L(s.lang, r.doc.cp)} · {r.doc.ref} · {L(s.lang, r.doc.value)}</p>
       <Dropzone
-        bucket="review"
+        bucket="xray"
+        accept={CONTRACT_ACCEPT}
         title={<T en="Drop the contract to review" th="ลากสัญญาที่ต้องการตรวจมาวาง" />}
         hint={<T en="Counterparty paper, PDF or DOCX. LAW24 extracts terms and opens issue cards — the lawyer keeps the decision." th="ฉบับคู่สัญญา PDF หรือ DOCX ระบบสกัดข้อกำหนดและเปิดบัตรประเด็น — ทนายเป็นผู้ตัดสิน" />}
+        multiple={false}
+        onAfter={() => { router.push("/review?s=xray"); }}
       />
+      <div className="stack-actions" style={{ margin: "8px 0 16px" }}>
+        {!s.xrayReady && (
+          <button type="button" className="btn btn-primary" onClick={() => { s.startXray(); }}>
+            <T en="Run demo on Nimbus" th="ทดลองกับนิมบัส" />
+          </button>
+        )}
+        <Link href="/review?s=xray" className="btn btn-secondary">X-Ray</Link>
+        <Link href="/review?s=find" className="btn btn-secondary"><T en="Open findings" th="เปิดข้อค้นพบ" /></Link>
+      </div>
       <div className="grid-2" style={{ marginTop: 8 }}>
         {r.setup.map((x) => (
           <div key={L(s.lang, x.k)} style={{ padding: 14, border: "2px solid var(--color-divider)" }}>
@@ -84,6 +100,10 @@ function Quick() {
           </div>
         ))}
       </div>
+      <div className="stack-actions" style={{ marginTop: 18 }}>
+        <Link href="/review?s=find" className="btn btn-primary"><T en="Open findings" th="เปิดข้อค้นพบ" /></Link>
+        <Link href="/review?s=xray" className="btn btn-secondary">X-Ray</Link>
+      </div>
     </div>
   );
 }
@@ -92,11 +112,12 @@ function Findings() {
   const s = useStore();
   const th = s.lang === "th";
   const r = R();
-  const list = r.findings.filter((f) => !s.gsev || f.sev === s.gsev);
+  const listSource = s.reviewLive?.findings ?? r.findings;
+  const list = listSource.filter((f) => !s.gsev || f.sev === s.gsev);
   const stOf = (id: string, fallback: string) => s.findingStatus[id] || fallback;
-  const high = r.findings.filter((f) => f.sev === "high").length;
-  const acted = r.findings.filter((f) => {
-    const st = stOf(f.id, f.status);
+  const high = listSource.filter((f) => f.sev === "high").length;
+  const acted = listSource.filter((f) => {
+    const st = stOf(f.id, "status" in f ? String((f as { status?: string }).status) : "pending");
     return st === "accepted" || st === "amended" || st === "escalated";
   }).length;
   return (
@@ -105,9 +126,9 @@ function Findings() {
       <Title><T en="Findings" th="ข้อค้นพบ" /></Title>
       <Stats items={[
         { v: String(high), k: th ? "ความเสี่ยงสูง" : "High severity" },
-        { v: String(r.findings.length), k: th ? "ข้อค้นพบทั้งหมด" : "All findings" },
+        { v: String(listSource.length), k: th ? "ข้อค้นพบทั้งหมด" : "All findings" },
         { v: String(acted), k: th ? "ดำเนินการแล้ว" : "Acted on" },
-        { v: String(r.findings.length - acted), k: th ? "ยังเปิดอยู่" : "Still open" },
+        { v: String(listSource.length - acted), k: th ? "ยังเปิดอยู่" : "Still open" },
       ]} />
       <div style={{ display: "flex", gap: 6, margin: "16px 0" }}>
         {[["", th ? "ทั้งหมด" : "All"], ["high", th ? "สูง" : "High"], ["med", th ? "ปานกลาง" : "Medium"], ["low", th ? "ต่ำ" : "Low"]].map(([v, lb]) => (
@@ -117,7 +138,7 @@ function Findings() {
       {list.map((f) => {
         const open = s.openF === f.id;
         const rec = REC[f.rec] || REC.amend;
-        const st = stOf(f.id, f.status) as FindingStatus | string;
+        const st = stOf(f.id, "status" in f ? String((f as { status?: string }).status) : "pending") as FindingStatus | string;
         return (
           <div key={f.id} className={`issue-card${open ? " open" : ""}`} style={{ marginBottom: 8 }}>
             <button className="issue-head" onClick={() => s.setOpenF(open ? "" : f.id)}>
@@ -148,6 +169,10 @@ function Findings() {
           </div>
         );
       })}
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <Link href="/review?s=pb" className="btn btn-primary"><T en="Compare playbook" th="เทียบเพลย์บุ๊ก" /></Link>
+        <Link href="/review?s=board" className="btn btn-secondary"><T en="Review Board" th="คณะทบทวน" /></Link>
+      </div>
     </div>
   );
 }
@@ -176,6 +201,10 @@ function Playbook() {
           ))}
         </tbody>
       </table>
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <Link href="/review?s=red" className="btn btn-primary"><T en="Open counterparty redline" th="เปิด redline คู่สัญญา" /></Link>
+        <Link href="/help?s=book&b=itcloud" className="btn btn-secondary"><T en="Full house book" th="เล่มเต็มในคู่มือ" /></Link>
+      </div>
     </div>
   );
 }
@@ -200,18 +229,27 @@ function Redline() {
           ))}
         </tbody>
       </table>
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <Link href="/review?s=board" className="btn btn-primary"><T en="Open Review Board" th="เปิดคณะทบทวน" /></Link>
+        <Link href="/negotiate?s=nladder" className="btn btn-secondary"><T en="Negotiation ladder" th="บันไดเจรจา" /></Link>
+      </div>
     </div>
   );
 }
 
 function Board() {
   const s = useStore();
+  const th = s.lang === "th";
+  const seats = s.reviewLive?.board ?? BOARD;
+  const agreement = s.reviewLive?.agreement;
+  const rec = s.reviewLive?.recommendation;
+
   return (
     <div className="pad-page">
-      <Kicker>wow · AI Legal Review Board</Kicker>
+      <Kicker>wow · AI Legal Review Board · <AiLiveMark compact /></Kicker>
       <Title><T en="Specialized reviewers, not one chatbot" th="คณะทบทวนเฉพาะทาง ไม่ใช่แชตบอทตัวเดียว" /></Title>
       <div className="grid-3" style={{ marginTop: 20 }}>
-        {BOARD.map((b) => (
+        {seats.map((b) => (
           <div key={L(s.lang, b.k)} className="reviewer-col">
             <div className="page-kicker">{L(s.lang, b.k)}</div>
             <div style={{ font: "800 20px/1 var(--font-heading)", margin: "10px 0" }}>{L(s.lang, b.v)}</div>
@@ -220,18 +258,21 @@ function Board() {
         ))}
       </div>
       <div className="callout" style={{ marginTop: 24 }}>
-        <T en="Agreement: data cap, DPA/SCCs, and asymmetric termination must close. Disagreement: tax reviewer would sign with an FX clause; commercial reviewer would not." th="จุดที่เห็นพ้อง: เพดานข้อมูล DPA/SCC และสิทธิเลิกที่ไม่สมมาตรต้องปิด จุดที่เห็นต่าง: ฝ่ายภาษียอมลงนามได้ถ้ามีข้อ FX ฝ่ายพาณิชย์ไม่ยอม" />
+        {agreement
+          ? L(s.lang, agreement)
+          : <T en="Agreement: data cap, DPA/SCCs, and asymmetric termination must close. Disagreement: tax reviewer would sign with an FX clause; commercial reviewer would not." th="จุดที่เห็นพ้อง: เพดานข้อมูล DPA/SCC และสิทธิเลิกที่ไม่สมมาตรต้องปิด จุดที่เห็นต่าง: ฝ่ายภาษียอมลงนามได้ถ้ามีข้อ FX ฝ่ายพาณิชย์ไม่ยอม" />}
       </div>
-      <button
-        type="button"
-        className="btn btn-primary"
-        style={{ marginTop: 16 }}
-        onClick={() => { s.acceptBoard(); s.flash(s.lang === "th" ? "รับคำแนะนำ: เจรจาใหม่ สี่ข้อต้องได้" : "Board taken: renegotiate the four must-haves"); }}
-      >
-        {s.boardAccepted
-          ? <T en="Board recommendation recorded" th="บันทึกคำแนะนำของคณะแล้ว" />
-          : <T en="Take board recommendation — renegotiate" th="รับคำแนะนำคณะ — เจรจาใหม่" />}
-      </button>
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => { s.acceptBoard(); s.flash(th ? (rec ? L(s.lang, rec) : "รับคำแนะนำ: เจรจาใหม่ สี่ข้อต้องได้") : (rec ? L(s.lang, rec) : "Board taken: renegotiate the four must-haves")); }}
+        >
+          {s.boardAccepted
+            ? <T en="Board recommendation recorded" th="บันทึกคำแนะนำของคณะแล้ว" />
+            : <T en="Take board recommendation — renegotiate" th="รับคำแนะนำคณะ — เจรจาใหม่" />}
+        </button>
+      </div>
     </div>
   );
 }
@@ -268,6 +309,10 @@ function Diff() {
           ))}
         </tbody>
       </table>
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <Link href="/negotiate?s=nladder" className="btn btn-primary"><T en="Open Copilot" th="เปิดผู้ช่วยเจรจา" /></Link>
+        <Link href="/holistic?s=memo" className="btn btn-secondary"><T en="Decision memo" th="บันทึกตัดสินใจ" /></Link>
+      </div>
     </div>
   );
 }

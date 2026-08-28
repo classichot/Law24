@@ -237,14 +237,14 @@ export const WAR_ROOM = {
 };
 
 export const FIRM_BRAIN = [
-  { k: P("บรรทัดฐาน", "Precedents"), n: "184", d: P("ร่างที่ชนะและที่เดินออก", "Winning drafts and walk-aways") },
-  { k: P("คลังข้อสัญญา", "Clause library"), n: "612", d: P("ถ้อยคำหุ้นส่วนที่ล็อกแล้ว", "Locked partner wording") },
-  { k: P("ความเห็นหุ้นส่วน", "Partner comments"), n: "91", d: P("ไม่ข้ามลูกค้า", "Never across clients") },
-  { k: P("จุดยืนเจรจา", "Negotiation positions"), n: "44", d: P("บันไดต่อประเภทสัญญา", "Ladders by contract type") },
-  { k: P("บันทึกวิจัย", "Research memoranda"), n: "27", d: P("ผูกกับฐานกฎหมายไทย", "Tied to Thai authorities") },
-  { k: P("เพลย์บุ๊กต่อลูกค้า", "Client-specific playbooks"), n: "3", d: P("สยามดิจิทัล · เจริญ · PTT", "Siam Digital · Charoen · PTT") },
-  { k: P("คำแนะนำในอดีต", "Past advice"), n: "156", d: P("อยู่หลังกำแพงเรื่อง", "Behind the matter wall") },
-  { k: P("แบบร่างที่สำเร็จ", "Successful drafting patterns"), n: "38", d: P("จูเนียร์ใช้ได้โดยไม่เปิดเรื่องอื่น", "Juniors can use without opening other matters") },
+  { k: P("บรรทัดฐาน", "Precedents"), n: "184", d: P("ร่างที่ชนะและที่เดินออก", "Winning drafts and walk-aways"), href: "/intel?s=memory" },
+  { k: P("คลังข้อสัญญา", "Clause library"), n: "612", d: P("ถ้อยคำหุ้นส่วนที่ล็อกแล้ว", "Locked partner wording"), href: "/assemble?s=lib" },
+  { k: P("ความเห็นหุ้นส่วน", "Partner comments"), n: "91", d: P("ไม่ข้ามลูกค้า", "Never across clients"), href: "/intel?s=memory" },
+  { k: P("จุดยืนเจรจา", "Negotiation positions"), n: "44", d: P("บันไดต่อประเภทสัญญา", "Ladders by contract type"), href: "/negotiate?s=nladder" },
+  { k: P("บันทึกวิจัย", "Research memoranda"), n: "27", d: P("ผูกกับฐานกฎหมายไทย", "Tied to Thai authorities"), href: "/help?s=watch" },
+  { k: P("เพลย์บุ๊กต่อลูกค้า", "Client-specific playbooks"), n: "3", d: P("สยามดิจิทัล · เจริญ · PTT", "Siam Digital · Charoen · PTT"), href: "/help?s=books" },
+  { k: P("คำแนะนำในอดีต", "Past advice"), n: "156", d: P("อยู่หลังกำแพงเรื่อง", "Behind the matter wall"), href: "/intel?s=twin" },
+  { k: P("แบบร่างที่สำเร็จ", "Successful drafting patterns"), n: "38", d: P("จูเนียร์ใช้ได้โดยไม่เปิดเรื่องอื่น", "Juniors can use without opening other matters"), href: "/assemble?s=type" },
 ];
 
 export const CLIENT_ROOM = {
@@ -275,9 +275,9 @@ export const PACKAGES = [
 
 export const COMMAND = {
   requests: [
-    { id: "LR-104", k: P("ตรวจสัญญาผู้ขายคลังสินค้า", "Warehouse vendor review"), by: "Procurement", st: "open" },
-    { id: "LR-105", k: P("อนุมัติ DPA นิมบัส", "Approve Nimbus DPA"), by: "DPO", st: "progress" },
-    { id: "LR-106", k: P("หนังสือบอกกล่าวอาคาร", "Facilities notice letter"), by: "Ops", st: "open" },
+    { id: "LR-104", k: P("ตรวจสัญญาผู้ขายคลังสินค้า", "Warehouse vendor review"), by: "Procurement", st: "open", href: "/review?s=xray" },
+    { id: "LR-105", k: P("อนุมัติ DPA นิมบัส", "Approve Nimbus DPA"), by: "DPO", st: "progress", href: "/assemble?s=draft" },
+    { id: "LR-106", k: P("หนังสือบอกกล่าวอาคาร", "Facilities notice letter"), by: "Ops", st: "open", href: "/obligations?s=oalert" },
   ],
   approvals: [
     { k: P("DPO — นิมบัส CT-291", "DPO — Nimbus CT-291"), st: P("ค้าง", "Pending") },

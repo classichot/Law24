@@ -6,10 +6,11 @@ import { Kicker, Sev, Stats, Title } from "@/components/ui";
 import { L } from "@/lib/model";
 import { AUTOPILOT } from "@/lib/wow";
 import { T } from "@/lib/i18n";
-import { statusLabel } from "@/lib/demo";
+import { statusLabel, CHAROEN_FILES, ddReportText, downloadText } from "@/lib/demo";
 import { Dropzone } from "@/components/Dropzone";
 import { WAR_ROOM } from "@/lib/product";
 import Link from "next/link";
+import { AiLiveMark } from "@/components/AiLiveMark";
 
 export function DiligenceScreen({ screen }: { screen: string }) {
   if (screen === "dwar") return <War />;
@@ -27,6 +28,12 @@ export function DiligenceScreen({ screen }: { screen: string }) {
 
 function D() {
   return FX.dil;
+}
+
+function loadCharoen(s: ReturnType<typeof useStore>) {
+  const have = s.uploads.some((u) => u.bucket === "diligence");
+  if (!have) s.addUploads("diligence", CHAROEN_FILES.map(({ name, size }) => ({ name, size })));
+  s.flash(s.lang === "th" ? "รับห้องข้อมูลเจริญแล้ว — เปิดธงแดง DK-01" : "Charoen data room ingested — open flag DK-01");
 }
 
 function Matter() {
@@ -48,6 +55,10 @@ function Matter() {
             <div style={{ fontWeight: 700, marginTop: 6 }}>{typeof r.v === "string" ? r.v : L(s.lang, r.v)}</div>
           </div>
         ))}
+      </div>
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <button type="button" className="btn btn-primary" onClick={() => loadCharoen(s)}><T en="Load Charoen data room" th="รับห้องข้อมูลเจริญ" /></button>
+        <Link href="/diligence?s=dwar" className="btn btn-secondary"><T en="War Room" th="ห้องสงคราม" /></Link>
       </div>
     </div>
   );
@@ -84,6 +95,10 @@ function Room() {
           ))}
         </tbody>
       </table>
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <button type="button" className="btn btn-primary" onClick={() => loadCharoen(s)}><T en="Load Charoen data room" th="รับห้องข้อมูลเจริญ" /></button>
+        <Link href="/diligence?s=dflags" className="btn btn-secondary"><T en="Red flags" th="ธงแดง" /></Link>
+      </div>
     </div>
   );
 }
@@ -108,8 +123,11 @@ function Grid() {
                 ))}
               </tr>
             ))}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <Link href="/diligence?s=dflags" className="btn btn-primary"><T en="Open red flags" th="เปิดธงแดง" /></Link>
       </div>
     </div>
   );
@@ -136,6 +154,9 @@ function Map() {
           <p className="text-muted" style={{ marginTop: 8 }}>{L(s.lang, m.note)}</p>
         </div>
       ))}
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <Link href="/diligence?s=dflags" className="btn btn-primary"><T en="Open red flags" th="เปิดธงแดง" /></Link>
+      </div>
     </div>
   );
 }
@@ -143,11 +164,12 @@ function Map() {
 function Flags() {
   const s = useStore();
   const d = D();
+  const flags = s.ddLive?.flags ?? d.flags;
   return (
     <div className="pad-page">
-      <Kicker>diligence · red flags</Kicker>
+      <Kicker>diligence · red flags · <AiLiveMark compact /></Kicker>
       <Title><T en="Findings & red flags" th="ธงแดงและข้อค้นพบ" /></Title>
-      {d.flags.map((f) => {
+      {flags.map((f) => {
         const st = s.flagStatus[f.id] || f.st;
         return (
           <div key={f.id} className="issue-card" style={{ padding: 16, marginBottom: 8 }}>
@@ -230,6 +252,9 @@ function Qa() {
           <div className="bar-track"><div className="bar-fill" style={{ width: `${w.p}%` }} /></div>
         </div>
       ))}
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <Link href="/diligence?s=drep" className="btn btn-primary"><T en="Open reports" th="เปิดรายงาน" /></Link>
+      </div>
     </div>
   );
 }
@@ -243,12 +268,22 @@ function Rep() {
       <Title><T en="Evidence-linked reports" th="รายงานที่อ้างหลักฐาน" /></Title>
       <div className="grid-2">
         {d.reports.map((r, i) => (
-          <div key={i} style={{ padding: 16, border: "2px solid var(--color-divider)", display: "flex", justifyContent: "space-between", gap: 12 }}>
+          <div key={i} style={{ padding: 16, border: "2px solid var(--color-divider)", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
             <div>
               <div style={{ fontWeight: 700 }}>{L(s.lang, r.k)}</div>
               <div className="text-muted">{r.f}</div>
             </div>
-            <span className="tag tag-neutral">{r.s}</span>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ fontSize: 12 }}
+              onClick={() => {
+                downloadText(`LAW24-${r.f.replace(/\s+/g, "-")}.txt`, ddReportText(s.lang));
+                s.flash(s.lang === "th" ? `ส่งออก ${r.f} แล้ว — ชี้แหล่งในห้องข้อมูล` : `${r.f} exported — source-linked to the room`);
+              }}
+            >
+              {s.lang === "th" ? "ดาวน์โหลด" : "Download"}
+            </button>
           </div>
         ))}
       </div>
@@ -258,9 +293,15 @@ function Rep() {
 
 function Auto() {
   const s = useStore();
+  const missing = s.ddLive?.missing ?? AUTOPILOT.missing;
+
+  function runLive() {
+    loadCharoen(s);
+  }
+
   return (
     <div className="pad-page">
-      <Kicker>wow · DD Autopilot</Kicker>
+      <Kicker>wow · DD Autopilot · <AiLiveMark compact /></Kicker>
       <Title><T en="First-pass after the data room lands" th="ผลรอบแรกหลังอัปโหลดห้องข้อมูล" /></Title>
       <Stats items={[
         { v: AUTOPILOT.index, k: s.lang === "th" ? "ดัชนีเอกสาร" : "Document index" },
@@ -269,9 +310,16 @@ function Auto() {
         { v: "2", k: s.lang === "th" ? "ธงแดงรุนแรงมาก" : "Very-high flags" },
       ]} />
       <div className="grid-3" style={{ marginTop: 24 }}>
-        <div><h5><T en="Missing" th="ขาด" /></h5><ul>{AUTOPILOT.missing.map((m, i) => <li key={i}>{L(s.lang, m)}</li>)}</ul></div>
+        <div><h5><T en="Missing" th="ขาด" /></h5><ul>{missing.map((m, i) => <li key={i}>{L(s.lang, m)}</li>)}</ul></div>
         <div><h5><T en="Material contracts" th="สัญญาสำคัญ" /></h5><ul>{AUTOPILOT.material.map((m, i) => <li key={i}>{L(s.lang, m)}</li>)}</ul></div>
         <div><h5><T en="First-round Q&A" th="คำถามรอบแรก" /></h5><ul>{AUTOPILOT.qa.map((m, i) => <li key={i}>{L(s.lang, m)}</li>)}</ul></div>
+      </div>
+      <div className="stack-actions" style={{ marginTop: 18 }}>
+        <button type="button" className="btn btn-primary" onClick={runLive}>
+          <T en="Run first-pass Autopilot" th="วิ่ง Autopilot รอบแรก" />
+        </button>
+        <Link href="/diligence?s=dflags" className="btn btn-secondary"><T en="Open red flags" th="เปิดธงแดง" /></Link>
+        <Link href="/diligence?s=droom" className="btn btn-secondary"><T en="Data room" th="ห้องข้อมูล" /></Link>
       </div>
     </div>
   );
@@ -290,6 +338,7 @@ function War() {
       <h5 style={{ marginTop: 24 }}><T en="Missing-document list" th="เอกสารที่ขาด" /></h5>
       {WAR_ROOM.missing.map((m) => <div key={m.e} className="xray-row">{L(s.lang, m)}</div>)}
       <div className="stack-actions" style={{ marginTop: 18 }}>
+        <button type="button" className="btn btn-secondary" onClick={() => loadCharoen(s)}><T en="Load Charoen room" th="รับห้องเจริญ" /></button>
         <Link href="/diligence?s=droom" className="btn btn-primary"><T en="Data room" th="ห้องข้อมูล" /></Link>
         <Link href="/diligence?s=dflags" className="btn btn-secondary"><T en="Red-flag register" th="ทะเบียนธงแดง" /></Link>
         <Link href="/diligence?s=dmap" className="btn btn-secondary"><T en="Entity map" th="แผนผังนิติบุคคล" /></Link>

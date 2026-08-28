@@ -145,6 +145,12 @@ function Dash() {
       <p className="text-muted" style={{ marginTop: 16, fontSize: 12 }}>
         {aHint(practice.assignments[0] ? (th ? practice.assignments[0].titleTh : practice.assignments[0].title) : "", th)}
       </p>
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <Link href="/practice?s=brain" className="btn btn-primary"><T en="Firm Brain" th="สมองสำนักงาน" /></Link>
+        <Link href="/practice?s=room" className="btn btn-secondary"><T en="Client Room" th="ห้องตรวจลูกค้า" /></Link>
+        <Link href="/practice?s=packages" className="btn btn-secondary"><T en="Packages" th="บริการสำเร็จรูป" /></Link>
+        <Link href="/practice?s=quote" className="btn btn-secondary"><T en="Quote" th="ใบเสนอ" /></Link>
+      </div>
     </div>
   );
 }
@@ -503,11 +509,11 @@ function Brain() {
       </p>
       <div className="grid-2" style={{ marginTop: 20 }}>
         {FIRM_BRAIN.map((b) => (
-          <div key={b.k.e} className="xray-layer">
+          <Link key={b.k.e} href={b.href} className="xray-layer" style={{ textDecoration: "none", color: "inherit" }}>
             <div className="page-kicker">{b.n}</div>
             <strong>{L(lang, b.k)}</strong>
             <p className="text-muted" style={{ margin: "6px 0 0", fontSize: 13 }}>{L(lang, b.d)}</p>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
@@ -539,23 +545,45 @@ function Room() {
       <h5><T en="Lawyer questions" th="คำถามจากทนาย" /></h5>
       {r.questions.map((q) => <div key={q.e} className="xray-row">{L(s.lang, q)}</div>)}
       <p style={{ marginTop: 16 }}>{L(s.lang, r.cost)}</p>
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => {
+            const votes = r.risks.map((x) => `${x.id}: ${s.roomVotes[x.id] || "pending"}`).join("\n");
+            downloadText("LAW24-client-room.txt", `${L(s.lang, r.client)}\n${L(s.lang, r.progress)}\n\n${votes}\n\n${s.lang === "th" ? "ทนายเป็นผู้ลงนามในท่าที — เครื่องยนต์ไม่ลงนามแทน" : "Counsel signs the posture — the engine never signs"}`);
+            s.flash(s.lang === "th" ? "ส่งออกชุดลูกค้าแล้ว" : "Client pack exported");
+          }}
+        >
+          <T en="Export client pack" th="ส่งออกชุดลูกค้า" />
+        </button>
+        <Link href="/review?s=xray" className="btn btn-secondary">X-Ray</Link>
+      </div>
     </div>
   );
 }
 
 function Packages() {
-  const { lang } = useStore();
+  const s = useStore();
+  const router = useRouter();
   return (
     <div className="pad-page">
       <Kicker>firm · productize</Kicker>
       <Title><T en="Packaged services" th="บริการสำเร็จรูป" /></Title>
-      <p className="page-sub">{L(lang, ENTRANCES.firm.pitch)}</p>
+      <p className="page-sub">{L(s.lang, ENTRANCES.firm.pitch)}</p>
       <div className="grid-2" style={{ marginTop: 20 }}>
         {PACKAGES.map((p) => (
-          <div key={p.id} className="xray-layer">
-            <strong>{L(lang, p.k)}</strong>
-            <div className="xray-kv" style={{ marginTop: 8 }}><span>{p.fee}</span><span>{L(lang, p.cycle)}</span></div>
-          </div>
+          <button
+            key={p.id}
+            type="button"
+            className="xray-layer"
+            style={{ textAlign: "left", cursor: "pointer", color: "inherit", width: "100%" }}
+            onClick={() => { s.setQuotePkg(p.id); router.push("/practice?s=quote"); }}
+          >
+            <strong>{L(s.lang, p.k)}</strong>
+            <div className="xray-kv" style={{ marginTop: 8 }}><span>{p.fee}</span><span>{L(s.lang, p.cycle)}</span></div>
+            <span className="text-muted" style={{ fontSize: 12 }}>{s.lang === "th" ? "เปิดใบเสนอ →" : "Open quote →"}</span>
+          </button>
         ))}
       </div>
     </div>

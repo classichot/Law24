@@ -11,6 +11,7 @@ import { L } from "@/lib/model";
 import { landingHref, WORK_HREF } from "@/lib/nav";
 import { ENTRANCES, POSITION, TRUST_STRIP, WEDGE_TYPES } from "@/lib/product";
 import { T } from "@/lib/i18n";
+import { PLAYBOOKS } from "@/lib/guides";
 
 export default function LoginPage() {
   const { login, authed, ready, startDemo, startXray, edition: storedEdition, lang } = useStore();
@@ -66,6 +67,9 @@ export default function LoginPage() {
         <div className="gate-trust">
           {TRUST_STRIP.slice(0, 2).map((x) => <span key={x.e}>{L(lang, x)}</span>)}
         </div>
+        <p className="gate-wedge" style={{ marginTop: 18 }}>
+          <T en="Every module carries a house playbook — the engine never signs." th="ทุกโมดูลมีเพลย์บุ๊กบ้าน — เครื่องยนต์ไม่ลงนามแทน" />
+        </p>
       </section>
 
       <section className="gate-auth">
@@ -87,12 +91,14 @@ export default function LoginPage() {
               <strong>LAW24 Corporate</strong>
               <span>{L(lang, ENTRANCES.corporate.help)}</span>
               <em>{L(lang, ENTRANCES.corporate.fear)}</em>
+              <span className="pb-mark compact">{PLAYBOOKS.command.id} · {PLAYBOOKS.command.ver}</span>
             </button>
             <button type="button" className={`login-mode${edition === "firm" ? " on" : ""}`} onClick={() => { setEdition("firm"); setEmail("kanit@7l-advisory.com"); }}>
               <Briefcase size={18} />
               <strong>LAW24 Firm</strong>
               <span>{L(lang, ENTRANCES.firm.help)}</span>
               <em>{L(lang, ENTRANCES.firm.fear)}</em>
+              <span className="pb-mark compact">{PLAYBOOKS.practice.id} · {PLAYBOOKS.practice.ver}</span>
             </button>
           </div>
           <ul className="gate-points">
@@ -119,7 +125,7 @@ export default function LoginPage() {
         </form>
         <footer className="login-meta" style={{ marginTop: 20 }}>
           <span>SSO · MFA · PDPA · tenant isolation</span>
-          <span>Demo / demo1234</span>
+          <span>Demo / demo1234 · <a href="/host"><T en="Host desk" th="โต๊ะโฮสต์" /></a></span>
         </footer>
       </section>
     </div>

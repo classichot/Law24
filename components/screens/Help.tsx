@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowRight, BookOpen, Keyboard } from "lucide-react";
-import { Kicker, Title } from "@/components/ui";
+import { Kicker, Title, ReviewerPath } from "@/components/ui";
 import { useStore } from "@/lib/store";
 import { T } from "@/lib/i18n";
 import { LeioChat } from "@/components/LeioChat";
@@ -53,6 +53,19 @@ function HowTo() {
         ))}
       </div>
 
+      <h5><T en="Live AI (X-Ray and Leio)" th="AI สด (X-Ray และเลโอ)" /></h5>
+      <div className="help-card" style={{ marginBottom: 24 }}>
+        <p>
+          <T
+            en="Without a key, X-Ray and Leio use the Nimbus demo. To run a real model on the server, put OPENAI_API_KEY or ANTHROPIC_API_KEY in .env.local (see .env.example), restart npm run dev, then drop a PDF/DOCX on Contract X-Ray or ask Leio. The engine never signs — counsel confirms. Documents are not used to train the public model."
+            th="ถ้าไม่มีคีย์ X-Ray และเลโอใช้สาธิตนิมบัส ถ้าจะให้โมเดลจริงทำงานบนเซิร์ฟเวอร์ ให้ใส่ OPENAI_API_KEY หรือ ANTHROPIC_API_KEY ใน .env.local (ดู .env.example) แล้วรีสตาร์ท npm run dev จากนั้นวาง PDF/DOCX ที่ Contract X-Ray หรือถามเลโอ เครื่องยนต์ไม่ลงนามแทน — ทนายเป็นผู้ยืนยัน เอกสารไม่ถูกใช้ฝึกโมเดลสาธารณะ"
+          />
+        </p>
+        <p className="text-muted" style={{ fontSize: 12, margin: 0 }}>
+          {s.aiLive ? (th ? "ตอนนี้: AI สดเปิดอยู่" : "Now: Live AI is on") : (th ? "ตอนนี้: โหมดสาธิต (ยังไม่มีคีย์)" : "Now: demo mode (no key)")}
+        </p>
+      </div>
+
       <h5><T en="First session" th="ขั้นแรก" /></h5>
       <ol className="assist-path">
         {HELP_START.map((st) => (
@@ -65,6 +78,8 @@ function HowTo() {
           </li>
         ))}
       </ol>
+
+      <ReviewerPath />
 
       <h5><T en="Which module, when" th="โมดูลไหน เมื่อใด" /></h5>
       <div className="help-mods">
@@ -291,6 +306,13 @@ function Trust() {
       {TRUST_CONTROLS.map((c) => (
         <div key={c.k.e} className="xray-kv"><span>{copyTE(s.lang, c.k)}</span><strong>{copyTE(s.lang, c.v)}</strong></div>
       ))}
+      <div className="stack-actions" style={{ marginTop: 18 }}>
+        <Link href="/help?s=books" className="btn btn-primary"><T en="Open playbooks" th="เปิดเพลย์บุ๊ก" /></Link>
+        <Link href="/help?s=leio" className="btn btn-secondary"><T en="Ask Leio" th="ถามเลโอ" /></Link>
+        <button type="button" className="btn btn-secondary" onClick={() => s.ask(s.lang === "th" ? "เครื่องยนต์ลงนามแทนได้หรือไม่" : "Does the engine ever sign?")}>
+          <T en="Ask: does the engine sign?" th="ถาม: เครื่องยนต์ลงนามแทนไหม" />
+        </button>
+      </div>
     </div>
   );
 }

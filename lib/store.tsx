@@ -27,6 +27,10 @@ import {
   type Movement,
   type PracticeState,
 } from "./firm";
+import { clearInviteSession } from "./invite";
+import { fetchAiStatus, postAi } from "./ai/client";
+import { peekFile } from "./ai/files";
+import type { DdLive, NegotiateLive, ReviewLive, XrayLivePayload, XrayView } from "./ai/types";
 
 const AUTH_KEY = "law24-auth";
 const THEME_KEY = "law24-theme";
@@ -37,7 +41,7 @@ const LIVE_KEY = "law24-live";
 type Store = {
   ready: boolean;
   authed: boolean;
-  login: (edition: Edition) => void;
+  login: (edition: Edition, opts?: { invite?: boolean }) => void;
   logout: () => void;
   theme: ThemeKey;
   setTheme: (k: ThemeKey) => void;
@@ -53,7 +57,8 @@ type Store = {
   searchOpen: boolean;
   setSearchOpen: (v: boolean) => void;
   pendingAsk: string | null;
-  ask: (q: string) => void;
+  pendingAskSource: "leio" | "twin";
+  ask: (q: string, source?: "leio" | "twin") => void;
   consumeAsk: () => string | null;
   sel: string;
   setSel: (id: string) => void;
@@ -119,7 +124,16 @@ type Store = {
   setActiveClient: (id: string) => void;
   setActiveAssignment: (id: string) => void;
   xrayReady: boolean;
+  xrayLive: XrayView | null;
+  reviewLive: ReviewLive | null;
+  ddLive: DdLive | null;
+  negotiateLive: NegotiateLive | null;
+  aiLive: boolean | null;
   startXray: (name?: string) => void;
+  runXray: (opts?: { demo?: boolean; name?: string }) => Promise<"live" | "demo" | "error">;
+  setReviewLive: (v: ReviewLive | null) => void;
+  setDdLive: (v: DdLive | null) => void;
+  setNegotiateLive: (v: NegotiateLive | null) => void;
   lawyerSent: boolean;
   sendToLawyer: () => void;
   roomVotes: Record<string, "approve" | "reject">;
@@ -143,6 +157,10 @@ function readLive(): LiveState {
     }));
     merged.clauseEdits = merged.clauseEdits || {};
     merged.xrayReady = Boolean(merged.xrayReady);
+    merged.xrayLive = merged.xrayLive || null;
+    merged.reviewLive = merged.reviewLive || null;
+    merged.ddLive = merged.ddLive || null;
+    merged.negotiateLive = merged.negotiateLive || null;
     merged.lawyerSent = Boolean(merged.lawyerSent);
     merged.roomVotes = merged.roomVotes || {};
     merged.quotePkg = merged.quotePkg || "nda";
@@ -197,6 +215,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [pendingAsk, setPendingAsk] = useState<string | null>(null);
+  const [pendingAskSource, setPendingAskSource] = useState<"leio" | "twin">("leio");
+  const [aiLive, setAiLive] = useState<boolean | null>(null);
   const [openF, setOpenF] = useState("F-01");
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("");
@@ -215,6 +235,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (e === "firm" || e === "corporate") setEditionState(e);
     setLive(readLive());
     setReady(true);
+    fetchAiStatus().then(setAiLive);
   }, []);
 
   useEffect(() => {
@@ -238,7 +259,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setEditionState(ed);
     localStorage.setItem(EDITION_KEY, ed);
   }, []);
-  const login = useCallback((ed: Edition) => {
+  const login = useCallback((ed: Edition, opts?: { invite?: boolean }) => {
+    if (!opts?.invite) clearInviteSession();
     setEdition(ed);
     setAuthed(true);
     localStorage.setItem(AUTH_KEY, "1");
@@ -246,15 +268,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     setAuthed(false);
     localStorage.removeItem(AUTH_KEY);
+    clearInviteSession();
   }, []);
   const flash = useCallback((m: string) => {
     setToast(m);
     window.setTimeout(() => setToast(null), 2600);
   }, []);
-  const ask = useCallback((question: string) => {
+  const ask = useCallback((question: string, source: "leio" | "twin" = "leio") => {
     setSearchOpen(false);
     setCopilotOpen(true);
     setPendingAsk(question);
+    setPendingAskSource(source);
   }, []);
   const consumeAsk = useCallback(() => {
     const v = pendingAsk;
@@ -272,6 +296,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       next.demoStep = 0;
       next.matter = "nimbus";
       next.sel = DEMO_TYPE_ID;
+      next.xrayReady = true;
+      next.xrayLive = null;
+      next.reviewLive = null;
+      next.ddLive = null;
+      next.negotiateLive = null;
+      next.uploads = [{ name: "Nimbus_Cloud_SaaS_CT-291.pdf", size: 842_110, bucket: "xray" }];
       next.practice = prev.practice?.clients?.length ? prev.practice : seedPractice();
       return next;
     });
@@ -401,6 +431,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         ...files.map((f) => ({ ...f, bucket })),
         ...p.uploads,
       ].slice(0, 40),
+      ...(bucket === "xray" ? { xrayReady: false, xrayLive: null, reviewLive: null } : {}),
     }));
   }, [patchLive]);
   const addClient = useCallback((input: { name: string; nameTh?: string; sector: string; owner: string }) => {
@@ -474,11 +505,63 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     patchLive((p) => ({
       ...p,
       xrayReady: true,
+      xrayLive: null,
+      reviewLive: null,
+      sel: p.sel || DEMO_TYPE_ID,
+      matter: p.matter || "nimbus",
       uploads: p.uploads.some((u) => u.bucket === "xray")
         ? p.uploads
         : [{ name: name || "Nimbus_Cloud_SaaS_CT-291.pdf", size: 842_110, bucket: "xray" }, ...p.uploads].slice(0, 40),
     }));
+    setQ("SaaS");
+    setCat("C15");
+    setOpenF("F-01");
   }, [patchLive]);
+  const runXray = useCallback(async (opts?: { demo?: boolean; name?: string }) => {
+    const file = opts?.demo ? null : (peekFile("xray") || peekFile("review"));
+    if (!file) {
+      startXray(opts?.name);
+      return "demo" as const;
+    }
+    const live = await fetchAiStatus();
+    if (!live) {
+      startXray(file.name);
+      return "demo" as const;
+    }
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("filename", file.name);
+      const pack = await postAi<XrayLivePayload>("/api/ai/xray", fd, 120_000);
+      if (!pack?.xray) {
+        flash("Live X-Ray returned an empty map");
+        return "error" as const;
+      }
+      patchLive((p) => ({
+        ...p,
+        xrayReady: true,
+        xrayLive: pack.xray,
+        reviewLive: pack.review || null,
+        sel: p.sel || DEMO_TYPE_ID,
+        matter: p.matter || "nimbus",
+        uploads: p.uploads.some((u) => u.bucket === "xray")
+          ? p.uploads
+          : [{ name: file.name, size: file.size, bucket: "xray" }, ...p.uploads].slice(0, 40),
+      }));
+      setQ("SaaS");
+      setCat("C15");
+      setOpenF("F-01");
+      fetchAiStatus(true).then(setAiLive);
+      return "live" as const;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Live X-Ray failed";
+      flash(msg);
+      return "error" as const;
+    }
+  }, [flash, patchLive, startXray]);
+  const setReviewLive = useCallback((v: ReviewLive | null) => patchLive({ reviewLive: v }), [patchLive]);
+  const setDdLive = useCallback((v: DdLive | null) => patchLive({ ddLive: v }), [patchLive]);
+  const setNegotiateLive = useCallback((v: NegotiateLive | null) => patchLive({ negotiateLive: v }), [patchLive]);
   const sendToLawyer = useCallback(() => {
     patchLive((p) => ({ ...p, lawyerSent: true }));
   }, [patchLive]);
@@ -493,7 +576,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value: Store = {
     ready, authed, login, logout, theme, setTheme, themeVars, lang, setLang, edition, setEdition,
-    toast, flash, copilotOpen, setCopilotOpen, searchOpen, setSearchOpen, pendingAsk, ask, consumeAsk,
+    toast, flash, copilotOpen, setCopilotOpen, searchOpen, setSearchOpen, pendingAsk, pendingAskSource, ask, consumeAsk,
     sel: live.sel, setSel, openF, setOpenF, q, setQ, cat, setCat, risk, setRisk, prio, setPrio, esign, setEsign,
     gsev, setGsev, resetFilters, conflictChoice: live.conflictChoice, setConflictChoice,
     demoOn: live.demoOn, demoStep: live.demoStep, matter: live.matter, setMatter,
@@ -514,7 +597,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     uploads: live.uploads, addUploads,
     clauseEdits: live.clauseEdits ?? {}, applyClauseEdit, revertClauseEdit,
     practice: live.practice ?? seedPractice(), addClient, addAssignment, setActiveClient, setActiveAssignment,
-    xrayReady: live.xrayReady, startXray, lawyerSent: live.lawyerSent, sendToLawyer,
+    xrayReady: live.xrayReady,
+    xrayLive: live.xrayLive ?? null,
+    reviewLive: live.reviewLive ?? null,
+    ddLive: live.ddLive ?? null,
+    negotiateLive: live.negotiateLive ?? null,
+    aiLive,
+    startXray,
+    runXray,
+    setReviewLive,
+    setDdLive,
+    setNegotiateLive,
+    lawyerSent: live.lawyerSent, sendToLawyer,
     roomVotes: live.roomVotes ?? {}, setRoomVote, quotePkg: live.quotePkg || "nda", setQuotePkg,
   };
 

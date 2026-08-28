@@ -29,6 +29,7 @@ export function StandardClause({
   const [reason, setReason] = useState(edit?.reason ?? "");
   const [instruction, setInstruction] = useState(edit?.instruction ?? "");
   const [proposal, setProposal] = useState<AiProposal | null>(null);
+  const [proposing, setProposing] = useState(false);
 
   function start(next: ClauseAdjustMode) {
     setMode(next);
@@ -57,10 +58,15 @@ export function StandardClause({
     s.flash(th ? "ใช้ข้อที่ปรับแล้ว — ทนายเป็นผู้ตัดสิน" : "Adjusted clause applied — counsel decided");
   }
 
-  function runAi() {
-    const next = proposeAiClause({ heading: kicker, original, instruction });
-    setProposal(next);
-    if (!next.blocked) setText(L(s.lang, next.body));
+  async function runAi() {
+    setProposing(true);
+    try {
+      const next = proposeAiClause({ heading: kicker, original, instruction });
+      setProposal(next);
+      if (!next.blocked) setText(L(s.lang, next.body));
+    } finally {
+      setProposing(false);
+    }
   }
 
   function applyAi() {
@@ -157,8 +163,8 @@ export function StandardClause({
                 onChange={(e) => setInstruction(e.target.value)}
                 placeholder={th ? "เช่น ใส่รายชื่อผู้ประมวลผลช่วง และล็อกที่ตั้งประมวลผล" : "e.g. add the sub-processor list and lock processing location"}
               />
-              <button type="button" className="btn btn-secondary" style={{ marginTop: 10 }} onClick={runAi}>
-                <Sparkles size={14} /> <T en="Propose from playbook" th="เสนอจากเพลย์บุ๊ก" />
+              <button type="button" className="btn btn-secondary" style={{ marginTop: 10 }} onClick={runAi} disabled={proposing}>
+                <Sparkles size={14} /> {proposing ? <T en="Proposing…" th="กำลังเสนอ…" /> : <T en="Propose from playbook" th="เสนอจากเพลย์บุ๊ก" />}
               </button>
               {proposal && (
                 <div className={`callout${proposal.blocked ? "" : ""}`} style={{ marginTop: 12 }}>

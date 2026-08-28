@@ -143,6 +143,7 @@ export const PLAYBOOKS = {
       P("เพลย์บุ๊กของโมดูลที่กำลังทำคือกฎที่ใช้บังคับ", "The playbook of the module in hand is the rule in force"),
       P("คู่มืออธิบายระบบ ไม่ลงนามและไม่เลือกท่าทีแทนทนาย", "Help explains the OS — it does not sign or pick a posture"),
       P("เลโอช่วยวิธีใช้ วิจัย และกฎที่เพิ่งออก — ทุกข้อสรุปต้องมีหลักฐาน และประกาศใหม่ไม่ย้ายเพลย์บุ๊กจนกว่าทนายจะยืนยัน", "Leio helps with how to use, research and regulation updates — every conclusion cites evidence, and a new gazette does not move the playbook until counsel confirms"),
+      P("ลิงก์สาธิตออกที่โต๊ะโฮสต์ — คีย์โฮสต์ไม่อยู่หน้าเข้าสู่ระบบสาธารณะ", "Demo links mint at Host desk — the host key is not on public login"),
       P("ถ้ายังไม่รู้ว่าจะเปิดโมดูลใด ให้เริ่มที่ผู้ช่วย", "If it is not yet obvious which module to open, start in Assist"),
     ],
   },
@@ -466,6 +467,86 @@ export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
     do: P("ถามเรื่องที่เคยตัดสินแล้ว อย่าให้โมเดลลืมเพลย์บุ๊กบ้าน", "Ask what has already been decided; do not let the model forget the house book"),
     rule: P("ความจำอยู่เฉพาะเทนแนนท์ — ไม่ฝึกโมเดลจากข้อมูลลูกค้าโดยค่าเริ่มต้น", "Memory stays in-tenant — customer data does not train the model by default"),
   },
+  "intel/twin": {
+    why: P("ฝาแฝดกฎหมายของบริษัท — สัญญา ข้อผูกพัน และคำถามผู้บริหารที่ชี้หลักฐาน", "The company's living legal twin — contracts, obligations and management questions that cite evidence"),
+    do: P("ถามหนึ่งคำถาม แล้วเปิดสัญญาต้นทางที่ฝาแฝดชี้", "Ask one question, then open the source contract the twin cites"),
+    rule: P("ข้อสรุปทุกข้อต้องมีหลักฐาน — ข้อสัญญา เพลย์บุ๊ก หรือฐานกฎหมาย", "Every conclusion cites a clause, playbook or authority"),
+  },
+  "review/xray": {
+    why: P("Contract X-Ray วางแผนที่ฉบับเป็นคำตัดสิน แผนความร้อน และข้อที่ขาด", "Contract X-Ray maps the paper into a verdict, heatmap and missing clauses"),
+    do: P("อัปโหลดสัญญา หรือทดลองกับนิมบัส แล้วเปิดข้อค้นพบ", "Upload the agreement or run the Nimbus demo, then open findings"),
+    rule: P("SaaS / คลาวด์ใช้ IT & Cloud v4.2 — X-Ray ไม่ใช่ลายเซ็น", "SaaS/cloud uses IT & Cloud v4.2 — X-Ray is not a signature"),
+  },
+  "holistic/cockpit": {
+    why: P("ห้องบังคับคือภาพทั้งฉบับ — มูลค่า ขั้น ความเสี่ยง อนุมัติ", "The cockpit is the whole-instrument view — value, stage, risk, approvals"),
+    do: P("อ่านคำตัดสิน แล้วเปิด Clause DNA หรือบันทึกตัดสินใจ", "Read the verdict, then open Clause DNA or the decision memo"),
+    rule: P("ห้ามลงนามถ้าข้อสัญญายังขัดกันหรือภาคผนวกขาด", "No signature while clauses conflict or annexes are missing"),
+  },
+  "holistic/dna": {
+    why: P("Clause DNA เทียบข้อนี้กับเพลย์บุ๊กและสัญญาที่ลงนามแล้ว", "Clause DNA compares this clause to the playbook and signed history"),
+    do: P("เปิดข้อที่พลาดท่าทีบ้าน แล้วโยงกลับข้อค้นพบ", "Open the clause that misses the house position, then jump back to the finding"),
+    rule: P("miss ต่อเพลย์บุ๊กต้องมีการกระทำ — ไม่ใช่ผ่าน", "A miss against the playbook needs an act — not a pass"),
+  },
+  "diligence/dwar": {
+    why: P("ห้องสงคราม DD คือดัชนีดีล ธงแดง และรายงานที่ชี้แหล่ง", "The DD War Room is the deal index, flags and source-linked report"),
+    do: P("เปิดประเด็นล้มดีล แล้วดูความครบของห้องข้อมูล", "Open the kill items, then the data-room coverage"),
+    rule: P("ประเด็นล้มดีลต้องถึงพาร์ทเนอร์ก่อนชุดคณะกรรมการลงทุน", "Kill items reach partner before the IC pack"),
+  },
+  "negotiate/nladder": {
+    why: P("บันไดเจรจาคือทางเดินจากฉบับปัจจุบันถึงอำนาจที่ต้องได้", "The negotiation ladder is the walk from current paper to the mandate"),
+    do: P("ยึดข้อต้องได้ — แลกได้เฉพาะที่อำนาจอนุญาต", "Hold the must-haves; trade only what the mandate allows"),
+    rule: P("ห้ามยอมเพดานข้อมูลเพื่อแลกส่วนลด", "Do not trade the data cap for a price cut"),
+  },
+  "practice/brain": {
+    why: P("สมองสำนักงานคือความจำว่าสำนักงานนี้เคยตัดสินอย่างไร", "Firm Brain is the institutional memory of how this office decides"),
+    do: P("ถามท่าทีบ้านเรื่องข้อนี้ แล้วเปิดแหล่งที่สมองชี้", "Ask how this firm treats this clause, then open the source it cites"),
+    rule: P("ความจำอยู่เฉพาะสำนักงาน — ไม่กลายเป็นลายเซ็น", "Memory stays in-firm — it does not become a signature"),
+  },
+  "practice/room": {
+    why: P("ห้องตรวจลูกค้าคือการส่งข้อค้นพบภายใต้แบรนด์สำนักงาน", "The Client Review Room is branded delivery of findings to the client"),
+    do: P("แชร์ชุดที่ลูกค้าอ่านได้ โดยไม่เห็นเครื่องยนต์", "Share the pack the client can read without seeing the engine"),
+    rule: P("ลูกค้าเห็นห้อง ไม่เห็นระบบปฏิบัติการ — พาร์ทเนอร์ยังเป็นเจ้าของท่าที", "The client sees the room, not the OS — partner still owns the posture"),
+  },
+  "practice/packages": {
+    why: P("บริการสำเร็จรูปคือวิธีที่สำนักงานขายงานกฎหมายแบบวนซ้ำ", "Packaged services are how the firm sells recurring legal work"),
+    do: P("เลือกแพ็กเกจ แล้วเปิดใบเสนอและหนังสือว่าจ้าง", "Pick a package, then open quote and engagement"),
+    rule: P("แพ็กเกจคือสินค้า — ค่าธรรมเนียมและรอบต้องอยู่บนบันทึกก่อนเริ่มงาน", "A package is a product — fee and cycle are on the record before work starts"),
+  },
+  "practice/quote": {
+    why: P("ใบเสนอและหนังสือว่าจ้างล็อกขอบเขต ค่าธรรมเนียม และเพลย์บุ๊กที่ใช้บังคับ", "Quote and engagement lock scope, fee and the playbook in force"),
+    do: P("ออกหนังสือ แล้วเปิดงานในสำนักงาน", "Issue the letter, then open the assignment"),
+    rule: P("ห้ามเริ่มงานถ้ายังไม่มีหนังสือว่าจ้างบนบันทึก", "No work starts without an engagement on the record"),
+  },
+  "command/desk": {
+    why: P("ศูนย์บัญชาการกฎหมายคือที่ฝ่ายบริหารเห็นคำขอ ความเสี่ยง และที่ปรึกษาภายนอก", "The legal command center is where management sees requests, risk and outside counsel"),
+    do: P("เปิดคำขอที่ค้างนานสุด หรือรายการอนุมัติที่รอ", "Open the oldest open request or the pending approval"),
+    rule: P("คำขอทุกใบต้องมีเจ้าของและกำหนด — เครื่องยนต์ไม่ลงนามแทน", "Every request has an owner and a due date — the engine never signs"),
+  },
+  "command/requests": {
+    why: P("คำขอกฎหมายคือทางรับเรื่องจากธุรกิจ", "Legal requests are intake from the business"),
+    do: P("กำหนดเจ้าของ หรือส่งฉบับเข้า X-Ray", "Assign an owner, or send the paper into X-Ray"),
+    rule: P("คำขอที่ไม่มีเจ้าของอยู่ไม่ได้ — ต้องกำหนดภายในวันเดียวกัน", "Unowned requests do not sit — they are assigned the same day"),
+  },
+  "command/approvals": {
+    why: P("การอนุมัติคือประตูนโยบายบริษัทก่อนสัญญาขยับ", "Approvals are the company policy gate before a contract moves"),
+    do: P("ผ่านหรือคืนรายการ DPO ที่ค้าง", "Clear or return the pending DPO item"),
+    rule: P("ประตูนโยบายคือเพลย์บุ๊ก — ข้ามผู้อนุมัติถือว่า miss", "Policy gates are the playbook — skipping an approver is a miss"),
+  },
+  "command/counsel": {
+    why: P("ที่ปรึกษาภายนอกทำงานหลังกำแพงเรื่อง", "Outside counsel works behind the matter wall"),
+    do: P("เปิดคำสั่งที่ยังเปิด หรือชุดคณะกรรมการล่าสุด", "Open the live instruction or the latest board pack"),
+    rule: P("ที่ปรึกษาภายนอกไม่เห็นเรื่องอื่น", "Outside counsel does not see other matters"),
+  },
+  "command/board": {
+    why: P("รายงานคณะกรรมการชี้หลักฐาน ไม่ใช่ความเห็นลอย", "Board reports cite evidence, not free-floating opinion"),
+    do: P("เปิดหน้าเดียว แล้วไล่ทุกตัวเลขกลับไปแหล่ง", "Open the one-pager and trace every number to a source"),
+    rule: P("ตัวเลขคณะกรรมการที่ไม่มีแหล่งไม่ใช่รายงาน", "A board number without a source is not a report"),
+  },
+  "help/trust": {
+    why: P("ความเชื่อถือที่มองเห็น — สิ่งที่เครื่องยนต์ทำและไม่ทำ", "Visible trust — what the engine will and will not do"),
+    do: P("อ่านคำสัญญา แล้วเปิดคลังเพลย์บุ๊ก", "Read the promises, then open the playbook library"),
+    rule: P("ไม่มี redline สุดท้ายโดยไม่มีทนายตรวจ — เครื่องยนต์ไม่ลงนามแทน", "No final redlines without professional review — the engine never signs"),
+  },
 };
 
 export function playbookKeyFor(mode: string, matter?: string): PlaybookKey {
@@ -497,6 +578,13 @@ export function playbookEntries(): { key: PlaybookKey; book: PlaybookDef }[] {
 
 export function helpBookHref(key: PlaybookKey) {
   return `/help?s=book&b=${key}`;
+}
+
+export function modeFromHref(href: string): { mode: string; screen: string } {
+  const [path, query] = href.split("?");
+  const mode = (path || "/home").replace(/^\//, "").split("/")[0] || "home";
+  const screen = new URLSearchParams(query || "").get("s") || (isMode(mode) ? NAV[mode][0][0] : "home");
+  return { mode, screen };
 }
 
 export function screenGuide(mode: string, screen: string) {

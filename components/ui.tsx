@@ -1,11 +1,23 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { L, type Lang } from "@/lib/model";
 import type { TE } from "@/lib/model";
+import { PlaybookMark } from "@/components/PlaybookMark";
+import { useStore } from "@/lib/store";
+import { T } from "@/lib/i18n";
+import { copyTE } from "@/lib/guides";
+import { REVIEWER_PATH } from "@/lib/help";
 
 export function Kicker({ children }: { children: ReactNode }) {
-  return <div style={{ font: "800 10px/1 var(--font-heading)", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--color-accent)", marginBottom: 10 }}>{children}</div>;
+  return (
+    <div className="kicker-row">
+      <div className="kicker-label">{children}</div>
+      <PlaybookMark compact />
+    </div>
+  );
 }
 
 export function Title({ children }: { children: ReactNode }) {
@@ -44,4 +56,43 @@ export function Chip({ on, active, children }: { on: () => void; active: boolean
 
 export function te(lang: Lang, x: TE | string) {
   return L(lang, x);
+}
+
+/** Compact in-app walkthrough for reviewers — lives on Home and Help. */
+export function ReviewerPath() {
+  const { edition, lang, startDemo, startXray } = useStore();
+  const router = useRouter();
+  const steps = REVIEWER_PATH[edition];
+  return (
+    <div className="reviewer-path">
+      <h5><T en="Reviewer path" th="เส้นทางผู้ตรวจ" /></h5>
+      <p className="text-muted" style={{ fontSize: 13, margin: "0 0 12px" }}>
+        {edition === "firm"
+          ? <T en="Firm walk: X-Ray → Brain → Room → packages. Click a step — every screen has seeded Nimbus / practice data." th="เส้นสำนักงาน: X-Ray → สมอง → ห้องลูกค้า → แพ็ก คลิกขั้น — ทุกจอมีข้อมูลนิมบัส / งานสำนักงาน" />
+          : <T en="Corporate walk: X-Ray → Twin → Control. Click a step — every screen has seeded Nimbus / Charoen data." th="เส้นองค์กร: X-Ray → ฝาแฝด → ควบคุม คลิกขั้น — ทุกจอมีข้อมูลนิมบัส / เจริญ" />}
+      </p>
+      <ol className="assist-path">
+        {steps.map((st, i) => (
+          <li key={st.href}>
+            <span className="assist-n">{String(i + 1).padStart(2, "0")}</span>
+            <div>
+              <Link href={st.href} onClick={() => { if (st.href.includes("xray")) startXray(); }}>{copyTE(lang, st.k)}</Link>
+              <div className="text-muted" style={{ fontSize: 12 }}>{copyTE(lang, st.do)}</div>
+            </div>
+          </li>
+        ))}
+      </ol>
+      <div className="stack-actions" style={{ marginTop: 12 }}>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() => { startDemo(); router.push("/review?s=xray"); }}
+        >
+          <T en="Start live demo" th="เริ่มสาธิตสด" />
+        </button>
+        <Link href="/assist?s=ask" className="btn btn-secondary"><T en="Assist router" th="ผู้ช่วยจัดเส้นทาง" /></Link>
+        <Link href="/help?s=books" className="btn btn-secondary"><T en="Playbook library" th="คลังเพลย์บุ๊ก" /></Link>
+      </div>
+    </div>
+  );
 }

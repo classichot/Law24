@@ -49,6 +49,10 @@ function Inter() {
           <div style={{ gridColumn: "1 / -1", fontSize: 13, color: "var(--color-neutral-700)" }}>{L(s.lang, x.w)}</div>
         </div>
       ))}
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <Link href="/holistic?s=hcons" className="btn btn-primary"><T en="Completeness" th="ความครบถ้วน" /></Link>
+        <Link href="/holistic?s=simulate" className="btn btn-secondary"><T en="Simulate" th="จำลองผล" /></Link>
+      </div>
     </div>
   );
 }
@@ -76,6 +80,9 @@ function Cons() {
             <p className="text-muted" style={{ marginTop: 8 }}>{L(s.lang, x.n)}</p>
           </div>
         ))}
+      </div>
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <Link href="/holistic?s=hbal" className="btn btn-primary"><T en="Hierarchy & balance" th="ลำดับและความสมดุล" /></Link>
       </div>
     </div>
   );
@@ -112,6 +119,10 @@ function Bal() {
       ))}
       <div className="callout" style={{ marginTop: 20 }}>
         <T en="Signing-readiness: reject until four must-haves close. Recommended strategy: hold liability and PDPA; trade reference rights for the price cap." th="ความพร้อมลงนาม: ปฏิเสธจนกว่าสี่ข้อต้องได้จะปิด กลยุทธ์: ยืนเพดานความรับผิดและ PDPA แลกสิทธิลูกค้าอ้างอิงกับเพดานราคา" />
+      </div>
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <Link href="/holistic?s=simulate" className="btn btn-primary"><T en="Run a consequence" th="จำลองผล" /></Link>
+        <Link href="/negotiate?s=nladder" className="btn btn-secondary"><T en="Copilot" th="เจรจา" /></Link>
       </div>
     </div>
   );
@@ -226,6 +237,11 @@ function Dna() {
       <p className="text-muted" style={{ marginTop: 18, fontSize: 13 }}>
         <T en="This is more defensible than generic AI because it learns from this organisation's own legal history. The engine never signs." th="นี่ป้องกันได้ดีกว่า AI ทั่วไป เพราะฉลาดจากประวัติกฎหมายขององค์กรนี้เอง เครื่องยนต์ไม่ลงนามแทน" />
       </p>
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <Link href="/holistic?s=simulate" className="btn btn-primary"><T en="Run a consequence" th="จำลองผล" /></Link>
+        <Link href="/holistic?s=memo" className="btn btn-secondary"><T en="Decision memo" th="บันทึกตัดสินใจ" /></Link>
+        <Link href="/review?s=xray" className="btn btn-secondary">X-Ray</Link>
+      </div>
     </div>
   );
 }

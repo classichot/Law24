@@ -1,6 +1,7 @@
 import type { Edition, Lang } from "./model";
 import { answerCopilot, type CopilotMsg } from "./copilot";
 import { copyTE, type TE } from "./guides";
+import { askLiveChat } from "./ai/client";
 
 const P = (t: string, e: string): TE => ({ t, e });
 
@@ -181,6 +182,19 @@ export function answerLeio(q: string, lang: Lang, edition: Edition = "corporate"
   const t = q.toLowerCase();
   const th = lang === "th";
 
+  if (/\bhost desk\b|\bbhd\b|demo (invite|link)|review link|mint (a )?link|โต๊ะโฮสต์|ลิงก์สาธิต/.test(t)) {
+    return {
+      role: "ai",
+      text: th
+        ? "โต๊ะโฮสต์เป็นหน้าที่ 7L ใช้สร้างลิงก์สาธิต เปิด /host ตั้ง 1–14 วัน (ค่าเริ่มต้น 3) กดสร้าง แล้วส่งเฉพาะ URL นั้น วันหมดอายุถูกเซ็นใน /review/{token} — ใช้บนเครื่องอื่นได้จนกว่าจะหมด คีย์โฮสต์ไม่อยู่หน้าเข้าสู่ระบบสาธารณะ เลโอไม่ลงนามแทน"
+        : "Host desk is the 7L page that mints demo links. Open /host, set 1–14 days (default 3), Generate, then send only that URL. Expiry is signed into /review/{token} — it works on another device until it ends. The host key is never on public login. Leio does not sign.",
+      cites: [
+        { label: th ? "โต๊ะโฮสต์" : "Host desk", href: "/host" },
+        { label: th ? "วิธีใช้" : "How to use", href: "/help?s=use" },
+      ],
+    };
+  }
+
   if (t.includes("leio") || t.includes("เลโอ") || t.includes("who are you") || t.includes("คุณคือ")) {
     return {
       role: "ai",
@@ -271,4 +285,19 @@ export function answerLeio(q: string, lang: Lang, edition: Edition = "corporate"
   }
 
   return answerCopilot(q, lang, edition);
+}
+
+/** Live Leio when a key is present; canned research / how-to / copilot answers otherwise. Twin is not live-wired. */
+export async function askLeio(
+  q: string,
+  lang: Lang,
+  edition: Edition = "corporate",
+  source: "leio" | "twin" = "leio",
+  context?: string
+): Promise<CopilotMsg> {
+  if (source === "twin") return answerCopilot(q, lang, edition);
+  const canned = answerLeio(q, lang, edition);
+  const ans = await askLiveChat("/api/ai/leio", { q, lang, edition, context });
+  if (!ans) return canned;
+  return { role: "ai", text: ans.text, cites: ans.cites };
 }

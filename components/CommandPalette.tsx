@@ -8,6 +8,9 @@ import { FX, TAX_LIST } from "@/lib/taxonomy";
 import { useStore } from "@/lib/store";
 import { L } from "@/lib/model";
 import { T } from "@/lib/i18n";
+import { PLAYBOOKS, modeFromHref, playbookKeyFor } from "@/lib/guides";
+import { isMode } from "@/lib/nav";
+import { readInviteSession } from "@/lib/invite";
 
 export function CommandPalette() {
   const s = useStore();
@@ -25,12 +28,14 @@ export function CommandPalette() {
   const hits = useMemo(() => {
     const needle = q.trim().toLowerCase();
     const th = s.lang === "th";
+    const invite = readInviteSession();
     if (!needle) {
       const starter: SearchHit[] = [
         { id: "xray", href: "/review?s=xray", kind: "X-Ray", title: th ? "Contract X-Ray" : "Contract X-Ray" },
         { id: "twin", href: "/intel?s=twin", kind: th ? "ฝาแฝด" : "Twin", title: th ? "Living Legal Twin" : "Living Legal Twin" },
         { id: "assist-ask", href: "/assist?s=ask", kind: th ? "ผู้ช่วย" : "Assist", title: th ? "อธิบายงานและคำสั่ง" : "Describe job & assignment" },
         { id: "help-trust", href: "/help?s=trust", kind: th ? "คู่มือ" : "Help", title: th ? "ความเชื่อถือที่มองเห็น" : "Visible trust" },
+        ...(!invite ? [{ id: "host", href: "/host", kind: th ? "โต๊ะโฮสต์" : "Host desk", title: th ? "สร้างลิงก์สาธิต" : "Mint a demo link" }] : []),
         ...(s.edition === "firm"
           ? [
               { id: "practice-dash", href: "/practice?s=dash", kind: "Firm", title: th ? "แดชบอร์ดสำนักงาน" : "Firm dashboard" },
@@ -82,6 +87,8 @@ export function CommandPalette() {
     });
     return [...catalogHits(s.lang), ...extra]
       .filter((h) => s.edition === "firm" || !h.href.startsWith("/practice"))
+      .filter((h) => s.edition !== "firm" || !h.href.startsWith("/command"))
+      .filter((h) => !invite || (h.href !== "/host" && h.id !== "host"))
       .filter((h) => `${h.kind} ${h.title} ${h.sub || ""}`.toLowerCase().includes(needle))
       .slice(0, 12);
   }, [q, s.lang, s.edition, s.practice]);
@@ -118,15 +125,19 @@ export function CommandPalette() {
           />
         </form>
         <div className="cmdk-list">
-          {hits.map((h) => (
+          {hits.map((h) => {
+            const { mode } = modeFromHref(h.href);
+            const pb = isMode(mode) ? PLAYBOOKS[playbookKeyFor(mode)] : null;
+            return (
             <button key={h.id + h.href} className="cmdk-row" type="button" onClick={() => go(h)}>
-              <span className="cmdk-kind">{h.kind}</span>
+              <span className="cmdk-kind">{h.kind}{pb ? ` · ${pb.id}` : ""}</span>
               <span>
                 <strong>{h.title}</strong>
                 {h.sub && <span className="text-muted" style={{ display: "block", fontSize: 12 }}>{h.sub}</span>}
               </span>
             </button>
-          ))}
+            );
+          })}
           {q.trim() && (
             <button className="cmdk-row" type="button" onClick={askNow}>
               <span className="cmdk-kind">✦</span>

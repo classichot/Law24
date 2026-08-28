@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { isMode, screenSiblings } from "@/lib/nav";
 import { modeHref, useStore } from "@/lib/store";
 import { T } from "@/lib/i18n";
+import { PlaybookMark } from "@/components/PlaybookMark";
 
 export function ScreenNav({ mode, screen }: { mode: string; screen: string }) {
   const { lang } = useStore();
@@ -18,6 +19,7 @@ export function ScreenNav({ mode, screen }: { mode: string; screen: string }) {
           <ChevronLeft size={14} /> {lang === "th" ? prev[1] : prev[2]}
         </Link>
       ) : <span />}
+      <PlaybookMark mode={mode} screen={screen} compact />
       {next ? (
         <Link href={modeHref(mode, next[0])} className="btn btn-primary">
           {lang === "th" ? next[1] : next[2]} <ChevronRight size={14} />

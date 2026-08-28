@@ -10,6 +10,7 @@ import { T } from "@/lib/i18n";
 import { copyTE, helpBookHref } from "@/lib/guides";
 import { TYPE_LABEL } from "@/lib/firm";
 import { ASSIST_EXAMPLES, assistTitle, playbookName, routeAssist } from "@/lib/assist";
+import { AiLiveMark } from "@/components/AiLiveMark";
 
 export function AssistScreen() {
   const s = useStore();
@@ -53,7 +54,7 @@ export function AssistScreen() {
   return (
     <div className="pad-page">
       <Kicker>assist · intake</Kicker>
-      <Title><T en="Describe the job and the assignment" th="อธิบายงานและคำสั่ง" /></Title>
+      <Title><T en="Describe the job and the assignment" th="อธิบายงานและคำสั่ง" /> <AiLiveMark compact /></Title>
       <p className="page-sub">
         <T
           en="Tell LAW24 who you are and what must be done. It names the module and the function that should run the work — the lawyer still decides."

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { FX } from "@/lib/taxonomy";
 import { Kicker, Stats, Title } from "@/components/ui";
@@ -7,6 +8,7 @@ import { L } from "@/lib/model";
 import { MEMORY } from "@/lib/wow";
 import { TWIN_ASKS, TWIN_LAYERS } from "@/lib/product";
 import { T } from "@/lib/i18n";
+import { AiLiveMark } from "@/components/AiLiveMark";
 
 export function IntelScreen({ screen }: { screen: string }) {
   if (screen === "twin") return <Twin />;
@@ -52,6 +54,10 @@ function Port() {
           </div>
         </div>
       </div>
+      <div className="stack-actions" style={{ marginTop: 18 }}>
+        <Link href="/intel?s=twin" className="btn btn-primary"><T en="Ask the Twin" th="ถามฝาแฝด" /></Link>
+        <Link href="/obligations?s=ocal" className="btn btn-secondary"><T en="Deadline calendar" th="ปฏิทินกำหนดเวลา" /></Link>
+      </div>
     </div>
   );
 }
@@ -87,7 +93,7 @@ function Kg() {
         <button
           key={i}
           type="button"
-          onClick={() => s.ask(L(s.lang, q))}
+          onClick={() => s.ask(L(s.lang, q), "twin")}
           style={{ display: "flex", gap: 16, padding: "15px 0", border: 0, borderBottom: "1px solid var(--color-divider)", width: "100%", background: "transparent", cursor: "pointer", textAlign: "left", color: "inherit", font: "inherit" }}
         >
           <span style={{ color: "var(--color-accent)", font: "800 14px/1 var(--font-heading)" }}>?</span>
@@ -118,6 +124,12 @@ function Mem() {
           ))}
         </tbody>
       </table>
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <button type="button" className="btn btn-primary" onClick={() => s.ask(s.lang === "th" ? "องค์กรนี้เคยยอมเพดานข้อมูลแบบใด" : "What data-cap exceptions has this tenant accepted?", "twin")}>
+          <T en="Ask legal memory" th="ถามความจำทางกฎหมาย" />
+        </button>
+        <Link href="/intel?s=twin" className="btn btn-secondary"><T en="Open Twin" th="เปิดฝาแฝด" /></Link>
+      </div>
     </div>
   );
 }
@@ -126,7 +138,7 @@ function Twin() {
   const s = useStore();
   return (
     <div className="pad-page">
-      <Kicker>twin · living legal position</Kicker>
+      <Kicker>twin · living legal position · <AiLiveMark compact /></Kicker>
       <Title><T en="Living Legal Twin" th="ฝาแฝดกฎหมายที่มีชีวิต" /></Title>
       <p className="page-sub">
         <T
@@ -138,18 +150,32 @@ function Twin() {
         {TWIN_LAYERS.map((x) => <span key={x.e} className="tag tag-outline">{L(s.lang, x)}</span>)}
       </div>
       <h5 style={{ marginTop: 28 }}><T en="Ask management questions" th="ถามคำถามฝ่ายบริหาร" /></h5>
+      <div className="stack-actions" style={{ margin: "0 0 14px" }}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => s.ask(s.lang === "th" ? "สัญญาใดมีความรับผิดไม่จำกัดและยังใช้บังคับอยู่" : "Which contracts in force carry uncapped liability?", "twin")}
+        >
+          <T en="Ask the Twin" th="ถามฝาแฝด" />
+        </button>
+      </div>
       {TWIN_ASKS.map((q) => (
         <button
           key={q.q.e}
           type="button"
           className="twin-ask"
-          onClick={() => s.ask(s.lang === "th" ? q.q.t : q.q.e)}
+          onClick={() => s.ask(s.lang === "th" ? q.q.t : q.q.e, "twin")}
         >
           <strong>{L(s.lang, q.q)}</strong>
           <span>{L(s.lang, q.a)}</span>
           <em>{L(s.lang, q.src)}</em>
         </button>
       ))}
+      <div className="stack-actions" style={{ marginTop: 18 }}>
+        <Link href="/intel?s=ipf" className="btn btn-secondary"><T en="Portfolio" th="พอร์ต" /></Link>
+        <Link href="/intel?s=memory" className="btn btn-secondary"><T en="Legal memory" th="ความจำทางกฎหมาย" /></Link>
+        <Link href="/review?s=xray" className="btn btn-secondary">X-Ray</Link>
+      </div>
     </div>
   );
 }

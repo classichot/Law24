@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { useStore } from "@/lib/store";
 import { T } from "@/lib/i18n";
+import { stashFiles } from "@/lib/ai/files";
 
 function bytes(n: number) {
   if (n < 1024) return `${n} B`;
@@ -45,7 +46,9 @@ export function Dropzone({
 
   function take(list: FileList | null) {
     if (!list || list.length === 0) return;
-    s.addUploads(bucket, Array.from(list).map((f) => ({ name: f.name, size: f.size })));
+    const arr = Array.from(list);
+    stashFiles(bucket, arr);
+    s.addUploads(bucket, arr.map((f) => ({ name: f.name, size: f.size })));
     s.flash(th
       ? `รับเข้า ${list.length} ไฟล์ — ${queued.th}`
       : `${list.length} file(s) ingested — ${queued.en}`);

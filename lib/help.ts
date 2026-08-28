@@ -93,3 +93,27 @@ export function visibleModules(edition: Edition) {
     return true;
   });
 }
+
+/** In-app walkthrough a reviewer can click — not a marketing page. */
+export const REVIEWER_PATH: Record<Edition, { href: string; k: TE; do: TE }[]> = {
+  corporate: [
+    { href: "/review?s=xray", k: P("Contract X-Ray", "Contract X-Ray"), do: P("รันนิมบัส CT-291 — คำตัดสิน: เจรจา", "Run Nimbus CT-291 — verdict: Negotiate") },
+    { href: "/intel?s=twin", k: P("ฝาแฝดกฎหมาย", "Legal Twin"), do: P("ถามคำถามฝ่ายบริหาร — ต้องชี้ต้นทาง", "Ask a management question — it must cite source") },
+    { href: "/command?s=desk", k: P("ศูนย์บัญชาการ", "Control desk"), do: P("ไล่คำขอ อนุมัติ ที่ปรึกษา รายงานกรรมการ", "Walk requests, approvals, counsel, board") },
+    { href: "/holistic?s=cockpit", k: P("ห้องบังคับ", "Cockpit"), do: P("มูลค่า ขั้น ความเสี่ยง แล้วเปิด Clause DNA", "Value, stage, risk — then open Clause DNA") },
+    { href: "/diligence?s=dwar", k: P("ห้องสงคราม DD", "DD War Room"), do: P("เจริญโลจิสติกส์ — ส่งต่อ DK-01", "Charoen — escalate DK-01") },
+    { href: "/negotiate?s=nladder", k: P("บันไดเจรจา", "Negotiation ladder"), do: P("จุดยืนที่ต้องการถึงเดินออก", "Preferred through walk-away") },
+    { href: "/obligations?s=ocal", k: P("ปฏิทินข้อผูกพัน", "Obligations calendar"), do: P("หยุดต่ออายุอัตโนมัติอาคาร", "Stop the facilities auto-renew") },
+    { href: "/assemble?s=lib", k: P("คลัง → ร่าง", "Library → draft"), do: P("เปิด CT-284 แล้วประกอบชุด", "Open CT-284 then assemble the pack") },
+    { href: "/help?s=books", k: P("เพลย์บุ๊ก", "Playbooks"), do: P("เปิดเล่มที่ใช้บังคับ", "Open the book in force") },
+  ],
+  firm: [
+    { href: "/review?s=xray", k: P("Contract X-Ray", "Contract X-Ray"), do: P("รันนิมบัส — ส่งถึงทนาย", "Run Nimbus — send to counsel") },
+    { href: "/practice?s=brain", k: P("สมองสำนักงาน", "Firm Brain"), do: P("บรรทัดฐาน ข้อ จุดยืน เพลย์บุ๊กลูกค้า", "Precedents, clauses, positions, client books") },
+    { href: "/practice?s=room", k: P("ห้องตรวจลูกค้า", "Client Room"), do: P("อนุมัติหรือปฏิเสธคำแนะนำสามข้อ", "Approve or reject the three recommendations") },
+    { href: "/practice?s=packages", k: P("บริการสำเร็จรูป", "Packages"), do: P("เลือกแพ็กแล้วสร้างหนังสือว่าจ้าง", "Pick a pack, generate the engagement letter") },
+    { href: "/practice?s=dash", k: P("แดชบอร์ดงาน", "Practice dash"), do: P("เปิดงานนิมบัส ไล่เส้นทาง", "Open the Nimbus assignment, walk the trail") },
+    { href: "/holistic?s=cockpit", k: P("ห้องบังคับ", "Cockpit"), do: P("มูลค่า ขั้น ความเสี่ยง — เครื่องยนต์ชุดเดียว", "Value, stage, risk — same engine") },
+    { href: "/help?s=books", k: P("เพลย์บุ๊ก", "Playbooks"), do: P("เปิดเล่ม PB-PRAC แล้วเข้าโมดูล", "Open PB-PRAC, then enter the module") },
+  ],
+};

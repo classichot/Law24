@@ -1,13 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useStore } from "@/lib/store";
 import modules from "@/data/modules.json";
 import { Kicker, Stats, Title } from "@/components/ui";
 import { L } from "@/lib/model";
 import { T } from "@/lib/i18n";
-import { copyText, statusLabel } from "@/lib/demo";
+import { copyText, statusLabel, downloadText, noticeLetterText } from "@/lib/demo";
 import { Dropzone } from "@/components/Dropzone";
 import { XRAY } from "@/lib/product";
+import { AiLiveMark } from "@/components/AiLiveMark";
 
 const NG = modules.ng;
 const OB = modules.ob;
@@ -77,12 +79,18 @@ function Strat() {
           <span>{L(s.lang, r.k)}</span><strong>{L(s.lang, r.v)}</strong>
         </div>
       ))}
+      <div className="stack-actions" style={{ marginTop: 18 }}>
+        <Link href="/negotiate?s=nladder" className="btn btn-primary"><T en="Open negotiation ladder" th="เปิดบันไดเจรจา" /></Link>
+        <Link href="/negotiate?s=nresp" className="btn btn-secondary"><T en="Recommended responses" th="คำตอบที่แนะนำ" /></Link>
+      </div>
     </div>
   );
 }
 
 function Ladder() {
   const s = useStore();
+  const ladder = s.xrayLive?.ladder ?? XRAY.ladder;
+  const email = s.xrayLive?.email ?? XRAY.email;
   return (
     <div className="pad-page">
       <Kicker>negotiate · copilot</Kicker>
@@ -94,7 +102,7 @@ function Ladder() {
         />
       </p>
       <div className="grid-2" style={{ marginTop: 8 }}>
-        {XRAY.ladder.map((r) => (
+        {ladder.map((r) => (
           <div key={r.n} className="xray-layer">
             <div className="page-kicker">{r.n} · {L(s.lang, r.k)}</div>
             <p>{L(s.lang, r.v)}</p>
@@ -108,6 +116,17 @@ function Ladder() {
           th="จุดถัดไป: ข้อมูลอยู่ในเพดาน 12 เดือนถ้าลงนาม DPA ก่อนวันเริ่ม คุ้มครองเพิ่ม: บริษัทแม่ค้ำข้อเรียกร้องข้อมูล แลก: สิทธิอ้างอิงลูกค้าเพื่อได้เพดาน อีเมลอยู่ที่ X-Ray"
         />
       </p>
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => { copyText(L(s.lang, email)).then(() => s.flash(s.lang === "th" ? "คัดลอกอีเมลคู่สัญญาแล้ว" : "Counterparty email copied")).catch(() => s.flash(s.lang === "th" ? "บันทึกจุดยืนแล้ว" : "Position recorded")); }}
+        >
+          <T en="Copy counterparty email" th="คัดลอกอีเมลคู่สัญญา" />
+        </button>
+        <Link href="/negotiate?s=nresp" className="btn btn-secondary"><T en="Recommended responses" th="คำตอบที่แนะนำ" /></Link>
+        <Link href="/review?s=xray" className="btn btn-secondary">X-Ray</Link>
+      </div>
     </div>
   );
 }
@@ -151,11 +170,13 @@ function Pos() {
 
 function Resp() {
   const s = useStore();
+  const moves = s.negotiateLive?.moves ?? NG.moves;
+
   return (
     <div className="pad-page">
-      <Kicker>negotiate · recommended moves</Kicker>
+      <Kicker>negotiate · recommended moves · <AiLiveMark compact /></Kicker>
       <Title><T en="Recommended next moves, with draft wording" th="ก้าวถัดไปที่แนะนำ พร้อมร่างข้อความ" /></Title>
-      {NG.moves.map((m, i) => {
+      {moves.map((m, i) => {
         const id = String(i);
         const sent = s.sentMoves[id];
         return (
@@ -213,6 +234,10 @@ function Hist() {
           </div>
         </div>
       ))}
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <Link href="/negotiate?s=nresp" className="btn btn-primary"><T en="Copy next move" th="คัดลอกก้าวถัดไป" /></Link>
+        <Link href="/obligations?s=oreg" className="btn btn-secondary"><T en="Obligation register" th="ทะเบียนข้อผูกพัน" /></Link>
+      </div>
     </div>
   );
 }
@@ -253,6 +278,10 @@ function Reg() {
           ))}
         </tbody>
       </table>
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <Link href="/obligations?s=ocal" className="btn btn-primary"><T en="Open calendar" th="เปิดปฏิทิน" /></Link>
+        <Link href="/obligations?s=oalert" className="btn btn-secondary"><T en="Open alerts" th="เปิดการแจ้งเตือน" /></Link>
+      </div>
     </div>
   );
 }
@@ -272,6 +301,10 @@ function Cal() {
             {c.items.map((it, n) => <div key={n} className="text-muted" style={{ fontSize: 13 }}>{L(s.lang, it)}</div>)}
           </div>
         ))}
+      </div>
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <Link href="/obligations?s=oalert" className="btn btn-primary"><T en="Open alerts" th="เปิดการแจ้งเตือน" /></Link>
+        <Link href="/obligations?s=oren" className="btn btn-secondary"><T en="Renewal pipeline" th="ท่อต่ออายุ" /></Link>
       </div>
     </div>
   );
@@ -298,6 +331,20 @@ function Ren() {
           ))}
         </tbody>
       </table>
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => {
+            downloadText("LAW24-non-renewal-notice.txt", noticeLetterText(s.lang));
+            s.completeAlert("0");
+            s.flash(s.lang === "th" ? "ร่างหนังสือไม่ต่ออายุแล้ว — ทนายเป็นผู้ลงนาม" : "Non-renewal notice drafted — counsel signs");
+          }}
+        >
+          <T en="Draft non-renewal notice" th="ร่างหนังสือไม่ต่ออายุ" />
+        </button>
+        <Link href="/obligations?s=oalert" className="btn btn-secondary"><T en="Serve from alerts" th="ส่งจากรายการแจ้งเตือน" /></Link>
+      </div>
     </div>
   );
 }

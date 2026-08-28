@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Check, LogOut, Menu, Search, X } from "lucide-react";
+import { Check, Link2, LogOut, Menu, Search, Timer, X } from "lucide-react";
 import { CORPORATE_USER, FIRM_USER } from "@/lib/model";
 import { NAV, isMode, navModes } from "@/lib/nav";
 import { modeHref, useStore } from "@/lib/store";
@@ -16,7 +16,10 @@ import { CommandPalette } from "@/components/CommandPalette";
 import { ScreenNav } from "@/components/ScreenNav";
 import { GuideRail } from "@/components/GuideRail";
 import { T } from "@/lib/i18n";
-import { TrustStrip } from "@/components/TrustStrip";
+import { PlaybookMark } from "@/components/PlaybookMark";
+import { AiLiveMark } from "@/components/AiLiveMark";
+import { PLAYBOOKS, playbookKeyFor } from "@/lib/guides";
+import { formatExpiry, hoursLeft, readInviteSession } from "@/lib/invite";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
@@ -27,6 +30,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const s = useStore();
   const user = s.edition === "firm" ? FIRM_USER : CORPORATE_USER;
   const [menu, setMenu] = useState(false);
+  const [invite, setInvite] = useState<ReturnType<typeof readInviteSession>>(null);
+  const inviteHours = invite ? hoursLeft(invite.exp) : 0;
 
   const mode = path === "/home" || path === "/" ? "home" : path.replace("/", "").split("/")[0];
   const screen = params.get("s") || (isMode(mode) ? NAV[mode][0][0] : "home");
@@ -35,6 +40,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const matter = MATTERS[s.matter];
   const tabs = navModes(s.edition);
   const assignment = s.practice.assignments.find((a) => a.id === s.practice.activeAssignmentId);
+
+  useEffect(() => {
+    setInvite(readInviteSession());
+  }, [path]);
 
   useEffect(() => {
     if (mode === "practice" && s.edition !== "firm") {
@@ -111,6 +120,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="os-os-badge">os</span>
         </Link>
         <EditionBadge />
+        <AiLiveMark compact />
         <button className="os-grid-btn search-toggle" onClick={() => s.setSearchOpen(true)} aria-label="Search"><Search size={16} /></button>
         <div style={{ flex: 1, display: "flex", justifyContent: "center", minWidth: 0 }}>
           <button className="os-ask" type="button" onClick={() => s.setSearchOpen(true)}>
@@ -122,6 +132,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         <span className="os-online header-hide-sm"><span className="os-dot" /> <T en="Online" th="ออนไลน์" /></span>
         <LangToggle />
         <ModeToggle compact />
+        {!invite && (
+          <Link href="/host" className="btn btn-ghost header-hide-sm" style={{ fontSize: 12, padding: "6px 10px" }}>
+            <Link2 size={14} /> <T en="Desk" th="โฮสต์" />
+          </Link>
+        )}
         <div className="os-user">
           <div className="os-avatar">{user.initials}</div>
           <div style={{ lineHeight: 1.35 }} className="header-hide-sm">
@@ -139,13 +154,27 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
+      {invite && (
+        <div className="os-invite">
+          <Timer size={13} />
+          <T
+            en={`Demo review link · until ${formatExpiry(invite.exp)} · ~${Math.max(1, Math.ceil(inviteHours / 24))}d left`}
+            th={`ลิงก์สอบทานสาธิต · ถึง ${formatExpiry(invite.exp)} · เหลือ ~${Math.max(1, Math.ceil(inviteHours / 24))} วัน`}
+          />
+          <Link href="/review?s=xray" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>X-Ray</Link>
+        </div>
+      )}
+
       {notHome && (
         <>
           <div className="os-modes">
             <Link href="/home" style={{ color: "var(--color-neutral-600)", fontSize: 11, textDecoration: "none", padding: "13px 0" }}>← <T en="All modules" th="โมดูลทั้งหมด" /></Link>
             <span style={{ width: 1, height: 16, background: "var(--color-neutral-400)", flex: "none" }} />
             {tabs.map((m) => (
-              <Link key={m.k} href={modeHref(m.k)} className={mode === m.k ? "on" : ""}>{s.lang === "th" ? m.th : m.en}</Link>
+              <Link key={m.k} href={modeHref(m.k)} className={mode === m.k ? "on" : ""}>
+                <span className="os-mode-label">{s.lang === "th" ? m.th : m.en}</span>
+                <span className="os-mode-pb">{PLAYBOOKS[playbookKeyFor(m.k)].id}</span>
+              </Link>
             ))}
             {mode !== "practice" && mode !== "command" && mode !== "assist" && mode !== "help" && (
             <div className="os-matters header-hide-sm">
@@ -163,6 +192,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {s.lang === "th" ? th : en}
               </Link>
             ))}
+            <span className="os-subnav-end">
+            <PlaybookMark mode={mode} screen={screen} compact />
             <span className="os-matter-line header-hide-sm">
               {mode === "practice"
                 ? (assignment
@@ -181,15 +212,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <T en="Live demo" th="สาธิตสด" />
               </button>
             )}
+            </span>
           </div>
         </>
       )}
 
       <DemoBar />
-      {notHome && <GuideRail mode={mode} screen={screen} />}
-      {!notHome && (
-        <div style={{ padding: "8px 24px 0" }}><TrustStrip compact /></div>
-      )}
+      <GuideRail mode={mode} screen={screen} />
 
       <div className="os-body">
         <main className="page-main">
@@ -220,9 +249,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
             <div style={{ marginBottom: 18 }}><EditionBadge /></div>
             <Link href="/home" className="os-drawer-link" onClick={() => setMenu(false)}><T en="All modules" th="โมดูลทั้งหมด" /></Link>
+            {!invite && (
+              <Link href="/host" className="os-drawer-link" onClick={() => setMenu(false)}>
+                <T en="Host desk" th="โต๊ะโฮสต์" />
+              </Link>
+            )}
             {tabs.map((m) => (
               <Link key={m.k} href={modeHref(m.k)} className={`os-drawer-link${mode === m.k ? " on" : ""}`} onClick={() => setMenu(false)}>
-                {s.lang === "th" ? m.th : m.en}
+                <span>{s.lang === "th" ? m.th : m.en}</span>
+                <span className="os-drawer-pb">{PLAYBOOKS[playbookKeyFor(m.k)].id}</span>
               </Link>
             ))}
             <button type="button" className="os-drawer-link" onClick={() => { setMenu(false); startLive(); }}>
