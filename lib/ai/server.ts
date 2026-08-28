@@ -5,6 +5,30 @@ import type { z } from "zod";
 import { HOUSE_SYSTEM } from "./house";
 
 const TIMEOUT_MS = 120_000;
+/** Retired June 2026. Anthropic's documented replacement is Sonnet 4.6. */
+const DEFAULT_ANTHROPIC = "claude-sonnet-4-6";
+const RETIRED_ANTHROPIC: Record<string, string> = {
+  "claude-sonnet-4-20250514": DEFAULT_ANTHROPIC,
+  "claude-sonnet-4": DEFAULT_ANTHROPIC,
+  "claude-opus-4-20250514": "claude-opus-4-6",
+};
+
+export function aiErrorMessage(err: unknown): string {
+  if (!err) return "Live AI failed";
+  if (typeof err === "string" && err.trim()) return err.trim();
+  const e = err as {
+    message?: string;
+    cause?: unknown;
+    data?: { error?: { message?: string } | string };
+    text?: string;
+  };
+  const nested = typeof e.data?.error === "string" ? e.data.error : e.data?.error?.message;
+  if (nested?.trim()) return nested.trim();
+  if (e.text?.trim() && e.text.length < 400) return e.text.trim();
+  if (e.message?.trim() && e.message !== "AI_APICallError") return e.message.trim();
+  if (e.cause && e.cause !== err) return aiErrorMessage(e.cause);
+  return "Live AI failed";
+}
 
 export function isAiLive(): boolean {
   const force = (process.env.AI_LIVE || "").trim().toLowerCase();
@@ -30,16 +54,22 @@ function anthropicProvider() {
   });
 }
 
+function anthropicModelId() {
+  const named = (process.env.AI_MODEL || "").trim();
+  const id = named || DEFAULT_ANTHROPIC;
+  return RETIRED_ANTHROPIC[id] || id;
+}
+
 function getModel() {
   const named = (process.env.AI_MODEL || "").trim();
   const wantClaude = named.toLowerCase().includes("claude");
   if (process.env.ANTHROPIC_API_KEY && (wantClaude || !process.env.OPENAI_API_KEY)) {
-    return anthropicProvider()(named || "claude-sonnet-4-20250514");
+    return anthropicProvider()(anthropicModelId());
   }
   if (!process.env.OPENAI_API_KEY) {
     throw new Error("No AI provider key");
   }
-  return openai(named || "gpt-4o");
+  return openai(named && !wantClaude ? named : "gpt-4o");
 }
 
 export async function generateStructured<S extends z.ZodType>(
@@ -51,18 +81,22 @@ export async function generateStructured<S extends z.ZodType>(
     throw new Error("Live AI is not configured");
   }
   const system = extraSystem ? `${HOUSE_SYSTEM}\n\n${extraSystem}` : HOUSE_SYSTEM;
-  const { object } = await generateObject({
-    model: getModel(),
-    schema,
-    schemaName: "law24",
-    schemaDescription: "LAW24 structured legal output. Cite evidence. Never sign.",
-    system,
-    prompt,
-    mode: "json",
-    maxRetries: 1,
-    abortSignal: AbortSignal.timeout(TIMEOUT_MS),
-  });
-  return object as z.infer<S>;
+  try {
+    const { object } = await generateObject({
+      model: getModel(),
+      schema,
+      schemaName: "law24",
+      schemaDescription: "LAW24 structured legal output. Cite evidence. Never sign.",
+      system,
+      prompt,
+      mode: "json",
+      maxRetries: 1,
+      abortSignal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    return object as z.infer<S>;
+  } catch (err) {
+    throw new Error(aiErrorMessage(err));
+  }
 }
 
 /** Read Thai/English contract text off scanned page images. Used when the PDF has no text layer. */
@@ -73,25 +107,29 @@ export async function generateTranscript(
 ): Promise<string> {
   if (!isAiLive()) throw new Error("Live AI is not configured");
   if (!pages.length) throw new Error("No page images to read");
-  const { text } = await generateText({
-    model: getModel(),
-    messages: [{
-      role: "user",
-      content: [
-        {
-          type: "text",
-          text: `Transcribe this scanned contract (Thai and/or English). Keep clause numbers, party names, dates, amounts, defined terms and headings. Do not summarise. Do not invent missing pages. If a page is unreadable write [page N unreadable]. These are pages 1–${rendered} of ${total}.`,
-        },
-        ...pages.map((p) => ({
-          type: "image" as const,
-          image: p.data,
-          mediaType: p.mediaType,
-        })),
-      ],
-    }],
-    abortSignal: AbortSignal.timeout(60_000),
-  });
-  const out = (text || "").trim();
-  if (out.length < 80) throw new Error("OCR produced no usable contract text");
-  return out;
+  try {
+    const { text } = await generateText({
+      model: getModel(),
+      messages: [{
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: `Transcribe this scanned contract (Thai and/or English). Keep clause numbers, party names, dates, amounts, defined terms and headings. Do not summarise. Do not invent missing pages. If a page is unreadable write [page N unreadable]. These are pages 1–${rendered} of ${total}.`,
+          },
+          ...pages.map((p) => ({
+            type: "image" as const,
+            image: p.data,
+            mediaType: p.mediaType,
+          })),
+        ],
+      }],
+      abortSignal: AbortSignal.timeout(60_000),
+    });
+    const out = (text || "").trim();
+    if (out.length < 80) throw new Error("OCR produced no usable contract text");
+    return out;
+  } catch (err) {
+    throw new Error(aiErrorMessage(err));
+  }
 }
