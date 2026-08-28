@@ -119,6 +119,21 @@ export function XRayScreen() {
       </div>
       <p style={{ maxWidth: "72ch", marginBottom: 22 }}>{L(s.lang, X.verdictWhy)}</p>
 
+      <Dropzone
+        bucket="xray"
+        compact
+        accept={CONTRACT_ACCEPT}
+        title={<T en="Map another PDF or DOCX" th="วางแผนที่ PDF หรือ DOCX อีกฉบับ" />}
+        hint={<T en="Replaces this map. Live AI when the badge says Live; otherwise the Nimbus fixture." th="แทนที่แผนที่นี้ AI สดเมื่อป้ายบอกสด ไม่เช่นนั้นใช้ข้อมูลนิมบัส" />}
+        multiple={false}
+        onAfter={() => s.clearXray()}
+      />
+      <div className="stack-actions" style={{ margin: "10px 0 22px" }}>
+        <button type="button" className="btn btn-ghost" onClick={runDemo}>
+          <T en="Run Nimbus sample instead" th="ใช้ตัวอย่างนิมบัสแทน" />
+        </button>
+      </div>
+
       <h5><T en="Risk heatmap by clause" th="แผนความร้อนตามข้อสัญญา" /></h5>
       <div className="xray-heat">
         {X.heatmap.map((h) => (

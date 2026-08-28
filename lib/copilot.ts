@@ -35,8 +35,8 @@ export function answerCopilot(q: string, lang: Lang, edition: Edition = "corpora
     return {
       role: "ai",
       text: th
-        ? "โต๊ะโฮสต์สร้าง URL สาธิต LAW24 ที่มีกำหนดเวลา เปิด /host ตั้งจำนวนวัน (1–14 ค่าเริ่มต้น 3) กดสร้าง แล้วส่งเฉพาะ URL นั้น\n\nวันหมดอายุถูกเซ็นใน /review/{token} ผู้รับบนเครื่องอื่นเปิดสาธิตได้จนกว่านาฬิกาจะหมด หลังจากนั้น URL เดิมแสดงว่าสิ้นสุดการเข้าถึง\n\nคีย์โฮสต์ใช้ปลดล็อก Firm บนเบราว์เซอร์นี้เท่านั้น ไม่แสดงบนหน้าเข้าสู่ระบบสาธารณะ ถ้าจะตัดลิงก์ที่ยังใช้ได้ทั้งหมด ให้เพิ่ม INVITE_EPOCH แล้ว redeploy เครื่องยนต์ไม่ลงนามแทน"
-        : "Host desk mints a time-limited LAW24 demo URL. Open /host, set days (1–14, default 3), Generate, then send only that URL.\n\nThe expiry is signed into /review/{token}, so a recipient on another device can open the demo until the clock runs out. After that the same URL shows Access ended.\n\nThe host key unlocks Firm on this browser. It is never shown on public login. To kill every live link at once, bump INVITE_EPOCH and redeploy. The engine never signs.",
+        ? "โต๊ะโฮสต์เป็นหน้าที่ 7L ใช้สร้างลิงก์สาธิต เปิด /host ปลดล็อกด้วยคีย์โฮสต์ (ไม่อยู่หน้าเข้าสู่ระบบสาธารณะ) ตั้ง 1–14 วัน (ค่าเริ่มต้น 3) กดสร้าง แล้วส่งเฉพาะ URL นั้น\n\nวันหมดอายุถูกเซ็นใน /review/{token} ผู้รับบนเครื่องอื่นเปิดสาธิตได้จนกว่านาฬิกาจะหมด หลังจากนั้น URL เดิมแสดงว่าสิ้นสุดการเข้าถึง\n\nถ้าจะตัดลิงก์ที่ยังใช้ได้ทั้งหมด ให้เพิ่ม INVITE_EPOCH แล้ว redeploy เครื่องยนต์ไม่ลงนามแทน"
+        : "Host desk is the 7L page that mints demo links. Open /host, unlock with the host key (never on public login), set 1–14 days (default 3), Generate, then send only that URL.\n\nThe expiry is signed into /review/{token}, so a recipient on another device can open the demo until the clock runs out. After that the same URL shows Access ended.\n\nTo kill every live link at once, bump INVITE_EPOCH and redeploy. The engine never signs.",
       cites: [
         { label: th ? "โต๊ะโฮสต์" : "Host desk", href: "/host" },
         { label: th ? "วิธีใช้ LAW24" : "How to use LAW24", href: "/help?s=use" },

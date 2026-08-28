@@ -98,6 +98,19 @@ function HowTo() {
         ))}
       </div>
 
+      <h5><T en="Host desk (7L)" th="โต๊ะโฮสต์ (7L)" /></h5>
+      <div className="help-card" style={{ marginBottom: 24 }}>
+        <p>
+          <T
+            en="Demo links mint only at Host desk. Unlock with the host key (never on public login), set 1–14 days (default 3), Generate, then send the signed /review/{token} URL. Guests open that URL on another device until it expires — they do not use /host."
+            th="ลิงก์สาธิตสร้างได้ที่โต๊ะโฮสต์เท่านั้น ปลดล็อกด้วยคีย์โฮสต์ (ไม่อยู่หน้าเข้าสู่ระบบสาธารณะ) ตั้ง 1–14 วัน (ค่าเริ่มต้น 3) กดสร้าง แล้วส่ง URL /review/{token} ที่เซ็นแล้ว ผู้รับเปิด URL นั้นบนเครื่องอื่นได้จนกว่าจะหมดอายุ — ไม่ได้ใช้ /host"
+          />
+        </p>
+        <Link href="/host" className="btn btn-secondary" style={{ marginTop: 8, alignSelf: "flex-start", fontSize: 12 }}>
+          <T en="Open Host desk" th="เปิดโต๊ะโฮสต์" /> <ArrowRight size={12} />
+        </Link>
+      </div>
+
       <div className="help-keys">
         <div className="guide-kicker" style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Keyboard size={12} /> <T en="Shortcuts" th="ทางลัด" />

@@ -13,12 +13,17 @@ function Guard({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!ready) return;
-    if (isInviteAuth() && !readInviteSession()) {
-      logout();
-      router.replace("/review/ended");
-      return;
+    function check() {
+      if (isInviteAuth() && !readInviteSession()) {
+        logout();
+        router.replace("/review/ended");
+        return;
+      }
+      if (!authed) router.replace("/");
     }
-    if (!authed) router.replace("/");
+    check();
+    const t = window.setInterval(check, 15_000);
+    return () => window.clearInterval(t);
   }, [ready, authed, logout, router, path]);
 
   if (!ready || !authed) {

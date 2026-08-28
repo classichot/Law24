@@ -13,6 +13,8 @@ import { CLIENT_ROOM, ENTRANCES, PACKAGES, POSITION, TWIN_ASKS, WEDGE_TYPES } fr
 import { OS_FLOW, PLAYBOOKS, copyTE, helpBookHref, playbookKeyFor } from "@/lib/guides";
 import { ReviewerPath } from "@/components/ui";
 import { CONTRACT_ACCEPT } from "@/lib/ai/files";
+import { formatExpiry, readInviteSession } from "@/lib/invite";
+import { GuestBriefing } from "@/components/GuestBriefing";
 
 export function HomeScreen() {
   const { edition } = useStore();
@@ -47,12 +49,39 @@ function HomePlaybooks() {
   );
 }
 
+function InviteHomeStrip() {
+  const { edition, startXray } = useStore();
+  const router = useRouter();
+  const invite = readInviteSession();
+  if (!invite) return null;
+  return (
+    <div className="callout" style={{ marginBottom: 22 }}>
+      <div className="stat-label">
+        <T en="Host desk trial — full OS" th="ทดลองโต๊ะโฮสต์ — ทั้งระบบ" />
+      </div>
+      <GuestBriefing edition={edition} linked expiry={formatExpiry(invite.exp)} />
+      <div className="stack-actions" style={{ marginTop: 12 }}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => { startXray(); router.push("/review?s=xray"); }}
+        >
+          <T en="Sample ingest — Nimbus CT-291" th="รับเข้าตัวอย่าง — นิมบัส CT-291" />
+        </button>
+        <Link href="/review?s=xray" className="btn btn-secondary"><T en="Drop your own PDF/DOCX" th="ลาก PDF/DOCX ของคุณ" /></Link>
+        <Link href="/help?s=leio" className="btn btn-ghost">Leio</Link>
+      </div>
+    </div>
+  );
+}
+
 function CorporateHome() {
   const { lang, startXray, ask } = useStore();
   const router = useRouter();
   const th = lang === "th";
   return (
     <div className="home-wrap">
+      <InviteHomeStrip />
       <div className="home-hero">
         <div>
           <div className="home-kicker-row">
@@ -118,6 +147,7 @@ function FirmHome() {
   const th = lang === "th";
   return (
     <div className="home-wrap">
+      <InviteHomeStrip />
       <div className="home-hero">
         <div>
           <div className="home-kicker-row">
@@ -143,6 +173,9 @@ function FirmHome() {
         </button>
         <Link href="/practice?s=packages" className="btn btn-secondary"><T en="Sell packaged services" th="ขายบริการสำเร็จรูป" /></Link>
         <Link href="/practice?s=brain" className="btn btn-secondary"><T en="Firm Brain" th="สมองสำนักงาน" /></Link>
+        {!readInviteSession() && (
+          <Link href="/host" className="btn btn-ghost"><T en="Host desk" th="โต๊ะโฮสต์" /></Link>
+        )}
       </div>
       <TrustStrip />
       <ReviewerPath />

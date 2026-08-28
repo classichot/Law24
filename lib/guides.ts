@@ -143,7 +143,7 @@ export const PLAYBOOKS = {
       P("เพลย์บุ๊กของโมดูลที่กำลังทำคือกฎที่ใช้บังคับ", "The playbook of the module in hand is the rule in force"),
       P("คู่มืออธิบายระบบ ไม่ลงนามและไม่เลือกท่าทีแทนทนาย", "Help explains the OS — it does not sign or pick a posture"),
       P("เลโอช่วยวิธีใช้ วิจัย และกฎที่เพิ่งออก — ทุกข้อสรุปต้องมีหลักฐาน และประกาศใหม่ไม่ย้ายเพลย์บุ๊กจนกว่าทนายจะยืนยัน", "Leio helps with how to use, research and regulation updates — every conclusion cites evidence, and a new gazette does not move the playbook until counsel confirms"),
-      P("ลิงก์สาธิตออกที่โต๊ะโฮสต์ — คีย์โฮสต์ไม่อยู่หน้าเข้าสู่ระบบสาธารณะ", "Demo links mint at Host desk — the host key is not on public login"),
+      P("ลิงก์สาธิตออกที่โต๊ะโฮสต์หลังปลดล็อกคีย์โฮสต์ — คีย์นั้นไม่อยู่หน้าเข้าสู่ระบบสาธารณะ", "Demo links mint at Host desk after the host key — the key is not on public login"),
       P("ถ้ายังไม่รู้ว่าจะเปิดโมดูลใด ให้เริ่มที่ผู้ช่วย", "If it is not yet obvious which module to open, start in Assist"),
     ],
   },

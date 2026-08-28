@@ -19,7 +19,7 @@ import { T } from "@/lib/i18n";
 import { PlaybookMark } from "@/components/PlaybookMark";
 import { AiLiveMark } from "@/components/AiLiveMark";
 import { PLAYBOOKS, playbookKeyFor } from "@/lib/guides";
-import { formatExpiry, hoursLeft, readInviteSession } from "@/lib/invite";
+import { formatExpiry, hoursLeft, isInviteAuth, readInviteSession } from "@/lib/invite";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
@@ -42,8 +42,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   const assignment = s.practice.assignments.find((a) => a.id === s.practice.activeAssignmentId);
 
   useEffect(() => {
-    setInvite(readInviteSession());
-  }, [path]);
+    function check() {
+      if (isInviteAuth() && !readInviteSession()) {
+        s.logout();
+        router.replace("/review/ended");
+        return;
+      }
+      setInvite(readInviteSession());
+    }
+    check();
+    const t = window.setInterval(check, 15_000);
+    return () => window.clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path, router]);
 
   useEffect(() => {
     if (mode === "practice" && s.edition !== "firm") {
@@ -134,7 +145,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <ModeToggle compact />
         {!invite && (
           <Link href="/host" className="btn btn-ghost header-hide-sm" style={{ fontSize: 12, padding: "6px 10px" }}>
-            <Link2 size={14} /> <T en="Desk" th="โฮสต์" />
+            <Link2 size={14} /> <T en="Host desk" th="โต๊ะโฮสต์" />
           </Link>
         )}
         <div className="os-user">
@@ -158,10 +169,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="os-invite">
           <Timer size={13} />
           <T
-            en={`Demo review link · until ${formatExpiry(invite.exp)} · ~${Math.max(1, Math.ceil(inviteHours / 24))}d left`}
-            th={`ลิงก์สอบทานสาธิต · ถึง ${formatExpiry(invite.exp)} · เหลือ ~${Math.max(1, Math.ceil(inviteHours / 24))} วัน`}
+            en={`Host desk demo · full OS until ${formatExpiry(invite.exp)} · ~${Math.max(1, Math.ceil(inviteHours / 24))}d left · no demo1234`}
+            th={`สาธิตโต๊ะโฮสต์ · ทั้งระบบถึง ${formatExpiry(invite.exp)} · เหลือ ~${Math.max(1, Math.ceil(inviteHours / 24))} วัน · ไม่ใช้ demo1234`}
           />
+          <Link href="/home" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}><T en="Home" th="หน้าแรก" /></Link>
           <Link href="/review?s=xray" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>X-Ray</Link>
+          <Link href="/help?s=leio" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Leio</Link>
         </div>
       )}
 

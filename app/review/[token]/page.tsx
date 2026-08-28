@@ -8,6 +8,7 @@ import { useStore } from "@/lib/store";
 import { LangToggle } from "@/components/LangToggle";
 import { ModeToggle } from "@/components/ModeToggle";
 import { T } from "@/lib/i18n";
+import { GuestBriefing } from "@/components/GuestBriefing";
 import {
   formatExpiry,
   hoursLeft,
@@ -29,7 +30,7 @@ function Shell({ kicker, title, lede, children }: { kicker: ReactNode; title: Re
         <h1>{title}</h1>
         <p className="gate-lede">{lede}</p>
       </section>
-      <section className="gate-auth">
+      <section className="gate-auth" style={{ overflowY: "auto" }}>
         <header className="login-pane-head">
           <div className="login-kicker-ghost"><T en="Review link" th="ลิงก์สอบทาน" /></div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -46,7 +47,7 @@ function Shell({ kicker, title, lede, children }: { kicker: ReactNode; title: Re
 
 export default function ReviewInvitePage() {
   const { token } = useParams<{ token: string }>();
-  const { login, ready, startXray, lang } = useStore();
+  const { login, ready, lang } = useStore();
   const router = useRouter();
   const [state, setState] = useState<"checking" | "ok" | "expired" | "revoked" | "invalid">("checking");
   const [payload, setPayload] = useState<InvitePayload | null>(null);
@@ -83,9 +84,17 @@ export default function ReviewInvitePage() {
     if (!payload) return;
     saveInviteSession(payload, raw);
     login(payload.edition, { invite: true });
-    startXray();
     router.push(inviteLandingHref(payload.edition));
   }
+
+  useEffect(() => {
+    if (state !== "ok" || !payload || !raw) return;
+    const existing = readInviteSession();
+    if (existing && existing.id === payload.id) {
+      login(payload.edition, { invite: true });
+      router.replace(inviteLandingHref(payload.edition));
+    }
+  }, [state, payload, raw, login, router]);
 
   if (!ready || state === "checking") {
     return (
@@ -182,11 +191,12 @@ export default function ReviewInvitePage() {
       <h2><T en={existing ? "Welcome back" : "Welcome"} th={existing ? "ยินดีต้อนรับกลับ" : "ยินดีต้อนรับ"} /></h2>
       <p className="text-muted login-card-note">
         <T
-          en={`You are in a time-limited ${door} review. Contract X-Ray is ready. This is a demo — the engine never signs.`}
-          th={`คุณอยู่ใน${door}แบบมีกำหนดเวลา Contract X-Ray พร้อมแล้ว นี่คือสาธิต — เครื่องยนต์ไม่ลงนามแทน`}
+          en={`You are entering a time-limited ${door} OS (~${left} hour${left === 1 ? "" : "s"} left). No demo1234. Home, X-Ray, Assemble, Diligence, Negotiate, Assist, ${payload.edition === "firm" ? "Practice" : "Control"}, Cockpit, Twin, Help, and Leio are all open until the link expires.`}
+          th={`คุณกำลังเข้า ${door} ทั้งระบบแบบมีกำหนดเวลา (เหลือประมาณ ${left} ชั่วโมง) ไม่ใช้ demo1234 หน้าแรก X-Ray ประกอบ ตรวจสอบสถานะ เจรจา ผู้ช่วย ${payload.edition === "firm" ? "สำนักงาน" : "ควบคุม"} ห้องบังคับ ฝาแฝด คู่มือ และเลโอ เปิดได้จนกว่าลิงก์จะหมด`}
         />
       </p>
-      <button className="btn btn-primary btn-block" type="button" onClick={enter}>
+      <GuestBriefing edition={payload.edition} expiry={formatExpiry(payload.exp)} />
+      <button className="btn btn-primary btn-block" type="button" onClick={enter} style={{ marginTop: 16 }}>
         {payload.edition === "firm"
           ? <T en="Enter LAW24 Firm" th="เข้า LAW24 Firm" />
           : <T en="Enter LAW24 Corporate" th="เข้า LAW24 Corporate" />}

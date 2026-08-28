@@ -130,6 +130,7 @@ type Store = {
   negotiateLive: NegotiateLive | null;
   aiLive: boolean | null;
   startXray: (name?: string) => void;
+  clearXray: () => void;
   runXray: (opts?: { demo?: boolean; name?: string }) => Promise<"live" | "demo" | "error">;
   setReviewLive: (v: ReviewLive | null) => void;
   setDdLive: (v: DdLive | null) => void;
@@ -517,6 +518,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setCat("C15");
     setOpenF("F-01");
   }, [patchLive]);
+  const clearXray = useCallback(() => {
+    patchLive((p) => ({ ...p, xrayReady: false, xrayLive: null }));
+  }, [patchLive]);
   const runXray = useCallback(async (opts?: { demo?: boolean; name?: string }) => {
     const file = opts?.demo ? null : (peekFile("xray") || peekFile("review"));
     if (!file) {
@@ -604,6 +608,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     negotiateLive: live.negotiateLive ?? null,
     aiLive,
     startXray,
+    clearXray,
     runXray,
     setReviewLive,
     setDdLive,

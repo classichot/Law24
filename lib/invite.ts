@@ -1,5 +1,4 @@
 import type { Edition } from "./model";
-import { landingHref, WORK_HREF } from "./nav";
 
 /** Time-limited demo invites. Default window is 3 days; expired tokens cannot open LAW24.
  *  Rotate INVITE_EPOCH (and redeploy) to cut off every outstanding link at once.
@@ -111,8 +110,39 @@ export function reviewUrl(token: string) {
   return `${origin}${reviewPath(token)}`;
 }
 
-export function inviteLandingHref(edition: Edition) {
-  return edition === "firm" ? landingHref("firm") : WORK_HREF;
+/** After a valid token the guest hydrates the full OS — Home, then every module. */
+export function inviteLandingHref(_edition?: Edition) {
+  return "/home";
+}
+
+export type GuestTourStep = {
+  href: string;
+  en: string;
+  th: string;
+  firm?: boolean;
+  corporate?: boolean;
+};
+
+/** Full-OS reviewer tour. Not an ingest-only shell. */
+export const GUEST_TOUR: GuestTourStep[] = [
+  { href: "/home", en: "Home — every module from the grid (same chrome as a logged-in demo).", th: "หน้าแรก — ทุกโมดูลจากตาราง (โครมเดียวกับสาธิตที่ล็อกอิน)" },
+  { href: "/review?s=xray", en: "X-Ray — drop a PDF/DOCX, or one-click Nimbus CT-291 if you have no file. Read the verdict. Live AI posts /api/ai/xray when a key is on the server.", th: "X-Ray — ลาก PDF/DOCX หรือกดนิมบัส CT-291 ถ้าไม่มีไฟล์ อ่านคำตัดสิน AI สดยิง /api/ai/xray เมื่อมีคีย์บนเซิร์ฟเวอร์" },
+  { href: "/help?s=leio", en: "Leio — ask one question (Ctrl J). Live vs Demo badge stays honest.", th: "เลโอ — ถามหนึ่งข้อ (Ctrl J) ป้ายสด/สาธิตไม่โกหก" },
+  { href: "/assemble?s=lib", en: "Assemble — pick a Thai type, interview, generate Word + PDF. Nothing is signed.", th: "ประกอบ — เลือกประเภทไทย สัมภาษณ์ สร้าง Word + PDF ไม่มีการลงนามแทน" },
+  { href: "/diligence?s=dwar", en: "Diligence — ingest data-room files, open red flags (Charoen is seeded).", th: "ตรวจสอบสถานะ — รับไฟล์ห้องข้อมูล เปิดธงแดง (เจริญมีข้อมูลจริง)" },
+  { href: "/negotiate?s=nstrat", en: "Negotiate — drop markup, walk preferred → walk-away.", th: "เจรจา — ลาก redline เดินจุดยืนที่ต้องการถึงเดินออก" },
+  { href: "/assist?s=ask", en: "Assist — describe a job; the OS names the module.", th: "ผู้ช่วย — อธิบายงาน ระบบชี้โมดูล" },
+  { href: "/practice?s=dash", en: "Practice — clients, assignments, Firm Brain, client room.", th: "สำนักงาน — ลูกค้า งาน สมองสำนักงาน ห้องลูกค้า", firm: true },
+  { href: "/command?s=desk", en: "Control — requests, approvals, outside counsel, board.", th: "ควบคุม — คำขอ อนุมัติ ที่ปรึกษาภายนอก คณะกรรมการ", corporate: true },
+  { href: "/holistic?s=cockpit", en: "Cockpit, Twin, Obligations, Help — seeded Nimbus / Charoen data, same engine.", th: "ห้องบังคับ ฝาแฝด ข้อผูกพัน คู่มือ — ข้อมูลนิมบัส/เจริญ เครื่องยนต์ชุดเดียว" },
+];
+
+export function guestTour(edition: Edition): GuestTourStep[] {
+  return GUEST_TOUR.filter((step) => {
+    if (step.firm && edition !== "firm") return false;
+    if (step.corporate && edition !== "corporate") return false;
+    return true;
+  });
 }
 
 export function mintInvite({
@@ -257,7 +287,8 @@ export function pinMatches(pin: unknown) {
     .trim()
     .toLowerCase()
     .replace(/[\s-]+/g, "");
-  return compact === "7lhost" || compact === "advisor" || compact === "partner" || compact === "firm";
+  const host = HOST_PIN.toLowerCase().replace(/[\s-]+/g, "");
+  return compact === host || compact === "advisor" || compact === "partner" || compact === "firm";
 }
 
 export function saveLastMintUrl(url: string) {

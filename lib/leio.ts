@@ -186,8 +186,8 @@ export function answerLeio(q: string, lang: Lang, edition: Edition = "corporate"
     return {
       role: "ai",
       text: th
-        ? "โต๊ะโฮสต์เป็นหน้าที่ 7L ใช้สร้างลิงก์สาธิต เปิด /host ตั้ง 1–14 วัน (ค่าเริ่มต้น 3) กดสร้าง แล้วส่งเฉพาะ URL นั้น วันหมดอายุถูกเซ็นใน /review/{token} — ใช้บนเครื่องอื่นได้จนกว่าจะหมด คีย์โฮสต์ไม่อยู่หน้าเข้าสู่ระบบสาธารณะ เลโอไม่ลงนามแทน"
-        : "Host desk is the 7L page that mints demo links. Open /host, set 1–14 days (default 3), Generate, then send only that URL. Expiry is signed into /review/{token} — it works on another device until it ends. The host key is never on public login. Leio does not sign.",
+        ? "โต๊ะโฮสต์เป็นหน้าที่ 7L ใช้สร้างลิงก์สาธิต เปิด /host ปลดล็อกด้วยคีย์โฮสต์ (ไม่อยู่หน้าเข้าสู่ระบบสาธารณะ) ตั้ง 1–14 วัน (ค่าเริ่มต้น 3) กดสร้าง แล้วส่งเฉพาะ URL นั้น วันหมดอายุถูกเซ็นใน /review/{token} — ใช้บนเครื่องอื่นได้จนกว่าจะหมด เลโอไม่ลงนามแทน"
+        : "Host desk is the 7L page that mints demo links. Open /host, unlock with the host key (never on public login), set 1–14 days (default 3), Generate, then send only that URL. Expiry is signed into /review/{token} — it works on another device until it ends. Leio does not sign.",
       cites: [
         { label: th ? "โต๊ะโฮสต์" : "Host desk", href: "/host" },
         { label: th ? "วิธีใช้" : "How to use", href: "/help?s=use" },
