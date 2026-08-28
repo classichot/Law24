@@ -77,7 +77,6 @@ export type NegotiateLive = {
 
 export type XrayLivePayload = {
   xray: XrayView;
-  review?: ReviewLive | null;
 };
 
 export type AssistLiveHit = {

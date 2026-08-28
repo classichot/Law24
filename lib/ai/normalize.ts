@@ -1,7 +1,7 @@
 import type { TE } from "@/lib/model";
 import type { XrayView, ReviewLive } from "./types";
 import type { z } from "zod";
-import type { xrayPayload } from "./schema";
+import type { reviewPack, xrayObject } from "./schema";
 
 const LABELS: Record<string, TE> = {
   sign: { t: "ยอมรับ", e: "Accept" },
@@ -25,10 +25,10 @@ function asTE(v: TE | string): TE {
 }
 
 export function normalizeXray(
-  raw: z.infer<typeof xrayPayload>,
+  raw: z.infer<typeof xrayObject>,
   meta: { filename: string; pages: number; ms: number }
-): { xray: XrayView; review: ReviewLive } {
-  const v = raw.xray.verdict;
+): XrayView {
+  const v = raw.verdict;
   const empty = { t: "—", e: "—" };
   const layerNames: TE[] = [
     { t: "ข้อเท็จจริง", e: "Fact" },
@@ -41,24 +41,24 @@ export function normalizeXray(
     { n: "3", k: { t: "ขั้นต่ำ", e: "Minimum" } },
     { n: "4", k: { t: "เดินออก", e: "Walk-away" } },
   ];
-  const layers = layerNames.map((k, i) => raw.xray.layers[i] || { k, v: empty });
-  const ladder = ladderNames.map((row, i) => raw.xray.ladder[i] || { ...row, v: empty });
-  const xray = {
-    ...raw.xray,
+  const layers = layerNames.map((k, i) => raw.layers[i] || { k, v: empty });
+  const ladder = ladderNames.map((row, i) => raw.ladder[i] || { ...row, v: empty });
+  return {
+    ...raw,
     layers,
     ladder,
-    verdictLabel: raw.xray.verdictLabel?.e ? raw.xray.verdictLabel : (LABELS[v] || LABELS.negotiate),
+    verdictLabel: raw.verdictLabel?.e ? raw.verdictLabel : (LABELS[v] || LABELS.negotiate),
     mappedIn: mappedIn(meta.ms),
-    pages: raw.xray.pages || meta.pages || 1,
-    ref: raw.xray.ref || meta.filename.replace(/\.[^.]+$/, "").slice(0, 24),
+    pages: raw.pages || meta.pages || 1,
+    ref: raw.ref || meta.filename.replace(/\.[^.]+$/, "").slice(0, 24),
   } as XrayView;
+}
+
+export function normalizeReview(raw: z.infer<typeof reviewPack>): ReviewLive {
   return {
-    xray,
-    review: {
-      findings: (raw.findings || []).map((f) => ({ ...f, src: asTE(f.src) })),
-      board: raw.board || [],
-      agreement: raw.agreement,
-      recommendation: raw.recommendation,
-    },
+    findings: (raw.findings || []).map((f) => ({ ...f, src: asTE(f.src) })),
+    board: raw.board || [],
+    agreement: raw.agreement,
+    recommendation: raw.recommendation,
   };
 }

@@ -73,7 +73,11 @@ export function Dropzone({
             <div key={`${u.name}-${i}`} className="dropzone-row">
               <span>{u.name}</span>
               <span className="text-muted" style={{ fontSize: 12 }}>{bytes(u.size)}</span>
-              <span className="tag tag-accent">{th ? queued.th : queued.en}</span>
+              <span className="tag tag-accent">
+                {bucket === "xray" && s.xrayReady
+                  ? (th ? "วางแผนที่แล้ว" : "Mapped")
+                  : (th ? queued.th : queued.en)}
+              </span>
             </div>
           ))}
         </div>

@@ -10,6 +10,7 @@
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.17",
     "@ai-sdk/openai": "^2.0.42",
+    "@napi-rs/canvas": "^1.0.8",
     "ai": "^5.0.52",
     "docx": "^9.7.1",
     "lucide-react": "^0.511.0",

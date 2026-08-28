@@ -37,6 +37,10 @@ const THEME_KEY = "law24-theme";
 const LANG_KEY = "law24-lang";
 const EDITION_KEY = "law24-edition";
 const LIVE_KEY = "law24-live";
+/** Stays under the route's maxDuration so the user gets our message, not a gateway timeout. */
+const AI_STAGE_MS = 70_000;
+/** Scanned PDFs OCR then map — needs the longer X-Ray window. */
+const AI_XRAY_MS = 110_000;
 
 type Store = {
   ready: boolean;
@@ -125,6 +129,7 @@ type Store = {
   setActiveAssignment: (id: string) => void;
   xrayReady: boolean;
   xrayLive: XrayView | null;
+  xrayError: string | null;
   reviewLive: ReviewLive | null;
   ddLive: DdLive | null;
   negotiateLive: NegotiateLive | null;
@@ -218,6 +223,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [pendingAsk, setPendingAsk] = useState<string | null>(null);
   const [pendingAskSource, setPendingAskSource] = useState<"leio" | "twin">("leio");
   const [aiLive, setAiLive] = useState<boolean | null>(null);
+  const [xrayError, setXrayError] = useState<string | null>(null);
   const [openF, setOpenF] = useState("F-01");
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("");
@@ -426,6 +432,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   }, [patchLive, edition]);
   const addUploads = useCallback((bucket: string, files: { name: string; size: number }[]) => {
+    if (bucket === "xray") setXrayError(null);
     patchLive((p) => ({
       ...p,
       uploads: [
@@ -503,6 +510,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     patchLive((p) => ({ ...p, practice: { ...p.practice, activeAssignmentId: id } }));
   }, [patchLive]);
   const startXray = useCallback((name?: string) => {
+    setXrayError(null);
     patchLive((p) => ({
       ...p,
       xrayReady: true,
@@ -519,33 +527,48 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setOpenF("F-01");
   }, [patchLive]);
   const clearXray = useCallback(() => {
+    setXrayError(null);
     patchLive((p) => ({ ...p, xrayReady: false, xrayLive: null }));
   }, [patchLive]);
+  /** Second stage. Findings and the board fall back to the house fixture if this fails. */
+  const loadReview = useCallback(async (file: File) => {
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("filename", file.name);
+      const pack = await postAi<ReviewLive>("/api/ai/review", fd, AI_STAGE_MS);
+      if (pack?.findings?.length) patchLive({ reviewLive: pack });
+    } catch {
+      /* the map still stands on its own */
+    }
+  }, [patchLive]);
   const runXray = useCallback(async (opts?: { demo?: boolean; name?: string }) => {
-    const file = opts?.demo ? null : (peekFile("xray") || peekFile("review"));
-    if (!file) {
-      startXray(opts?.name);
+    if (opts?.demo) {
+      startXray(opts.name);
       return "demo" as const;
+    }
+    const file = peekFile("xray") || peekFile("review");
+    if (!file) {
+      setXrayError("That upload is no longer held in this browser session. Drop the file again, or run the Nimbus sample.");
+      return "error" as const;
     }
     const live = await fetchAiStatus();
     if (!live) {
       startXray(file.name);
       return "demo" as const;
     }
+    setXrayError(null);
     try {
       const fd = new FormData();
       fd.append("file", file);
       fd.append("filename", file.name);
-      const pack = await postAi<XrayLivePayload>("/api/ai/xray", fd, 120_000);
-      if (!pack?.xray) {
-        flash("Live X-Ray returned an empty map");
-        return "error" as const;
-      }
+      const pack = await postAi<XrayLivePayload>("/api/ai/xray", fd, AI_XRAY_MS);
+      if (!pack?.xray) throw new Error("Live X-Ray returned an empty map");
       patchLive((p) => ({
         ...p,
         xrayReady: true,
         xrayLive: pack.xray,
-        reviewLive: pack.review || null,
+        reviewLive: null,
         sel: p.sel || DEMO_TYPE_ID,
         matter: p.matter || "nimbus",
         uploads: p.uploads.some((u) => u.bucket === "xray")
@@ -556,13 +579,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setCat("C15");
       setOpenF("F-01");
       fetchAiStatus(true).then(setAiLive);
+      void loadReview(file);
       return "live" as const;
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Live X-Ray failed";
-      flash(msg);
+      setXrayError(err instanceof Error ? err.message : "Live X-Ray failed");
       return "error" as const;
     }
-  }, [flash, patchLive, startXray]);
+  }, [loadReview, patchLive, startXray]);
   const setReviewLive = useCallback((v: ReviewLive | null) => patchLive({ reviewLive: v }), [patchLive]);
   const setDdLive = useCallback((v: DdLive | null) => patchLive({ ddLive: v }), [patchLive]);
   const setNegotiateLive = useCallback((v: NegotiateLive | null) => patchLive({ negotiateLive: v }), [patchLive]);
@@ -603,6 +626,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     practice: live.practice ?? seedPractice(), addClient, addAssignment, setActiveClient, setActiveAssignment,
     xrayReady: live.xrayReady,
     xrayLive: live.xrayLive ?? null,
+    xrayError,
     reviewLive: live.reviewLive ?? null,
     ddLive: live.ddLive ?? null,
     negotiateLive: live.negotiateLive ?? null,

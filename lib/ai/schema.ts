@@ -26,15 +26,15 @@ export const xrayObject = z.object({
     k: te,
     sev: z.enum(["high", "med", "low"]),
     pct: z.number(),
-  })).min(1).max(10),
-  missing: z.array(z.object({ k: te, src: te })).max(8),
-  unusual: z.array(z.object({ k: te, vs: te, src: te })).max(6),
-  money: z.array(z.object({ k: te, v: z.union([z.string(), te]) })).max(6),
-  dates: z.array(z.object({ k: te, v: z.union([z.string(), te]), src: te })).max(6),
-  parties: z.array(z.object({ k: te, v: te })).max(6),
-  laws: z.array(z.object({ k: te, src: te })).max(8),
+  })).min(1).max(8),
+  missing: z.array(z.object({ k: te, src: te })).max(6),
+  unusual: z.array(z.object({ k: te, vs: te, src: te })).max(5),
+  money: z.array(z.object({ k: te, v: z.union([z.string(), te]) })).max(5),
+  dates: z.array(z.object({ k: te, v: z.union([z.string(), te]), src: te })).max(5),
+  parties: z.array(z.object({ k: te, v: te })).max(5),
+  laws: z.array(z.object({ k: te, src: te })).max(6),
   layers: z.array(z.object({ k: te, v: te })).min(1).max(3),
-  redlines: z.array(z.object({ cl: z.string(), text: te })).max(8),
+  redlines: z.array(z.object({ cl: z.string(), text: te })).max(6),
   ladder: z.array(z.object({ n: z.string(), k: te, v: te })).min(1).max(4),
   brief: te,
   email: te,
@@ -66,9 +66,9 @@ export const boardSeatObject = z.object({
   vote: z.string(),
 });
 
-export const xrayPayload = z.object({
-  xray: xrayObject,
-  findings: z.array(findingObject).max(10),
+/** Second stage. Kept out of xrayObject so neither call outgrows the function time limit. */
+export const reviewPack = z.object({
+  findings: z.array(findingObject).min(1).max(8),
   board: z.array(boardSeatObject).min(5).max(7),
   agreement: te,
   recommendation: te,

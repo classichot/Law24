@@ -444,7 +444,7 @@ function renderPdfPages(blocks: PackBlock[]): HTMLCanvasElement[] {
       setFont("800", 18);
       const lines = wrapCanvas(ctx, b.text, maxW);
       ensure(lines.length * 22 + 8);
-      ctx.fillStyle = "#1b2a4a";
+      ctx.fillStyle = "#1c9a6a";
       for (const line of lines) {
         ctx.fillText(line, margin, y);
         y += 22;
@@ -459,10 +459,10 @@ function renderPdfPages(blocks: PackBlock[]): HTMLCanvasElement[] {
       ensure(28);
       y += 10;
       setFont("700", 12);
-      ctx.fillStyle = "#1b2a4a";
+      ctx.fillStyle = "#1c9a6a";
       ctx.fillText(b.text, margin, y);
       y += 6;
-      ctx.strokeStyle = "#1b2a4a";
+      ctx.strokeStyle = "#1c9a6a";
       ctx.lineWidth = 0.8;
       ctx.beginPath();
       ctx.moveTo(margin, y);
@@ -474,7 +474,7 @@ function renderPdfPages(blocks: PackBlock[]): HTMLCanvasElement[] {
       const lines = wrapCanvas(ctx, b.text, maxW);
       ensure(lines.length * 13 + (b.kind === "callout" ? 16 : 8));
       if (b.kind === "callout") {
-        ctx.fillStyle = "#e8ebf0";
+        ctx.fillStyle = "#e7f5ee";
         ctx.fillRect(margin - 6, y - 12, maxW + 12, lines.length * 13 + 16);
       }
       ctx.fillStyle = "#201e1d";
@@ -489,7 +489,7 @@ function renderPdfPages(blocks: PackBlock[]): HTMLCanvasElement[] {
       setFont("400", 10);
       const lines = wrapCanvas(ctx, b.v, maxW - keyW);
       ensure(Math.max(1, lines.length) * 13 + 2);
-      ctx.fillStyle = "#1b2a4a";
+      ctx.fillStyle = "#1c9a6a";
       setFont("700", 10);
       ctx.fillText(`${b.k}:`, margin, y);
       ctx.fillStyle = "#201e1d";
@@ -512,7 +512,7 @@ function renderPdfPages(blocks: PackBlock[]): HTMLCanvasElement[] {
     } else {
       ensure(40);
       setFont("700", 11);
-      ctx.fillStyle = "#1b2a4a";
+      ctx.fillStyle = "#1c9a6a";
       ctx.fillText(`${b.n}  ${b.heading}`, margin, y);
       y += 16;
       setFont("700", 8);

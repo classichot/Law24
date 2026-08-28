@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Kicker, Title } from "@/components/ui";
 import { Dropzone } from "@/components/Dropzone";
@@ -16,24 +16,27 @@ export function XRayScreen() {
   const s = useStore();
   const th = s.lang === "th";
   const [mapping, setMapping] = useState(false);
-  const queued = s.uploads.some((u) => u.bucket === "xray");
+  const [drop, setDrop] = useState(0);
+  const xrayKey = s.uploads.filter((u) => u.bucket === "xray").map((u) => `${u.name}:${u.size}`).join("|");
+  const queued = Boolean(xrayKey);
+  // Re-dropping the identical file leaves xrayKey unchanged, so the drop counter is what re-arms the run.
+  const attemptKey = `${xrayKey}#${drop}`;
+  const attempted = useRef<string | null>(null);
 
   useEffect(() => {
-    if (s.xrayReady) return;
-    if (!queued) return;
-    let cancelled = false;
-    setMapping(true);
-    s.runXray().then((kind) => {
-      if (cancelled) return;
+    if (s.xrayReady) {
       setMapping(false);
+      return;
+    }
+    if (!xrayKey || attempted.current === attemptKey) return;
+    attempted.current = attemptKey;
+    setMapping(true);
+    void s.runXray().then((kind) => {
       if (kind === "live") {
         s.flash(th ? "แผนที่สัญญาเสร็จ — AI สด (ทนายเป็นผู้ยืนยัน)" : "Contract mapped — live AI (counsel confirms)");
       }
-    }).catch(() => {
-      if (!cancelled) setMapping(false);
-    });
-    return () => { cancelled = true; };
-  }, [s.uploads, s.xrayReady]);
+    }).finally(() => setMapping(false));
+  }, [attemptKey, xrayKey, s.xrayReady, s.runXray, s.flash, th]);
 
   async function runDemo() {
     setMapping(true);
@@ -43,6 +46,7 @@ export function XRayScreen() {
   }
 
   async function retryMap() {
+    attempted.current = attemptKey;
     setMapping(true);
     try {
       const kind = await s.runXray();
@@ -73,17 +77,32 @@ export function XRayScreen() {
           </div>
         ) : (
           <>
+            {s.xrayError && (
+              <div className="xray-fail">
+                <strong><T en="The live X-Ray did not complete" th="X-Ray สดไม่สำเร็จ" /></strong>
+                <p>{s.xrayError}</p>
+                <p className="text-muted" style={{ fontSize: 12 }}>
+                  <T
+                    en="Nothing was mapped. Retry, or run the Nimbus sample — the sample is fixture data, not your document."
+                    th="ยังไม่มีการวางแผนที่ ลองใหม่ หรือใช้ตัวอย่างนิมบัส — ตัวอย่างเป็นข้อมูลสมมติ ไม่ใช่เอกสารของคุณ"
+                  />
+                </p>
+              </div>
+            )}
             <Dropzone
               bucket="xray"
               accept={CONTRACT_ACCEPT}
               title={<T en="Drop a Thai or English agreement" th="ลากสัญญาไทยหรืออังกฤษมาวาง" />}
-              hint={<T en="PDF or DOCX. One document. Facts, interpretations and suggested actions stay distinct." th="PDF หรือ DOCX หนึ่งฉบับ ข้อเท็จจริง การตีความ และการกระทำที่แนะนำแยกกันชัด" />}
+              hint={<T en="PDF or DOCX. Scanned PDFs are read with OCR. Facts, interpretations and suggested actions stay distinct." th="PDF หรือ DOCX สแกนแล้วระบบอ่านด้วย OCR ข้อเท็จจริง การตีความ และการกระทำที่แนะนำแยกกันชัด" />}
               multiple={false}
+              onAfter={() => setDrop((n) => n + 1)}
             />
             <div className="stack-actions" style={{ marginTop: 16 }}>
               {queued && (
                 <button type="button" className="btn btn-primary" onClick={retryMap}>
-                  <T en="Map uploaded contract" th="วางแผนที่สัญญาที่อัปโหลด" />
+                  {s.xrayError
+                    ? <T en="Retry live X-Ray" th="ลอง X-Ray สดอีกครั้ง" />
+                    : <T en="Map uploaded contract" th="วางแผนที่สัญญาที่อัปโหลด" />}
                 </button>
               )}
               <button type="button" className="btn btn-primary" onClick={runDemo}>
@@ -124,9 +143,9 @@ export function XRayScreen() {
         compact
         accept={CONTRACT_ACCEPT}
         title={<T en="Map another PDF or DOCX" th="วางแผนที่ PDF หรือ DOCX อีกฉบับ" />}
-        hint={<T en="Replaces this map. Live AI when the badge says Live; otherwise the Nimbus fixture." th="แทนที่แผนที่นี้ AI สดเมื่อป้ายบอกสด ไม่เช่นนั้นใช้ข้อมูลนิมบัส" />}
+        hint={<T en="Replaces this map. Scanned PDFs are read with OCR. Live AI when the badge says Live; otherwise the Nimbus fixture." th="แทนที่แผนที่นี้ PDF สแกนอ่านด้วย OCR AI สดเมื่อป้ายบอกสด ไม่เช่นนั้นใช้ข้อมูลนิมบัส" />}
         multiple={false}
-        onAfter={() => s.clearXray()}
+        onAfter={() => { setDrop((n) => n + 1); s.clearXray(); }}
       />
       <div className="stack-actions" style={{ margin: "10px 0 22px" }}>
         <button type="button" className="btn btn-ghost" onClick={runDemo}>

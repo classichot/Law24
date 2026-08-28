@@ -5,16 +5,16 @@
   --color-surface: #eae9e9;
   --color-text: #201e1d;
   --color-divider: color-mix(in srgb, #201e1d 40%, transparent);
-  --color-accent: #1b2a4a;
-  --color-accent-100: #e8ebf0;
-  --color-accent-200: #cfd6e2;
-  --color-accent-300: #8a96ad;
-  --color-accent-400: #4a5a78;
-  --color-accent-500: #1b2a4a;
-  --color-accent-600: #152238;
-  --color-accent-700: #101a2c;
-  --color-accent-800: #0c1422;
-  --color-accent-900: #080e18;
+  --color-accent: #1c9a6a;
+  --color-accent-100: #e7f5ee;
+  --color-accent-200: #c5e8d6;
+  --color-accent-300: #7ebe9c;
+  --color-accent-400: #3da87a;
+  --color-accent-500: #1c9a6a;
+  --color-accent-600: #0e7a54;
+  --color-accent-700: #0b5f42;
+  --color-accent-800: #084832;
+  --color-accent-900: #053224;
   --color-neutral-100: #f8f4f4;
   --color-neutral-200: #eae7e7;
   --color-neutral-300: #d7d3d3;
@@ -60,16 +60,16 @@ html[data-theme="dark"] {
   --color-surface: #141417;
   --color-text: #ecebe9;
   --color-divider: #26262b;
-  --color-accent: #8fa3c4;
-  --color-accent-100: #141820;
-  --color-accent-200: #1c2433;
-  --color-accent-300: #2a3850;
-  --color-accent-400: #3d5278;
-  --color-accent-500: #5a7194;
-  --color-accent-600: #6d82a8;
-  --color-accent-700: #a8b8d0;
-  --color-accent-800: #c5d0e0;
-  --color-accent-900: #e4e9f0;
+  --color-accent: #4ebe8c;
+  --color-accent-100: #101c17;
+  --color-accent-200: #162820;
+  --color-accent-300: #1f3d30;
+  --color-accent-400: #2c5c47;
+  --color-accent-500: #3a8a66;
+  --color-accent-600: #3d9a72;
+  --color-accent-700: #7dcc9e;
+  --color-accent-800: #a8e0c0;
+  --color-accent-900: #d4f0e2;
   --color-ok: #7d9a7a;
   --color-on-accent: #0b0b0c;
   --color-intel: #7ba3f0;
@@ -1136,7 +1136,7 @@ a.filter-chip { text-decoration: none; }
 .os-ask:hover { border-color: var(--color-accent); }
 .os-ask span { font-size: 12px; color: var(--color-neutral-600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .os-online { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--color-neutral-600); }
-.os-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; flex: none; }
+.os-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-accent); flex: none; }
 .os-user { display: flex; align-items: center; gap: 9px; padding-left: 12px; border-left: 1px solid var(--color-neutral-400); }
 .os-avatar {
   width: 28px; height: 28px; background: var(--color-neutral-900); color: var(--color-bg);
@@ -1449,7 +1449,7 @@ a.filter-chip { text-decoration: none; }
   flex-direction: column;
 }
 .gate-hero .login-mark { color: #f3f2f2; font-size: 72px; }
-.gate-hero .os-brand-24 { color: #7ba3f0; }
+.gate-hero .os-brand-24 { color: #5ec99a; }
 .gate-head { margin-bottom: 36px; }
 .gate-line {
   margin: 12px 0 0;
@@ -1521,8 +1521,8 @@ a.filter-chip { text-decoration: none; }
   white-space: nowrap;
 }
 .os-ai-badge.live {
-  border-color: var(--color-ok, #1f7a4d);
-  color: var(--color-ok, #1f7a4d);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 .xray-map {
   position: relative;
@@ -1538,6 +1538,13 @@ a.filter-chip { text-decoration: none; }
   animation: xray-scan 1.4s linear infinite;
 }
 @keyframes xray-scan { from { top: 0; } to { top: 100%; } }
+.xray-fail {
+  border: 2px solid var(--color-hot);
+  background: color-mix(in srgb, var(--color-hot) 8%, var(--color-surface));
+  padding: 14px 18px;
+  margin-bottom: 16px;
+}
+.xray-fail p { margin: 6px 0 0; font-size: 13px; line-height: 1.5; }
 .xray-verdict {
   border: 2px solid var(--color-warn);
   padding: 14px 18px;
