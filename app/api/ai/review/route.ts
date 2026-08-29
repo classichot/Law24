@@ -50,7 +50,7 @@ Keep every field to one tight sentence. Answer only the fields in the schema —
     const [found, seated] = await Promise.all([
       stage(() => generateStructured(
         reviewFindings,
-        `Return 4-6 issue cards with evidence quotes in src and why, and rec = amend|docs|reject|fallback|clarify|escalate|accept.\n\n${source}`,
+        `Return the four most material issue cards, with evidence quotes in src and why, and rec = amend|docs|reject|fallback|clarify|escalate|accept.\n\n${source}`,
         undefined,
         files,
       )),
