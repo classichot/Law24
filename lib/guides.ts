@@ -297,6 +297,11 @@ export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
     do: P("เลือกงาน ไล่ขั้น และกดเปิดในเครื่องยนต์เมื่อจะทำต่อ", "Pick an assignment, walk the steps, and open the engine to continue"),
     rule: P("เส้นทางต้องครบ — ขาดขั้นรับเรื่องถือว่ายังไม่เปิดงาน", "The trail must be complete — missing intake means the assignment is not open"),
   },
+  "assemble/intake": {
+    why: P("รับข้อเท็จจริง ข้อค้นพบ และคำสั่ง redline จาก Review พร้อมแหล่ง", "Ingest facts, findings and redline instructions from Review with their sources"),
+    do: P("เลือกเฉพาะข้อมูลที่ต้องควบคุมร่าง แล้วรับเข้า Assembly", "Select the information that must control the draft, then ingest it"),
+    rule: P("ห้ามคัดข้อค้นพบเป็นถ้อยคำโดยไม่รักษาแหล่งและท่าที", "Do not copy a finding into drafting words without its source and posture"),
+  },
   "assemble/lib": {
     why: P("คลัง 500 ประเภทเป็นประตูเข้าเครื่องยนต์ประกอบสัญญา", "The 500-type library is the door into assembly"),
     do: P("กรองหมวด เปิดประเภทที่ถูกเรื่อง — เดโมคือ CT-284 SaaS", "Filter the category and open the right type — the demo is CT-284 SaaS"),
@@ -318,9 +323,14 @@ export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
     rule: P("กฎหมายไทยเป็นค่าเริ่มต้น ต้องมีเหตุจึงจะสละได้", "Thai law is the default; waiver needs a recorded reason"),
   },
   "assemble/draft": {
-    why: P("ร่างพร้อมอนุมัติภายใน เส้นทาง e-Sign และชุด DOCX/PDF", "The draft waits on internal approval, e-Sign route and the DOCX/PDF pack"),
-    do: P("ปรับข้อมาตรฐานถ้าต้องขยับ อนุมัติ DPO แล้วสร้างชุด — ห้ามส่งคู่สัญญาถ้า pack ยังไม่ถูกสร้าง", "Adjust a standard clause if it must move, approve as DPO, then generate the pack — do not send counterparty paper without it"),
-    rule: P("GC + CIO + DPO ครบก่อนออกชุด", "GC, CIO and DPO before the pack issues"),
+    why: P("ร่างแสดงข้อมูล Review ที่ใช้บังคับ ก่อนอนุมัติและสร้างชุด", "The draft shows the Review inputs in force before approval and pack generation"),
+    do: P("ตรวจแหล่ง อนุมัติ DPO สร้างชุด แล้วเปิดด่านพร้อมส่งตรวจ", "Check sources, approve as DPO, generate the pack, then open review preflight"),
+    rule: P("ห้ามส่งลงนามก่อนร่างที่ประกอบแล้วผ่าน Contract Review ใหม่", "Do not send for signature before the assembled draft receives a fresh Contract Review"),
+  },
+  "assemble/areview": {
+    why: P("ด่านพร้อมส่งตรวจรักษาแหล่งจาก Review แล้วเปิดงานตรวจฉบับที่ประกอบ", "Review preflight preserves Review sources and opens a review matter for the assembled draft"),
+    do: P("ปิดทุกแถว OPEN แล้วส่งร่างเข้า Contract Review", "Close every OPEN row, then send the draft to Contract Review"),
+    rule: P("metadata ไม่ใช่เอกสาร — ต้องอัปโหลด DOCX/PDF ที่สร้างเพื่อทำ X-Ray ใหม่", "Metadata is not the document — upload the generated DOCX/PDF for a fresh X-Ray"),
   },
   "assemble/bilingual": {
     why: P("ร่างคู่ภาษาชี้จุดที่คำแปลสร้างความหมายทางกฎหมายคนละอย่าง", "The bilingual mirror flags where translation changes legal meaning"),

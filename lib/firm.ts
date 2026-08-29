@@ -118,9 +118,9 @@ export const ENGAGEMENT: Record<EngagementTrack, {
     th: "ร่างสัญญา",
     tagEn: "Draft",
     tagTh: "ร่าง",
-    why: { t: "คลังประเภท · สัมภาษณ์ · ประกอบข้อ · ร่างคู่ภาษา", e: "Type library · interview · clause assembly · bilingual draft" },
-    record: { t: "บันทึกงานร่าง — ประเภท ร่าง และเส้นทางอนุมัติ", e: "Drafting record — type, draft and approval trail" },
-    href: "/assemble?s=lib",
+    why: { t: "รับข้อมูล Review · คลังประเภท · สัมภาษณ์ · ประกอบข้อ · ส่งกลับตรวจ", e: "Review intake · type library · interview · clause assembly · back to Review" },
+    record: { t: "บันทึกงานร่าง — ข้อมูลต้นทาง ประเภท ร่าง และเส้นทางตรวจ", e: "Drafting record — source intake, type, draft and review trail" },
+    href: "/assemble?s=intake",
     firmHref: "/practice?s=edraft",
     recordHref: "/practice?s=assign&eng=assemble",
   },
@@ -172,8 +172,8 @@ export const HREF_FOR_TYPE: Record<AssignmentType, string> = {
   diligence: "/diligence?s=deal",
   negotiate: "/negotiate?s=nladder",
   obligations: "/obligations?s=oreg",
-  assemble: "/assemble?s=lib",
-  advisory: "/assemble?s=lib",
+  assemble: "/assemble?s=intake",
+  advisory: "/assemble?s=intake",
 };
 
 /** Open the engine that belongs to this engagement track. */

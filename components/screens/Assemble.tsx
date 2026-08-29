@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
@@ -13,6 +14,7 @@ import { downloadAssemblePack } from "@/lib/pack";
 import { Dropzone } from "@/components/Dropzone";
 import { StandardClause } from "@/components/StandardClause";
 import { houseStandard } from "@/lib/clauses";
+import { acceptedAssemblyInputs, assemblyInputsOf } from "@/lib/assembly";
 
 function pinDemo(rows: typeof TAX_LIST, sel: string) {
   const pinned = rows.find((r) => r.id === sel) || rows.find((r) => r.id === DEMO_TYPE_ID);
@@ -21,13 +23,102 @@ function pinDemo(rows: typeof TAX_LIST, sel: string) {
 }
 
 export function AssembleScreen({ screen }: { screen: string }) {
+  if (screen === "intake") return <ReviewIntake />;
   if (screen === "lib") return <Library />;
   if (screen === "type") return <TypeDetail />;
   if (screen === "iv") return <Interview />;
   if (screen === "asm") return <Assembly />;
   if (screen === "draft") return <Draft />;
+  if (screen === "areview") return <ReviewReady />;
   if (screen === "bilingual") return <Bilingual />;
   return <Library />;
+}
+
+function ReviewIntake() {
+  const s = useStore();
+  const th = s.lang === "th";
+  const rows = assemblyInputsOf(s.xrayLive, s.reviewLive);
+  const imported = acceptedAssemblyInputs(s.assembly);
+  const [selected, setSelected] = useState<string[]>(
+    imported.length ? imported.map((x) => x.id) : rows.map((x) => x.id),
+  );
+  const chosen = rows.filter((x) => selected.includes(x.id));
+
+  return (
+    <div className="pad-page">
+      <Kicker>assemble · review intake</Kicker>
+      <Title><T en="Ingest Review before drafting" th="รับข้อมูลจาก Review ก่อนร่าง" /></Title>
+      <p className="page-sub">
+        <T
+          en="Bring facts, findings, missing items and approved redline instructions into Assembly with their sources. Review evidence becomes drafting control — not copied prose."
+          th="นำข้อเท็จจริง ข้อค้นพบ รายการที่ขาด และคำสั่ง redline ที่อนุมัติแล้วเข้า Assembly พร้อมแหล่ง Review กลายเป็นตัวควบคุมการร่าง ไม่ใช่ข้อความคัดลอก"
+        />
+      </p>
+
+      {s.xrayLive ? (
+        <>
+          <div className="callout eng-card eng-draft" style={{ margin: "18px 0" }}>
+            <strong>{s.xrayLive.ref} · {L(s.lang, s.xrayLive.doc)}</strong>
+            <p className="text-muted" style={{ margin: "6px 0 0" }}>
+              {rows.length} <T en="source-backed inputs available" th="รายการชี้แหล่งพร้อมรับเข้า" />
+              {s.reviewLive ? ` · ${s.reviewLive.findings.length} ${th ? "ข้อค้นพบจากคณะตรวจ" : "Review findings"}` : ""}
+            </p>
+          </div>
+          <div className="assemble-intake-list">
+            {rows.map((r) => (
+              <label key={r.id} className="assemble-intake-row">
+                <input
+                  type="checkbox"
+                  checked={selected.includes(r.id)}
+                  onChange={() => setSelected((v) => v.includes(r.id) ? v.filter((id) => id !== r.id) : [...v, r.id])}
+                />
+                <span>
+                  <span style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                    <span className="mono">{r.id}</span>
+                    <span className={r.priority === "must" ? "tag tag-accent" : "tag tag-neutral"}>{r.priority}</span>
+                    <span className="tag tag-outline">{r.kind}</span>
+                  </span>
+                  <strong style={{ display: "block", marginTop: 8 }}>{L(s.lang, r.title)}</strong>
+                  <span style={{ display: "block", marginTop: 5 }}>{L(s.lang, r.value)}</span>
+                  <span className="text-muted" style={{ display: "block", marginTop: 6, fontSize: 12 }}>
+                    <T en="Source" th="แหล่ง" /> · {L(s.lang, r.source)}
+                  </span>
+                </span>
+                <Link href={r.href} onClick={(e) => e.stopPropagation()}><T en="Open evidence" th="เปิดหลักฐาน" /> →</Link>
+              </label>
+            ))}
+          </div>
+          <div className="stack-actions" style={{ marginTop: 18 }}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={!chosen.length}
+              onClick={() => {
+                s.ingestReviewToAssembly(chosen, s.xrayLive!.ref);
+                s.flash(th ? `รับเข้า ${chosen.length} รายการแล้ว — พร้อมเลือกประเภท` : `${chosen.length} inputs ingested — ready to select a type`);
+              }}
+            >
+              <T en="Ingest selected into Assembly" th="รับรายการที่เลือกเข้า Assembly" />
+            </button>
+            <Link href="/assemble?s=lib" className="btn btn-secondary"><T en="Continue to contract type" th="ไปเลือกประเภทสัญญา" /></Link>
+          </div>
+        </>
+      ) : (
+        <div className="callout" style={{ margin: "18px 0" }}>
+          <strong><T en="No Review map is connected" th="ยังไม่มีแผนที่ Review ที่เชื่อมอยู่" /></strong>
+          <p><T en="Map the source agreement in Contract Review, or attach a term sheet and source papers below." th="วางแผนที่สัญญาต้นทางใน Contract Review หรือแนบ term sheet และเอกสารต้นทางด้านล่าง" /></p>
+          <div className="stack-actions">
+            <Link href="/review?s=xray" className="btn btn-primary"><T en="Open Contract Review" th="เปิด Contract Review" /></Link>
+          </div>
+        </div>
+      )}
+      <Dropzone
+        bucket="assemble"
+        title={<T en="Attach term sheet, instructions or source papers" th="แนบ term sheet คำสั่ง หรือเอกสารต้นทาง" />}
+        hint={<T en="These supplement Review; they do not replace source-backed findings." th="เอกสารเหล่านี้เสริม Review ไม่แทนข้อค้นพบที่ชี้แหล่ง" />}
+      />
+    </div>
+  );
 }
 
 function Library() {
@@ -350,6 +441,7 @@ function Draft() {
   const s = useStore();
   const th = s.lang === "th";
   const draft = FX.interview.draft;
+  const inputs = acceptedAssemblyInputs(s.assembly);
   return (
     <div className="pad-page grid-split">
       <div>
@@ -366,6 +458,31 @@ function Draft() {
         ))}
       </div>
       <aside>
+        <h5><T en="Review inputs in force" th="ข้อมูล Review ที่ใช้บังคับ" /></h5>
+        {inputs.length ? (
+          <>
+            <div className="tag tag-accent" style={{ marginBottom: 8 }}>
+              {s.assembly.sourceRef} · {inputs.length} <T en="inputs" th="รายการ" />
+            </div>
+            {inputs.slice(0, 6).map((x) => (
+              <div key={x.id} style={{ padding: "9px 0", borderBottom: "1px solid var(--color-divider)" }}>
+                <div className="mono" style={{ fontSize: 10 }}>{x.id} · {x.priority}</div>
+                <div style={{ fontWeight: 700, marginTop: 4 }}>{L(s.lang, x.title)}</div>
+                <div className="text-muted" style={{ fontSize: 11, marginTop: 3 }}>{L(s.lang, x.source)}</div>
+              </div>
+            ))}
+            <Link href="/assemble?s=intake" className="btn btn-secondary btn-block" style={{ marginTop: 10 }}>
+              <T en="Review intake" th="ตรวจข้อมูลนำเข้า" />
+            </Link>
+          </>
+        ) : (
+          <div className="callout" style={{ marginBottom: 16 }}>
+            <T en="No source-backed Review inputs are locked into this draft yet." th="ยังไม่มีข้อมูล Review ที่ชี้แหล่งถูกล็อกในร่างนี้" />
+            <Link href="/assemble?s=intake" className="btn btn-secondary btn-block" style={{ marginTop: 10 }}>
+              <T en="Ingest Review" th="รับข้อมูล Review" />
+            </Link>
+          </div>
+        )}
         <h5><T en="Document package" th="ชุดเอกสารที่จะสร้าง" /></h5>
         {[{ k: th ? "สัญญาหลัก — บริการ SaaS" : "Main agreement — SaaS", v: "14 pp." }, { k: "Annex A — SLA", v: "4 pp." }, { k: "Annex B — DPA", v: "6 pp." }, { k: "Annex C — transfer", v: "3 pp." }].map((p) => (
           <div key={p.k} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--color-divider)" }}><span>{p.k}</span><span className="mono">{p.v}</span></div>
@@ -466,7 +583,94 @@ function Draft() {
         >
           {s.signingIssued ? <T en="Signing path issued" th="ส่งเส้นทางลงนามแล้ว" /> : <T en="Identity-assured e-signature" th="ลงนามอิเล็กทรอนิกส์ระดับยืนยันตัวตน" />}
         </button>
+        <Link href="/assemble?s=areview" className="btn btn-secondary btn-block" style={{ marginTop: 8 }}>
+          <T en="Preflight for Contract Review" th="ตรวจความพร้อมก่อนส่ง Contract Review" />
+        </Link>
       </aside>
+    </div>
+  );
+}
+
+function ReviewReady() {
+  const s = useStore();
+  const router = useRouter();
+  const th = s.lang === "th";
+  const c = TAX_LIST.find((r) => r.id === s.sel) || TAX_LIST[0];
+  const inputs = acceptedAssemblyInputs(s.assembly);
+  const draftTitle = `${th ? c.nameTh : c.nameEn} — ${s.assembly.sourceRef || c.id}`;
+  const checks = [
+    {
+      k: <T en="Review information ingested" th="รับข้อมูล Review แล้ว" />,
+      ok: inputs.length > 0,
+      n: inputs.length ? `${inputs.length} · ${s.assembly.sourceRef}` : (th ? "ยังไม่มี" : "None"),
+    },
+    {
+      k: <T en="Commercial interview confirmed" th="ยืนยันสัมภาษณ์เชิงพาณิชย์" />,
+      ok: s.interviewDone,
+      n: s.interviewDone ? (th ? "ล็อกแล้ว" : "Locked") : (th ? "ยังไม่ยืนยัน" : "Not confirmed"),
+    },
+    {
+      k: <T en="Policy conflict resolved" th="ตัดสินข้อขัดนโยบาย" />,
+      ok: Boolean(s.conflictChoice),
+      n: s.conflictChoice || (th ? "ยังไม่ตัดสิน" : "Open"),
+    },
+    {
+      k: <T en="Internal approval" th="การอนุมัติภายใน" />,
+      ok: s.dpoApproved,
+      n: s.dpoApproved ? "DPO approved" : "DPO pending",
+    },
+    {
+      k: <T en="Review copy generated" th="สร้างชุดสำหรับตรวจ" />,
+      ok: s.packGenerated,
+      n: s.packGenerated ? "DOCX + PDF" : (th ? "ยังไม่สร้าง" : "Not generated"),
+    },
+  ];
+  const ready = checks.every((x) => x.ok);
+
+  return (
+    <div className="pad-page">
+      <Kicker>assemble · ready for review</Kicker>
+      <Title><T en="Assembly → Contract Review" th="Assembly → Contract Review" /></Title>
+      <p className="page-sub">
+        <T
+          en="Preflight the assembled draft, preserve its Review sources, then open a new contract-review assignment. The draft is reviewed before any signing path."
+          th="ตรวจความพร้อมของร่าง รักษาแหล่งจาก Review แล้วเปิดงานตรวจสัญญาใหม่ ร่างต้องผ่านการตรวจก่อนเส้นทางลงนาม"
+        />
+      </p>
+      <div className="review-preflight">
+        {checks.map((x, i) => (
+          <div key={i} className="review-preflight-row">
+            <span className={x.ok ? "tag tag-neutral" : "tag tag-accent"}>{x.ok ? "READY" : "OPEN"}</span>
+            <strong>{x.k}</strong>
+            <span className="text-muted">{x.n}</span>
+          </div>
+        ))}
+      </div>
+      <div className="callout" style={{ marginTop: 18 }}>
+        <strong><T en="Review handoff" th="ส่งต่องานตรวจ" /></strong>
+        <p>{draftTitle}</p>
+        <p className="text-muted" style={{ fontSize: 12 }}>
+          <T
+            en="LAW24 opens the Firm review record and carries the source manifest. Upload the generated DOCX/PDF there for a fresh X-Ray; the engine does not pretend that metadata is the document."
+            th="LAW24 เปิดบันทึกงานตรวจของสำนักงานและพารายการแหล่งไปด้วย ให้อัปโหลด DOCX/PDF ที่สร้างแล้วเพื่อทำ X-Ray ใหม่ ระบบไม่แสร้งว่า metadata คือเอกสาร"
+          />
+        </p>
+      </div>
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          disabled={!ready}
+          onClick={() => {
+            s.sendAssemblyToReview(draftTitle);
+            s.flash(th ? "เปิดงาน Contract Review แล้ว — อัปโหลดชุดที่สร้างเพื่อ X-Ray" : "Contract Review opened — upload the generated pack for X-Ray");
+            router.push("/review?s=xray");
+          }}
+        >
+          <T en="Send assembled draft to Review" th="ส่งร่างที่ประกอบแล้วเข้า Review" />
+        </button>
+        <Link href="/assemble?s=draft" className="btn btn-secondary"><T en="Back to draft" th="กลับร่าง" /></Link>
+      </div>
     </div>
   );
 }

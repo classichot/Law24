@@ -1662,6 +1662,25 @@ button.xray-layer { font: inherit; text-align: left; cursor: pointer; width: 100
 }
 .wow-hops { display: flex; flex-wrap: wrap; gap: 8px; }
 .deal-page .issue-card h4 { font-size: 16px; margin-bottom: 6px; }
+.assemble-intake-list { display: grid; gap: 8px; }
+.assemble-intake-row {
+  display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 14px; align-items: start;
+  padding: 16px; border: 2px solid var(--color-divider); background: var(--color-bg); cursor: pointer;
+}
+.assemble-intake-row:hover { border-color: var(--eng-draft); background: var(--color-surface); }
+.assemble-intake-row input { margin-top: 4px; accent-color: var(--eng-draft); }
+.assemble-intake-row > a { font-size: 12px; white-space: nowrap; }
+.review-preflight { border-top: 2px solid var(--color-divider); }
+.review-preflight-row {
+  display: grid; grid-template-columns: 72px minmax(180px, 1fr) minmax(180px, 1fr);
+  gap: 14px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--color-divider);
+}
+@media (max-width: 720px) {
+  .assemble-intake-row { grid-template-columns: 20px minmax(0, 1fr); }
+  .assemble-intake-row > a { grid-column: 2; }
+  .review-preflight-row { grid-template-columns: 72px minmax(0, 1fr); }
+  .review-preflight-row > .text-muted { grid-column: 2; }
+}
 
 @media print {
   aside, header, .no-print, .bottom-nav, .sidebar, .copilot, .os-topbar, .os-invite, .os-modes, .os-subnav, .demo-bar, .guide-rail, .screen-nav, .cmdk { display: none !important; }
