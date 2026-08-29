@@ -106,8 +106,7 @@ export async function generateStructured<S extends z.ZodType>(
       schemaDescription: "LAW24 structured legal output. Cite evidence. Never sign.",
       system,
       ...(content ? { messages: [{ role: "user" as const, content }] } : { prompt }),
-      mode: "json",
-      maxRetries: 1,
+      maxRetries: 2,
       abortSignal: AbortSignal.timeout(TIMEOUT_MS),
     });
     return object as z.infer<S>;

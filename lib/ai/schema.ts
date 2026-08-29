@@ -1,7 +1,12 @@
 import { z } from "zod";
 
 export const te = z.object({ t: z.string(), e: z.string() });
+/** Bare string or TE — generateObject JSON-schema stays valid; normalizeXray folds strings. */
+export const teLoose = z.union([te, z.string()]);
 export const cite = z.object({ label: z.string(), href: z.string() });
+
+const verdictLoose = z.union([z.enum(["sign", "negotiate", "reject"]), z.string()]);
+const sevLoose = z.union([z.enum(["high", "med", "low"]), z.string()]);
 
 const PLAYBOOKS = [
   "practice", "assembly", "itcloud", "decision", "dd", "mandate",
@@ -14,30 +19,30 @@ const MODES = [
 ] as const;
 
 export const xrayObject = z.object({
-  doc: te,
-  ref: z.string(),
-  pages: z.number(),
-  langs: te,
-  verdict: z.enum(["sign", "negotiate", "reject"]),
-  verdictLabel: te,
-  verdictWhy: te,
+  doc: teLoose,
+  ref: z.string().optional().default(""),
+  pages: z.coerce.number().optional().default(1),
+  langs: teLoose,
+  verdict: verdictLoose,
+  verdictLabel: teLoose,
+  verdictWhy: teLoose,
   heatmap: z.array(z.object({
-    cl: z.string(),
-    k: te,
-    sev: z.enum(["high", "med", "low"]),
-    pct: z.number(),
-  })).min(1).max(8),
-  missing: z.array(z.object({ k: te, src: te })).max(6),
-  unusual: z.array(z.object({ k: te, vs: te, src: te })).max(5),
-  money: z.array(z.object({ k: te, v: z.union([z.string(), te]) })).max(5),
-  dates: z.array(z.object({ k: te, v: z.union([z.string(), te]), src: te })).max(5),
-  parties: z.array(z.object({ k: te, v: te })).max(5),
-  laws: z.array(z.object({ k: te, src: te })).max(6),
-  layers: z.array(z.object({ k: te, v: te })).min(1).max(3),
-  redlines: z.array(z.object({ cl: z.string(), text: te })).max(6),
-  ladder: z.array(z.object({ n: z.string(), k: te, v: te })).min(1).max(4),
-  brief: te,
-  email: te,
+    cl: z.coerce.string(),
+    k: teLoose,
+    sev: sevLoose,
+    pct: z.coerce.number(),
+  })).max(8).optional().default([]),
+  missing: z.array(z.object({ k: teLoose, src: teLoose })).max(6).optional().default([]),
+  unusual: z.array(z.object({ k: teLoose, vs: teLoose, src: teLoose })).max(5).optional().default([]),
+  money: z.array(z.object({ k: teLoose, v: z.union([z.string(), teLoose]) })).max(5).optional().default([]),
+  dates: z.array(z.object({ k: teLoose, v: z.union([z.string(), teLoose]), src: teLoose })).max(5).optional().default([]),
+  parties: z.array(z.object({ k: teLoose, v: teLoose })).max(5).optional().default([]),
+  laws: z.array(z.object({ k: teLoose, src: teLoose })).max(6).optional().default([]),
+  layers: z.array(z.object({ k: teLoose, v: teLoose })).max(3).optional().default([]),
+  redlines: z.array(z.object({ cl: z.coerce.string(), text: teLoose })).max(6).optional().default([]),
+  ladder: z.array(z.object({ n: z.coerce.string(), k: teLoose, v: teLoose })).max(4).optional().default([]),
+  brief: teLoose,
+  email: teLoose,
 });
 
 export const findingObject = z.object({

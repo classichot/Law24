@@ -19,16 +19,32 @@ export function mappedIn(ms: number): TE {
   };
 }
 
-function asTE(v: TE | string): TE {
+function asTE(v: TE | string | undefined | null): TE {
+  if (!v) return { t: "—", e: "—" };
   if (typeof v === "string") return { t: v, e: v };
-  return v;
+  return { t: v.t || v.e || "—", e: v.e || v.t || "—" };
+}
+
+function asVerdict(v: unknown): "sign" | "negotiate" | "reject" {
+  const s = String(v || "").toLowerCase();
+  if (/(reject|not sign|ห้าม|walk)/.test(s)) return "reject";
+  if (/(accept|sign|ยอมรับ)/.test(s) && !/not|ห้าม/.test(s)) return "sign";
+  if (s === "sign" || s === "negotiate" || s === "reject") return s;
+  return "negotiate";
+}
+
+function asSev(v: unknown): "high" | "med" | "low" {
+  const s = String(v || "").toLowerCase();
+  if (s.startsWith("h")) return "high";
+  if (s.startsWith("l")) return "low";
+  return "med";
 }
 
 export function normalizeXray(
   raw: z.infer<typeof xrayObject>,
   meta: { filename: string; pages: number; ms: number }
 ): XrayView {
-  const v = raw.verdict;
+  const v = asVerdict(raw.verdict);
   const empty = { t: "—", e: "—" };
   const layerNames: TE[] = [
     { t: "ข้อเท็จจริง", e: "Fact" },
@@ -41,13 +57,26 @@ export function normalizeXray(
     { n: "3", k: { t: "ขั้นต่ำ", e: "Minimum" } },
     { n: "4", k: { t: "เดินออก", e: "Walk-away" } },
   ];
-  const layers = layerNames.map((k, i) => raw.layers[i] || { k, v: empty });
-  const ladder = ladderNames.map((row, i) => raw.ladder[i] || { ...row, v: empty });
+  const layers = layerNames.map((k, i) => {
+    const row = raw.layers?.[i];
+    return row ? { k, v: asTE(row.v) } : { k, v: empty };
+  });
+  const ladder = ladderNames.map((row, i) => raw.ladder?.[i] || { ...row, v: empty });
+  const heatmap = (raw.heatmap || []).length
+    ? raw.heatmap.map((h) => ({ ...h, k: asTE(h.k), sev: asSev(h.sev), pct: Number(h.pct) || 0 }))
+    : [{ cl: "—", k: { t: "ยังไม่วางแผนที่ข้อ", e: "No clause map yet" }, sev: "med" as const, pct: 0 }];
   return {
     ...raw,
+    doc: asTE(raw.doc),
+    langs: asTE(raw.langs),
+    verdictWhy: asTE(raw.verdictWhy),
+    brief: asTE(raw.brief),
+    email: asTE(raw.email),
+    heatmap,
     layers,
     ladder,
-    verdictLabel: raw.verdictLabel?.e ? raw.verdictLabel : (LABELS[v] || LABELS.negotiate),
+    verdict: v,
+    verdictLabel: raw.verdictLabel ? asTE(raw.verdictLabel) : (LABELS[v] || LABELS.negotiate),
     mappedIn: mappedIn(meta.ms),
     pages: raw.pages || meta.pages || 1,
     ref: raw.ref || meta.filename.replace(/\.[^.]+$/, "").slice(0, 24),
