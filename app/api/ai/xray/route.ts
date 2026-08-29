@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateStructured } from "@/lib/ai/server";
 import { extractFromRequest, hasContractText } from "@/lib/ai/extract";
-import { xrayCore, xrayDeep } from "@/lib/ai/schema";
+import { xrayIdent, xrayFacts, xrayGaps, xrayPlan } from "@/lib/ai/schema";
 import { normalizeXray } from "@/lib/ai/normalize";
 import { TENANT_BRIEF } from "@/lib/ai/house";
 import { jsonError, requireLive } from "@/lib/ai/http";
@@ -14,7 +14,8 @@ type Half<T> = { label: string; ms: number; value?: T; error?: string };
 async function half<T>(label: string, run: () => Promise<T>): Promise<Half<T>> {
   const t0 = Date.now();
   try {
-    return { label, ms: Date.now() - t0, value: await run() };
+    const value = await run();
+    return { label, ms: Date.now() - t0, value };
   } catch (err) {
     return { label, ms: Date.now() - t0, error: err instanceof Error ? err.message : "failed" };
   }
@@ -39,38 +40,35 @@ ${scan
 
 Return bilingual TE fields and keep every field to one tight sentence. Answer only the fields in the schema — other parts of the X-Ray are minted by a parallel call, so do not attempt them here.`;
 
-    const [core, deep] = await Promise.all([
-      half("core", () => generateStructured(
-        xrayCore,
-        `Read this instrument and return its identity, verdict, and evidence tables. ${rules}
+    const ask = (schema: Parameters<typeof generateStructured>[0], task: string) =>
+      generateStructured(schema, `${task} ${rules}\n\n${source}`, undefined, files);
 
-${source}
-
-Heatmap by clause with a risk percentage. Money, dates, parties as they appear. Thai law citations tied to the clause they bite on.`,
-        undefined,
-        files,
+    const parts = await Promise.all([
+      half("ident", () => ask(
+        xrayIdent,
+        "Read this instrument and return its identity, the verdict, and a clause heatmap with a risk percentage per clause.",
       )),
-      half("deep", () => generateStructured(
-        xrayDeep,
-        `Read this instrument and return the playbook gaps and the negotiation narrative. ${rules}
-
-${source}
-
-Missing clauses vs the house playbook. Unusual terms vs house, with what they depart from. layers MUST be exactly Fact / Legal interpretation / Suggested action, in that order. Ladder: Preferred, Acceptable, Minimum, Walk-away. Brief is one page for management. Email is a counterparty draft — counsel sends it.`,
-        undefined,
-        files,
+      half("facts", () => ask(
+        xrayFacts,
+        "Read this instrument and return money, dates, parties as they appear, plus Thai law citations tied to the clause each one bites on.",
+      )),
+      half("gaps", () => ask(
+        xrayGaps,
+        "Read this instrument and return clauses missing against the house playbook, terms unusual against house with what they depart from, and exactly three layers: Fact, then Legal interpretation, then Suggested action.",
+      )),
+      half("plan", () => ask(
+        xrayPlan,
+        "Read this instrument and return redline wording for the worst clauses, a four-rung ladder (Preferred, Acceptable, Minimum, Walk-away), a one-page management brief, and a counterparty email for counsel to send.",
       )),
     ]);
-    const stages = [core, deep].map((h) => ({ stage: h.label, ms: h.ms, error: h.error }));
+    const stages = parts.map((p) => ({ stage: p.label, ms: p.ms, error: p.error }));
     console.log(`[xray] ${stages.map((s) => `${s.stage}=${s.ms}ms${s.error ? ` err:${s.error}` : ""}`).join(" ")}`);
-    // One half is enough to render a map — a partial X-Ray beats an empty screen.
-    if (!core.value && !deep.value) {
-      return jsonError(core.error || deep.error || "X-Ray failed", 500, { stages });
+    // Any surviving stage is enough to draw a map — a partial X-Ray beats an empty screen.
+    if (parts.every((p) => !p.value)) {
+      return jsonError(parts.find((p) => p.error)?.error || "X-Ray failed", 500, { stages });
     }
-    const xray = normalizeXray(
-      { ...core.value, ...deep.value },
-      { filename: doc.filename, pages: doc.pages, ms: Date.now() - started }
-    );
+    const merged = Object.assign({}, ...parts.map((p) => p.value || {}));
+    const xray = normalizeXray(merged, { filename: doc.filename, pages: doc.pages, ms: Date.now() - started });
     return NextResponse.json({ xray, stages });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "X-Ray failed";
