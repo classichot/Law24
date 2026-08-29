@@ -7,7 +7,7 @@ import { TENANT_BRIEF } from "@/lib/ai/house";
 import { jsonError, requireLive } from "@/lib/ai/http";
 
 export const runtime = "nodejs";
-export const maxDuration = 90;
+export const maxDuration = 120;
 
 export async function POST(req: Request) {
   const blocked = requireLive();
