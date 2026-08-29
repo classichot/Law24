@@ -41,7 +41,7 @@ function asSev(v: unknown): "high" | "med" | "low" {
 }
 
 export function normalizeXray(
-  raw: z.infer<typeof xrayObject>,
+  raw: Partial<z.infer<typeof xrayObject>>,
   meta: { filename: string; pages: number; ms: number }
 ): XrayView {
   const v = asVerdict(raw.verdict);
@@ -62,8 +62,9 @@ export function normalizeXray(
     return row ? { k, v: asTE(row.v) } : { k, v: empty };
   });
   const ladder = ladderNames.map((row, i) => raw.ladder?.[i] || { ...row, v: empty });
-  const heatmap = (raw.heatmap || []).length
-    ? raw.heatmap.map((h) => ({ ...h, k: asTE(h.k), sev: asSev(h.sev), pct: Number(h.pct) || 0 }))
+  const rows = raw.heatmap || [];
+  const heatmap = rows.length
+    ? rows.map((h) => ({ ...h, k: asTE(h.k), sev: asSev(h.sev), pct: Number(h.pct) || 0 }))
     : [{ cl: "—", k: { t: "ยังไม่วางแผนที่ข้อ", e: "No clause map yet" }, sev: "med" as const, pct: 0 }];
   return {
     ...raw,
@@ -72,6 +73,14 @@ export function normalizeXray(
     verdictWhy: asTE(raw.verdictWhy),
     brief: asTE(raw.brief),
     email: asTE(raw.email),
+    // A half may be missing entirely; every table the UI maps over must exist.
+    missing: raw.missing || [],
+    unusual: raw.unusual || [],
+    money: raw.money || [],
+    dates: raw.dates || [],
+    parties: raw.parties || [],
+    laws: raw.laws || [],
+    redlines: raw.redlines || [],
     heatmap,
     layers,
     ladder,

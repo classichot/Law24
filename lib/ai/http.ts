@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { isAiLive } from "@/lib/ai/server";
 
-export function jsonError(message: string, status: number) {
-  return NextResponse.json({ error: message, live: isAiLive() }, { status });
+export function jsonError(message: string, status: number, extra?: Record<string, unknown>) {
+  return NextResponse.json({ error: message, live: isAiLive(), ...extra }, { status });
 }
 
 export function requireLive() {

@@ -10,9 +10,11 @@ const TIMEOUT_MS = 100_000;
  * A full bilingual X-Ray map runs 6-10k output tokens because every field is
  * written twice and Thai tokenises far heavier than English. @ai-sdk/anthropic
  * defaults max_tokens to 4096, which truncates the tool-call JSON mid-object —
- * the SDK then reports only "response did not match schema".
+ * the SDK then reports only "response did not match schema". Anthropic also
+ * reserves max_tokens against the per-minute output budget, so this stays
+ * generous rather than enormous.
  */
-const MAX_OUTPUT_TOKENS = Number(process.env.AI_MAX_OUTPUT_TOKENS || "") || 16_000;
+const MAX_OUTPUT_TOKENS = Number(process.env.AI_MAX_OUTPUT_TOKENS || "") || 8_000;
 /** Retired June 2026. Anthropic's documented replacement is Sonnet 4.6. */
 const DEFAULT_ANTHROPIC = "claude-sonnet-4-6";
 const RETIRED_ANTHROPIC: Record<string, string> = {
