@@ -442,6 +442,14 @@ function Draft() {
   const th = s.lang === "th";
   const draft = FX.interview.draft;
   const inputs = acceptedAssemblyInputs(s.assembly);
+  const packInput = {
+    lang: s.lang,
+    conflictChoice: s.conflictChoice,
+    clauseEdits: s.clauseEdits,
+    typeId: s.sel,
+    sourceRef: s.assembly.sourceRef,
+    reviewInputs: inputs,
+  };
   return (
     <div className="pad-page grid-split">
       <div>
@@ -520,11 +528,7 @@ function Draft() {
               return;
             }
             s.flash(th ? "กำลังสร้างชุด Word + PDF…" : "Generating Word + PDF pack…");
-            void downloadAssemblePack({
-              lang: s.lang,
-              conflictChoice: s.conflictChoice,
-              clauseEdits: s.clauseEdits,
-            }).then(() => {
+            void downloadAssemblePack(packInput).then(() => {
               s.generatePack();
               s.flash(th ? "ดาวน์โหลด .docx และ .pdf แล้ว" : "Downloaded .docx and .pdf");
             }).catch(() => {
@@ -543,7 +547,7 @@ function Draft() {
                 s.flash(th ? "ต้องได้อนุมัติ DPO ก่อน" : "DPO approval is still required");
                 return;
               }
-              void downloadAssemblePack({ lang: s.lang, conflictChoice: s.conflictChoice, clauseEdits: s.clauseEdits }, "docx")
+              void downloadAssemblePack(packInput, "docx")
                 .then(() => { s.generatePack(); s.flash(th ? "ดาวน์โหลด Word แล้ว" : "Word downloaded"); })
                 .catch(() => s.flash(th ? "สร้าง Word ไม่สำเร็จ" : "Word generation failed"));
             }}
@@ -558,7 +562,7 @@ function Draft() {
                 s.flash(th ? "ต้องได้อนุมัติ DPO ก่อน" : "DPO approval is still required");
                 return;
               }
-              void downloadAssemblePack({ lang: s.lang, conflictChoice: s.conflictChoice, clauseEdits: s.clauseEdits }, "pdf")
+              void downloadAssemblePack(packInput, "pdf")
                 .then(() => { s.generatePack(); s.flash(th ? "ดาวน์โหลด PDF แล้ว" : "PDF downloaded"); })
                 .catch(() => s.flash(th ? "สร้าง PDF ไม่สำเร็จ" : "PDF generation failed"));
             }}
