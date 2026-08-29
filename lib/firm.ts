@@ -24,6 +24,8 @@ export type AssignmentRecord = {
   due: string;
   fee: string;
   href: string;
+  /** Contract X-Ray document ref — wires this assignment to the live map. */
+  ref?: string;
   matter?: "nimbus" | "charoen" | "portfolio";
 };
 
@@ -91,13 +93,24 @@ export function overdue(a: AssignmentRecord) {
 }
 
 export const HREF_FOR_TYPE: Record<AssignmentType, string> = {
-  review: "/review?s=rsetup",
+  review: "/review?s=xray",
   diligence: "/diligence?s=dmatter",
   negotiate: "/negotiate?s=nstrat",
   obligations: "/obligations?s=oreg",
   assemble: "/assemble?s=lib",
   advisory: "/assemble?s=type",
 };
+
+/** Review work lands on X-Ray; other types keep their engine entrance. */
+export function assignmentEngineHref(a: AssignmentRecord) {
+  if (a.ref || a.type === "review") return "/review?s=xray";
+  return a.href || HREF_FOR_TYPE[a.type];
+}
+
+export function latestAssignmentForClient(p: PracticeState, clientId: string) {
+  const rows = p.assignments.filter((a) => a.clientId === clientId);
+  return rows[rows.length - 1];
+}
 
 export function nextIds(p: PracticeState) {
   const cMax = Math.max(0, ...p.clients.map((c) => parseInt(c.id.replace(/\D/g, ""), 10) || 0));
@@ -169,7 +182,7 @@ export function practiceHits(p: PracticeState, lang: Lang) {
   p.assignments.forEach((a) => {
     hits.push({
       id: `assign-${a.id}`,
-      href: "/practice?s=trace",
+      href: assignmentEngineHref(a),
       kind: th ? "งาน" : "Assignment",
       title: `${a.id} · ${th ? a.titleTh : a.title}`,
       sub: stageCopy(a.stage, lang),

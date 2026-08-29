@@ -1200,6 +1200,8 @@ a.filter-chip { text-decoration: none; }
 .os-body .page-main { flex: 1; min-width: 0; overflow: auto; padding: 0; }
 .home-wrap { max-width: 1060px; margin: 0 auto; padding: 44px 24px 80px; }
 .home-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.firm-control { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.firm-control-card { min-height: 0; gap: 8px; padding: 14px 15px; }
 .home-card {
   appearance: none; cursor: pointer; text-align: left; background: var(--color-surface);
   border: 2px solid var(--color-divider); padding: 17px 18px 16px; display: flex; flex-direction: column; gap: 13px;
@@ -1578,6 +1580,7 @@ button.xray-layer { font: inherit; text-align: left; cursor: pointer; width: 100
 
 @media (max-width: 1100px) {
   .home-cards { grid-template-columns: 1fr 1fr; }
+  .firm-control { grid-template-columns: 1fr 1fr; }
   .bilingual-grid { grid-template-columns: 1fr; }
   .bilingual-col + .bilingual-col { border-left: 0; border-top: 2px solid var(--color-divider); }
   .guide-body { grid-template-columns: 1fr 1fr; }
@@ -1585,6 +1588,7 @@ button.xray-layer { font: inherit; text-align: left; cursor: pointer; width: 100
 }
 @media (max-width: 720px) {
   .home-cards { grid-template-columns: 1fr; }
+  .firm-control { grid-template-columns: 1fr; }
   .os-ask { display: none; }
   .pad-page { padding: 16px 16px 88px; }
   .demo-bar { flex-wrap: wrap; }

@@ -38,7 +38,7 @@ export function navModes(edition: Edition) {
 
 export const NAV: Record<Exclude<ModeKey, "home">, [ScreenKey, string, string][]> = {
   practice: [
-    ["dash", "แดชบอร์ดบริหาร", "Management dashboard"],
+    ["dash", "ศูนย์ควบคุม", "Firm control"],
     ["clients", "ลูกค้า", "Clients"],
     ["assign", "งาน", "Assignments"],
     ["trace", "เส้นทางงาน", "Movement trail"],
@@ -148,6 +148,25 @@ export function defaultScreen(mode: ModeKey): ScreenKey {
   if (mode === "home") return "home";
   return NAV[mode][0][0];
 }
+
+/**
+ * Firm dashboard as the OS control hub — engine modules plus the firm books.
+ * X-Ray is first: mapping a contract opens the client and assignment.
+ */
+export const FIRM_CONTROL: { href: string; en: string; th: string; kind: "engine" | "firm"; why: { t: string; e: string } }[] = [
+  { href: "/review?s=xray", en: "X-Ray", th: "X-Ray", kind: "engine", why: { t: "วางแผนที่สัญญา — เปิดลูกค้าและงานในสำนักงาน", e: "Map a contract — opens the client and assignment in the firm" } },
+  { href: "/holistic?s=cockpit", en: "Cockpit", th: "ห้องบังคับ", kind: "engine", why: { t: "มูลค่า ความเสี่ยง และขั้นเจรจาของงานที่เปิด", e: "Value, risk and negotiation stage for the open matter" } },
+  { href: "/intel?s=twin", en: "Twin", th: "ฝาแฝด", kind: "engine", why: { t: "ถามตำแหน่งกฎหมายของฉบับที่ map", e: "Ask the legal position of the mapped paper" } },
+  { href: "/diligence?s=dwar", en: "War Room", th: "ห้องสงคราม", kind: "engine", why: { t: "ธงแดงและตารางตรวจของงานนี้", e: "Flags and the review grid for this matter" } },
+  { href: "/negotiate?s=nladder", en: "Copilot", th: "เจรจา", kind: "engine", why: { t: "ถือบันไดจุดยืนของงานนี้", e: "Hold the fallback ladder for this assignment" } },
+  { href: "/obligations?s=oreg", en: "Obligations", th: "ข้อผูกพัน", kind: "engine", why: { t: "วันที่สำคัญลงทะเบียนและปฏิทิน", e: "Key dates onto the register and calendar" } },
+  { href: "/assemble?s=lib", en: "Assemble", th: "ประกอบ", kind: "engine", why: { t: "ประกอบร่างจากคลัง 500 ประเภท", e: "Assemble a draft from the 500-type library" } },
+  { href: "/practice?s=clients", en: "Clients", th: "ลูกค้า", kind: "firm", why: { t: "บัญชีลูกค้า — เปิดงานและ X-Ray", e: "Client book — open work and X-Ray" } },
+  { href: "/practice?s=assign", en: "Assignments", th: "งาน", kind: "firm", why: { t: "งานทั้งหมด — map สัญญาหรือเปิดเครื่องยนต์", e: "Every assignment — map a contract or open the engine" } },
+  { href: "/practice?s=trace", en: "Trail", th: "เส้นทาง", kind: "firm", why: { t: "ไล่จากรับเรื่องถึงจุดควบคุมปัจจุบัน", e: "Read intake through the current control point" } },
+  { href: "/practice?s=room", en: "Client Room", th: "ห้องลูกค้า", kind: "firm", why: { t: "ห้องตรวจภายใต้แบรนด์สำนักงาน", e: "Branded review room for the mapped client" } },
+  { href: "/assist?s=ask", en: "Assist", th: "ผู้ช่วย", kind: "firm", why: { t: "อธิบายงานแล้วให้ระบบชี้ทาง", e: "Describe the job and let the OS route it" } },
+];
 
 /** Where sign-in lands. Module home stays available from the 2×2 grid. */
 export const WORK_HREF = "/review?s=xray";

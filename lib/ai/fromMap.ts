@@ -1,7 +1,7 @@
 import type { TE } from "@/lib/model";
 import { FIRM_USER } from "@/lib/model";
-import type { PracticeState } from "@/lib/firm";
-import { stampDay, stampNow } from "@/lib/firm";
+import type { AssignmentRecord, ClientRecord, PracticeState } from "@/lib/firm";
+import { nextIds, stampDay, stampNow } from "@/lib/firm";
 import type { ReviewLive, XrayView } from "./types";
 
 const P = (t: string, e: string): TE => ({ t, e });
@@ -644,61 +644,201 @@ export function firmBrainOf(X: XrayView) {
   ];
 }
 
-export function practiceFromMap(X: XrayView, R?: ReviewLive | null): PracticeState {
-  const party = partyStr(X);
+function normName(s: string) {
+  return s.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function namesMatch(a: string, b: string) {
+  const x = normName(a);
+  const y = normName(b);
+  return Boolean(x && y && x === y);
+}
+
+function clientMatchesParty(c: ClientRecord, party: { t: string; e: string }) {
+  return namesMatch(c.name, party.e)
+    || namesMatch(c.nameTh, party.t)
+    || namesMatch(c.name, party.t)
+    || namesMatch(c.nameTh, party.e);
+}
+
+function mapFee(X: XrayView) {
+  const raw = moneyStr(X);
+  if (raw === "—") return "";
+  return raw.startsWith("THB") ? raw : `THB ${raw}`;
+}
+
+function mapDue(X: XrayView) {
   const due = dateLine(X, 0);
+  return due === "—" ? stampDay() : due;
+}
+
+function xrayMovement(assignmentId: string, X: XrayView, R?: ReviewLive | null) {
   const nFind = findings(R).length;
-  return {
-    activeClientId: "CL-MAP",
-    activeAssignmentId: "A-MAP",
-    clients: [{
-      id: "CL-MAP",
-      name: party.e,
-      nameTh: party.t,
-      sector: "Mapped",
-      owner: FIRM_USER.name,
-      opened: stampDay(),
-      status: "active",
-    }],
-    assignments: [{
-      id: "A-MAP",
-      clientId: "CL-MAP",
-      title: asTE(X.doc).e,
-      titleTh: asTE(X.doc).t,
+  const at = stampNow();
+  return [
+    {
+      id: `MV-${assignmentId}-xray`,
+      assignmentId,
+      at,
+      actor: "Engine",
+      stage: "work" as const,
+      en: `Contract X-Ray mapped as ${X.ref} (${X.pages} pages). Verdict: ${asTE(X.verdictLabel).e}.`,
+      th: `X-Ray วางแผนที่ฉบับ ${X.ref} (${X.pages} หน้า) คำตัดสิน: ${asTE(X.verdictLabel).t}`,
+      href: "/review?s=xray",
+    },
+    ...(nFind
+      ? [{
+          id: `MV-${assignmentId}-find`,
+          assignmentId,
+          at,
+          actor: FIRM_USER.name,
+          stage: "work" as const,
+          en: `Review pack: ${nFind} issue cards. Heatmap ${heat(X).length} clauses, ${X.missing?.length || 0} missing.`,
+          th: `ชุดตรวจ: ${nFind} บัตรประเด็น แผนความร้อน ${heat(X).length} ข้อ ขาด ${X.missing?.length || 0}`,
+          href: "/review?s=find",
+        }]
+      : []),
+  ];
+}
+
+function mergeMovements(existing: PracticeState["movements"], added: PracticeState["movements"]) {
+  const ids = new Set(existing.map((m) => m.id));
+  return [...existing, ...added.filter((m) => !ids.has(m.id))];
+}
+
+function findMappedAssignment(p: PracticeState, X: XrayView, party: { t: string; e: string }): AssignmentRecord | undefined {
+  const ref = (X.ref || "").trim();
+  if (ref) {
+    const byRef = p.assignments.find((a) => a.ref === ref);
+    if (byRef) return byRef;
+  }
+  const active = p.assignments.find((a) => a.id === p.activeAssignmentId);
+  if (active && active.stage !== "closed" && !active.ref) return active;
+  const client = p.clients.find((c) => clientMatchesParty(c, party));
+  if (!client) return undefined;
+  return [...p.assignments].reverse().find((a) =>
+    a.clientId === client.id && a.stage !== "closed" && (!a.ref || a.ref === ref)
+  );
+}
+
+/**
+ * Persist (or refresh) a Firm client + assignment from a live X-Ray map.
+ * Idempotent on `X.ref`. Attaches to the open Firm assignment when the user
+ * mapped from that row; otherwise reuses a client whose name matches party 0.
+ */
+export function applyMapToPractice(p: PracticeState, X: XrayView, R?: ReviewLive | null): PracticeState {
+  const party = partyStr(X);
+  const ref = (X.ref || "").trim();
+  const titleE = asTE(X.doc).e;
+  const titleT = asTE(X.doc).t;
+  const fee = mapFee(X);
+  const due = mapDue(X);
+  const existing = findMappedAssignment(p, X, party);
+
+  if (existing) {
+    const clients = p.clients.map((c) =>
+      c.id === existing.clientId
+        ? {
+            ...c,
+            name: party.e && party.e !== "—" ? party.e : c.name,
+            nameTh: party.t && party.t !== "—" ? party.t : c.nameTh,
+            status: "active" as const,
+          }
+        : c
+    );
+    const assignments = p.assignments.map((a) =>
+      a.id === existing.id
+        ? {
+            ...a,
+            title: titleE && titleE !== "—" ? titleE : a.title,
+            titleTh: titleT && titleT !== "—" ? titleT : a.titleTh,
+            type: "review" as const,
+            stage: a.stage === "intake" ? "work" as const : a.stage,
+            due: due || a.due,
+            fee: fee || a.fee,
+            href: "/review?s=xray",
+            ref: ref || a.ref,
+          }
+        : a
+    );
+    return {
+      ...p,
+      clients,
+      assignments,
+      movements: mergeMovements(p.movements, xrayMovement(existing.id, X, R)),
+      activeClientId: existing.clientId,
+      activeAssignmentId: existing.id,
+    };
+  }
+
+  const reuse = p.clients.find((c) => clientMatchesParty(c, party));
+  const ids = nextIds(p);
+  const clientId = reuse?.id || ids.clientId;
+  const assignmentId = ids.assignmentId;
+  const clients = reuse
+    ? p.clients.map((c) =>
+        c.id === reuse.id
+          ? { ...c, status: "active" as const, name: party.e && party.e !== "—" ? party.e : c.name, nameTh: party.t && party.t !== "—" ? party.t : c.nameTh }
+          : c
+      )
+    : [
+        ...p.clients,
+        {
+          id: clientId,
+          name: party.e && party.e !== "—" ? party.e : "Mapped client",
+          nameTh: party.t && party.t !== "—" ? party.t : "ลูกค้าจากแผนที่",
+          sector: "Mapped",
+          owner: FIRM_USER.name,
+          opened: stampDay(),
+          status: "active" as const,
+        },
+      ];
+  const assignments: AssignmentRecord[] = [
+    ...p.assignments,
+    {
+      id: assignmentId,
+      clientId,
+      title: titleE && titleE !== "—" ? titleE : `Mapped · ${ref || "contract"}`,
+      titleTh: titleT && titleT !== "—" ? titleT : `แผนที่ · ${ref || "สัญญา"}`,
       type: "review",
       stage: "work",
       lead: FIRM_USER.name,
-      due: due === "—" ? stampDay() : due,
-      fee: moneyStr(X) === "—" ? "THB —" : moneyStr(X).startsWith("THB") ? moneyStr(X) : `THB ${moneyStr(X)}`,
+      due,
+      fee: fee || "THB —",
       href: "/review?s=xray",
-    }],
-    movements: [
+      ref: ref || undefined,
+    },
+  ];
+  return {
+    ...p,
+    clients,
+    assignments,
+    movements: mergeMovements(p.movements, [
       {
-        id: "MV-MAP-intake",
-        assignmentId: "A-MAP",
+        id: `MV-${assignmentId}-intake`,
+        assignmentId,
         at: stampNow(),
         actor: "Engine",
         stage: "intake",
-        en: `Instrument mapped as ${X.ref} (${X.pages} pages). Verdict: ${asTE(X.verdictLabel).e}.`,
-        th: `วางแผนที่ฉบับ ${X.ref} (${X.pages} หน้า) คำตัดสิน: ${asTE(X.verdictLabel).t}`,
+        en: `Assignment opened from Contract X-Ray (${X.ref}, ${X.pages} pages).`,
+        th: `เปิดงานจาก Contract X-Ray (${X.ref}, ${X.pages} หน้า)`,
         href: "/review?s=xray",
       },
-      {
-        id: "MV-MAP-work",
-        assignmentId: "A-MAP",
-        at: stampNow(),
-        actor: FIRM_USER.name,
-        stage: "work",
-        en: nFind
-          ? `Review pack: ${nFind} issue cards. Heatmap ${heat(X).length} clauses, ${X.missing?.length || 0} missing.`
-          : `Map landed. Heatmap ${heat(X).length} clauses, ${X.missing?.length || 0} missing, ${X.unusual?.length || 0} unusual.`,
-        th: nFind
-          ? `ชุดตรวจ: ${nFind} บัตรประเด็น แผนความร้อน ${heat(X).length} ข้อ ขาด ${X.missing?.length || 0}`
-          : `แผนที่ลงแล้ว แผนความร้อน ${heat(X).length} ข้อ ขาด ${X.missing?.length || 0} ผิดปกติ ${X.unusual?.length || 0}`,
-        href: "/review?s=find",
-      },
-    ],
+      ...xrayMovement(assignmentId, X, R),
+    ]),
+    activeClientId: clientId,
+    activeAssignmentId: assignmentId,
   };
+}
+
+export function practiceFromMap(X: XrayView, R?: ReviewLive | null): PracticeState {
+  return applyMapToPractice({
+    activeClientId: "",
+    activeAssignmentId: "",
+    clients: [],
+    assignments: [],
+    movements: [],
+  }, X, R);
 }
 
 export function isDemoFixturePractice(p: PracticeState) {
@@ -706,7 +846,7 @@ export function isDemoFixturePractice(p: PracticeState) {
     || p.clients.some((c) => c.id === "CL-01" && /siam digital/i.test(c.name));
 }
 
-export function withLiveMatter(p: PracticeState, X: XrayView | null, R?: ReviewLive | null): PracticeState {
+function stripFixturePractice(p: PracticeState): PracticeState {
   const fixtureClient = (id: string, name: string) =>
     (id === "CL-01" && /siam digital/i.test(name))
     || (id === "CL-02" && /charoen/i.test(name))
@@ -717,18 +857,15 @@ export function withLiveMatter(p: PracticeState, X: XrayView | null, R?: ReviewL
     assignments: p.assignments.filter((a) => a.clientId !== "CL-MAP" && a.id !== "A-MAP" && !a.matter),
     movements: p.movements.filter((m) => !String(m.id).startsWith("MV-MAP") && !/^A-248[1-4]$/.test(m.assignmentId)),
   };
-  if (!X) {
-    return {
-      ...base,
-      activeClientId: base.clients.some((c) => c.id === p.activeClientId) ? p.activeClientId : (base.clients[0]?.id || ""),
-      activeAssignmentId: base.assignments.some((a) => a.id === p.activeAssignmentId) ? p.activeAssignmentId : (base.assignments[0]?.id || ""),
-    };
-  }
-  const live = practiceFromMap(X, R);
-  const clients = [...live.clients, ...base.clients];
-  const assignments = [...live.assignments, ...base.assignments];
-  const movements = [...live.movements, ...base.movements];
-  const activeAssignmentId = assignments.some((a) => a.id === p.activeAssignmentId) ? p.activeAssignmentId : live.activeAssignmentId;
-  const activeClientId = clients.some((c) => c.id === p.activeClientId) ? p.activeClientId : live.activeClientId;
-  return { clients, assignments, movements, activeClientId, activeAssignmentId };
+  return {
+    ...base,
+    activeClientId: base.clients.some((c) => c.id === p.activeClientId) ? p.activeClientId : (base.clients[0]?.id || ""),
+    activeAssignmentId: base.assignments.some((a) => a.id === p.activeAssignmentId) ? p.activeAssignmentId : (base.assignments[0]?.id || ""),
+  };
+}
+
+export function withLiveMatter(p: PracticeState, X: XrayView | null, R?: ReviewLive | null): PracticeState {
+  const base = stripFixturePractice(p);
+  if (!X) return base;
+  return applyMapToPractice(base, X, R);
 }

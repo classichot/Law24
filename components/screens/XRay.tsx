@@ -12,6 +12,8 @@ import { copyText, downloadText } from "@/lib/demo";
 import { AiLiveMark } from "@/components/AiLiveMark";
 import { CONTRACT_ACCEPT } from "@/lib/ai/files";
 import { XRAY_ENGINE_HOPS, XRAY_HOPS, XRAY_REVIEW_HOPS } from "@/lib/nav";
+import { assignmentOf, clientOf } from "@/lib/firm";
+import { withLiveMatter } from "@/lib/ai/fromMap";
 
 export function XRayScreen() {
   const s = useStore();
@@ -121,6 +123,9 @@ export function XRayScreen() {
   }
 
   const X = s.xrayLive ?? XRAY;
+  const practice = withLiveMatter(s.practice, s.xrayLive, s.reviewLive);
+  const matterA = s.xrayLive ? (assignmentOf(practice, practice.activeAssignmentId) || practice.assignments[0]) : undefined;
+  const matterC = matterA ? clientOf(practice, matterA.clientId) : undefined;
   // Live review stages are minted after the map, so the board may still be in
   // flight. A fixture map is served by fixture cards, which are always there.
   const reviewReady = !s.xrayLive || Boolean(s.reviewLive?.findings?.length || s.reviewLive?.board?.length);
@@ -141,6 +146,26 @@ export function XRayScreen() {
         </div>
       </div>
       <p style={{ maxWidth: "72ch", margin: "0 0 22px" }}>{L(s.lang, X.verdictWhy)}</p>
+
+      {s.xrayLive && (matterC || matterA) && (
+        <div className="xray-layer" style={{ marginBottom: 22 }}>
+          <div className="page-kicker"><T en="Firm client · assignment" th="ลูกค้า · งานในสำนักงาน" /></div>
+          <div style={{ font: "800 18px/1.25 var(--font-heading)", marginTop: 8 }}>
+            {matterC ? (th ? matterC.nameTh : matterC.name) : (th ? "ลูกค้าจากแผนที่" : "Mapped client")}
+          </div>
+          <p className="text-muted" style={{ margin: "6px 0 0", fontSize: 13 }}>
+            {matterA
+              ? `${matterA.id} · ${th ? matterA.titleTh : matterA.title}${matterA.ref ? ` · ${matterA.ref}` : ""}`
+              : X.ref}
+          </p>
+          <div className="stack-actions" style={{ marginTop: 12 }}>
+            <Link href="/practice?s=dash" className="btn btn-primary"><T en="Firm control" th="ศูนย์ควบคุมสำนักงาน" /></Link>
+            <Link href="/practice?s=clients" className="btn btn-secondary"><T en="Clients" th="ลูกค้า" /></Link>
+            <Link href="/practice?s=assign" className="btn btn-secondary"><T en="Assignments" th="งาน" /></Link>
+            <Link href="/practice?s=trace" className="btn btn-secondary"><T en="Trail" th="เส้นทาง" /></Link>
+          </div>
+        </div>
+      )}
 
       <h5><T en="Open the rest of the OS" th="เปิดโมดูลถัดไปของระบบ" /></h5>
       <p className="text-muted" style={{ margin: "6px 0 12px", fontSize: 13, maxWidth: "72ch" }}>

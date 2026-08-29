@@ -16,7 +16,7 @@ import {
   type UploadFile,
 } from "./demo";
 import type { ClauseEdit } from "./clauses";
-import { isDemoFixturePractice } from "./ai/fromMap";
+import { applyMapToPractice, isDemoFixturePractice } from "./ai/fromMap";
 import {
   HREF_FOR_TYPE,
   nextIds,
@@ -544,7 +544,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       fd.append("filename", file.name);
       const pack = await postAi<ReviewLive>("/api/ai/review", fd, AI_REVIEW_MS);
       // Cards and the board are separate stages — keep whichever one arrived.
-      if (pack?.findings?.length || pack?.board?.length) patchLive({ reviewLive: pack });
+      if (pack?.findings?.length || pack?.board?.length) {
+        patchLive((p) => ({
+          ...p,
+          reviewLive: pack,
+          practice: p.xrayLive ? applyMapToPractice(p.practice, p.xrayLive, pack) : p.practice,
+        }));
+      }
     } catch {
       /* the map still stands on its own */
     }
@@ -581,6 +587,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         uploads: p.uploads.some((u) => u.bucket === "xray")
           ? p.uploads
           : [{ name: file.name, size: file.size, bucket: "xray" }, ...p.uploads].slice(0, 40),
+        practice: applyMapToPractice(p.practice, pack.xray),
       }));
       setQ("SaaS");
       setCat("C15");

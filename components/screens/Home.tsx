@@ -9,7 +9,10 @@ import { EditionBadge } from "@/components/EditionBadge";
 import { Dropzone } from "@/components/Dropzone";
 import { TrustStrip } from "@/components/TrustStrip";
 import { PlaybookMark } from "@/components/PlaybookMark";
-import { CLIENT_ROOM, ENTRANCES, PACKAGES, POSITION, TWIN_ASKS, WEDGE_TYPES } from "@/lib/product";
+import { ENTRANCES, PACKAGES, POSITION, TWIN_ASKS, WEDGE_TYPES } from "@/lib/product";
+import { FIRM_CONTROL } from "@/lib/nav";
+import { assignmentOf, clientOf } from "@/lib/firm";
+import { clientRoomOf, withLiveMatter } from "@/lib/ai/fromMap";
 import { OS_FLOW, PLAYBOOKS, copyTE, helpBookHref, playbookKeyFor } from "@/lib/guides";
 import { ReviewerPath } from "@/components/ui";
 import { CONTRACT_ACCEPT } from "@/lib/ai/files";
@@ -142,9 +145,14 @@ function CorporateHome() {
 }
 
 function FirmHome() {
-  const { lang, startXray } = useStore();
+  const s = useStore();
+  const { lang, startXray } = s;
   const router = useRouter();
   const th = lang === "th";
+  const practice = withLiveMatter(s.practice, s.xrayLive, s.reviewLive);
+  const a = assignmentOf(practice, practice.activeAssignmentId) || practice.assignments[0];
+  const c = a ? clientOf(practice, a.clientId) : undefined;
+  const room = s.xrayLive ? clientRoomOf(s.xrayLive, s.reviewLive) : null;
   return (
     <div className="home-wrap">
       <InviteHomeStrip />
@@ -160,22 +168,49 @@ function FirmHome() {
           <div style={{ marginTop: 12 }}><PlaybookMark mode="practice" screen="dash" /></div>
         </div>
         <div className="xray-layer">
-          <div className="page-kicker"><T en="Client Review Room" th="ห้องตรวจลูกค้า" /></div>
-          <PlaybookMark href="/practice?s=room" compact />
-          <strong style={{ display: "block", marginTop: 8 }}>{L(lang, CLIENT_ROOM.client)}</strong>
-          <p className="text-muted" style={{ fontSize: 13 }}>{L(lang, CLIENT_ROOM.progress)}</p>
-          <Link href="/practice?s=room" className="btn btn-secondary" style={{ marginTop: 10 }}><T en="Open branded room" th="เปิดห้องภายใต้แบรนด์" /></Link>
+          <div className="page-kicker"><T en="Active matter" th="งานที่เปิดอยู่" /></div>
+          <PlaybookMark href="/practice?s=dash" compact />
+          {c && a ? (
+            <>
+              <strong style={{ display: "block", marginTop: 8 }}>{th ? c.nameTh : c.name}</strong>
+              <p className="text-muted" style={{ fontSize: 13 }}>
+                {a.id} · {th ? a.titleTh : a.title}
+                {room ? ` · ${L(lang, room.progress)}` : ""}
+              </p>
+            </>
+          ) : (
+            <>
+              <strong style={{ display: "block", marginTop: 8 }}>
+                <T en="No mapped matter yet" th="ยังไม่มีงานจากแผนที่" />
+              </strong>
+              <p className="text-muted" style={{ fontSize: 13 }}>
+                <T en="X-Ray opens a client and assignment. Firm then controls the rest of the OS." th="X-Ray เปิดลูกค้าและงาน สำนักงานควบคุมโมดูลอื่นต่อ" />
+              </p>
+            </>
+          )}
+          <Link href="/practice?s=dash" className="btn btn-secondary" style={{ marginTop: 10 }}>
+            <T en="Open firm control" th="เปิดศูนย์ควบคุมสำนักงาน" />
+          </Link>
         </div>
       </div>
       <div className="stack-actions" style={{ marginBottom: 28 }}>
         <button type="button" className="btn btn-primary" onClick={() => { startXray(); router.push("/review?s=xray"); }}>
           <T en="Analyse a contract" th="วิเคราะห์สัญญา" />
         </button>
+        <Link href="/practice?s=dash" className="btn btn-secondary"><T en="Firm control" th="ศูนย์ควบคุม" /></Link>
         <Link href="/practice?s=packages" className="btn btn-secondary"><T en="Sell packaged services" th="ขายบริการสำเร็จรูป" /></Link>
-        <Link href="/practice?s=brain" className="btn btn-secondary"><T en="Firm Brain" th="สมองสำนักงาน" /></Link>
         {!readInviteSession() && (
           <Link href="/host" className="btn btn-ghost"><T en="Host desk" th="โต๊ะโฮสต์" /></Link>
         )}
+      </div>
+      <h5><T en="OS control from the firm" th="ควบคุมทั้งระบบจากสำนักงาน" /></h5>
+      <div className="firm-control" style={{ marginBottom: 28 }}>
+        {FIRM_CONTROL.filter((h) => h.kind === "engine").map((h) => (
+          <Link key={h.href} href={h.href} className="home-card firm-control-card" style={{ textDecoration: "none", color: "inherit" }}>
+            <div style={{ fontWeight: 800 }}>{th ? h.th : h.en}</div>
+            <div className="text-muted" style={{ fontSize: 12, marginTop: 6 }}>{th ? h.why.t : h.why.e}</div>
+          </Link>
+        ))}
       </div>
       <TrustStrip />
       <ReviewerPath />
