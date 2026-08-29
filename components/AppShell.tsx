@@ -262,7 +262,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Link href="/intel?s=twin" className={mode === "intel" ? "active" : ""}>Twin</Link>
         {s.edition === "firm"
           ? <Link href="/practice?s=room" className={screen === "room" ? "active" : ""}>Room</Link>
-          : <Link href="/diligence?s=dwar" className={mode === "diligence" ? "active" : ""}>DD</Link>}
+          : <Link href="/diligence?s=deal" className={mode === "diligence" ? "active" : ""}>DD</Link>}
       </nav>
 
       {menu && (

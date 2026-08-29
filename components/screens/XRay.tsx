@@ -248,8 +248,8 @@ export function XRayScreen() {
       <h5><T en="Open the rest of the OS" th="เปิดโมดูลถัดไปของระบบ" /></h5>
       <p className="text-muted" style={{ margin: "6px 0 12px", fontSize: 13, maxWidth: "72ch" }}>
         <T
-          en="The map is the entry, not the end. Cockpit, Twin, War Room, Copilot and Obligations take this document into the rest of the engine."
-          th="แผนที่เป็นทางเข้า ไม่ใช่จุดจบ ห้องบังคับ ฝาแฝด ห้องสงคราม เจรจา และข้อผูกพันพาเอกสารนี้เข้าโมดูลอื่นของเครื่องยนต์"
+          en="The map is the entry, not the end. Cockpit, Twin, Deal X-Ray, Copilot and Obligations take this document into the rest of the engine."
+          th="แผนที่เป็นทางเข้า ไม่ใช่จุดจบ ห้องบังคับ ฝาแฝด Deal X-Ray เจรจา และข้อผูกพันพาเอกสารนี้เข้าโมดูลอื่นของเครื่องยนต์"
         />
       </p>
       <div className="home-cards" style={{ marginBottom: 22 }}>
@@ -402,8 +402,8 @@ export function XRayScreen() {
       <h5 style={{ marginTop: 22 }}><T en="Every submenu on those modules" th="ทุกเมนูย่อยในโมดูลเหล่านั้น" /></h5>
       <p className="text-muted" style={{ margin: "6px 0 0", fontSize: 13, maxWidth: "72ch" }}>
         <T
-          en="Firm, Cockpit, Twin, War Room, Copilot and Obligations now read this map — not the Nimbus sample."
-          th="สำนักงาน ห้องบังคับ ฝาแฝด ห้องสงคราม เจรจา และข้อผูกพันอ่านแผนที่นี้ — ไม่ใช่ตัวอย่างนิมบัส"
+          en="Firm, Cockpit, Twin, Deal X-Ray, Copilot and Obligations now read this map — not the Nimbus sample."
+          th="สำนักงาน ห้องบังคับ ฝาแฝด Deal X-Ray เจรจา และข้อผูกพันอ่านแผนที่นี้ — ไม่ใช่ตัวอย่างนิมบัส"
         />
       </p>
       <div className="stack-actions" style={{ marginTop: 10 }}>

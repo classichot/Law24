@@ -1646,6 +1646,14 @@ button.xray-layer { font: inherit; text-align: left; cursor: pointer; width: 100
   .home-hero, .xray-heat, .xray-ladder, .grid-4 { grid-template-columns: 1fr; }
 }
 
+.deal-tree {
+  margin: 0; padding: 16px 18px; border: 2px solid var(--color-divider);
+  background: var(--color-surface); font: 500 12px/1.55 var(--font-mono, ui-monospace, monospace);
+  white-space: pre; overflow: auto;
+}
+.wow-hops { display: flex; flex-wrap: wrap; gap: 8px; }
+.deal-page .issue-card h4 { font-size: 16px; margin-bottom: 6px; }
+
 @media print {
   aside, header, .no-print, .bottom-nav, .sidebar, .copilot, .os-topbar, .os-invite, .os-modes, .os-subnav, .demo-bar, .guide-rail, .screen-nav, .cmdk { display: none !important; }
   main, .page-main { padding: 0 !important; }

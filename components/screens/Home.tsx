@@ -129,7 +129,7 @@ function CorporateHome() {
         {[
           { href: "/holistic?s=cockpit", k: "Contract Cockpit", d: th ? "มูลค่า ขั้น ความเสี่ยง อนุมัติ" : "Value, stage, risk, approvals" },
           { href: "/holistic?s=dna", k: "Clause DNA", d: th ? "เทียบเพลย์บุ๊กและสัญญาที่ลงนามแล้ว" : "Vs playbook and signed history" },
-          { href: "/diligence?s=dwar", k: th ? "ห้องสงคราม DD" : "DD War Room", d: th ? "ดัชนี ธงแดง รายงานชี้แหล่ง" : "Index, flags, source-linked report" },
+          { href: "/diligence?s=deal", k: "Deal X-Ray", d: th ? "เข้าใจธุรกรรม เปิดความเสี่ยง แล้วแก้ไข" : "Understand the deal, expose the risk, fix it" },
           { href: "/obligations?s=oreg", k: th ? "ข้อผูกพัน" : "Obligations", d: th ? "ปฏิทินหลังลงนาม" : "Post-signature calendar" },
         ].map((c) => (
           <Link key={c.href} href={c.href} className="home-card" style={{ textDecoration: "none", color: "inherit" }}>

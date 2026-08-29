@@ -224,7 +224,7 @@ function Cockpit() {
         <Link href="/holistic?s=dna" className="btn btn-primary">Clause DNA</Link>
         <Link href="/review?s=xray" className="btn btn-secondary">X-Ray</Link>
         <Link href="/intel?s=twin" className="btn btn-secondary"><T en="Twin" th="ฝาแฝด" /></Link>
-        <Link href="/diligence?s=dwar" className="btn btn-secondary"><T en="War Room" th="ห้องสงคราม" /></Link>
+        <Link href="/diligence?s=deal" className="btn btn-secondary"><T en="Deal X-Ray" th="Deal X-Ray" /></Link>
         <Link href="/negotiate?s=nladder" className="btn btn-secondary"><T en="Copilot" th="เจรจา" /></Link>
         <Link href="/obligations?s=oreg" className="btn btn-secondary"><T en="Obligations" th="ข้อผูกพัน" /></Link>
       </div>

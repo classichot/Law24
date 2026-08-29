@@ -20,6 +20,7 @@ import { applyMapToPractice, isDemoFixturePractice } from "./ai/fromMap";
 import {
   ENGAGEMENT,
   HREF_FOR_TYPE,
+  ddContextOf,
   engagementOf,
   nextIds,
   nextPoolId,
@@ -32,6 +33,7 @@ import {
   type Movement,
   type PracticeState,
 } from "./firm";
+import { hydrateDeal, inferDealTx, seedDeal, type DealScenario, type DealState, type DealTx } from "./deal";
 import { clearInviteSession } from "./invite";
 import { fetchAiStatus, postAi } from "./ai/client";
 import { peekFile } from "./ai/files";
@@ -133,11 +135,20 @@ type Store = {
   applyClauseEdit: (id: string, edit: ClauseEdit) => void;
   revertClauseEdit: (id: string) => void;
   practice: PracticeState;
+  deal: DealState;
   addClient: (input: { name: string; nameTh?: string; sector: string; owner: string }) => void;
   addAssignment: (input: { clientId: string; title: string; titleTh?: string; type: AssignmentType; due: string; lead: string; fee?: string }) => void;
   addPoolIntake: (input: { clientName: string; engagementName: string; type: AssignmentType }) => void;
   assignPoolIntake: (id: string) => void;
   openXrayEngagement: (input: { clientName: string; engagementName: string }) => void;
+  openDealEngagement: (input: { clientName: string; engagementName: string; transaction: DealTx }) => void;
+  ensureDeal: () => void;
+  setDealTransaction: (tx: DealTx) => void;
+  setDealScenario: (sc: DealScenario) => void;
+  setDealMateriality: (partial: Partial<{ contract: number; litigation: number; customerPct: number; supplierPct: number }>) => void;
+  answerDealQuestion: (id: string, text: string) => void;
+  setDealCpStatus: (id: string, status: "open" | "in_progress" | "cleared") => void;
+  verifyDeal: () => void;
   setActiveClient: (id: string) => void;
   setActiveAssignment: (id: string) => void;
   xrayReady: boolean;
@@ -183,6 +194,7 @@ function readLive(): LiveState {
     merged.lawyerSent = Boolean(merged.lawyerSent);
     merged.roomVotes = merged.roomVotes || {};
     merged.quotePkg = merged.quotePkg || "nda";
+    merged.deal = hydrateDeal(merged.deal);
     if (!merged.practice || isDemoFixturePractice(merged.practice)) {
       merged.practice = seedPractice();
     } else {
@@ -199,6 +211,20 @@ function readLive(): LiveState {
   } catch {
     return defaultLive();
   }
+}
+
+function bindDeal(p: LiveState, assignmentId: string, clientId: string, title: string, transaction?: DealTx): LiveState {
+  const prev = hydrateDeal(p.deal);
+  const same = prev.assignmentId === assignmentId;
+  return {
+    ...p,
+    deal: {
+      ...(same ? prev : seedDeal()),
+      assignmentId,
+      clientId,
+      transaction: transaction || inferDealTx(title) || (same ? prev.transaction : "share"),
+    },
+  };
 }
 
 function appendMv(
@@ -515,8 +541,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ],
         },
       };
+      const bound = engagementOf(input.type) === "diligence"
+        ? bindDeal(next, assignmentId, input.clientId, input.title, inferDealTx(input.title))
+        : next;
       return appendMv(
-        next,
+        bound,
         "Assignment opened. Intake logged.",
         "เปิดงาน บันทึกการรับเรื่อง",
         href,
@@ -593,8 +622,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ],
         },
       };
+      const bound = item.type === "diligence"
+        ? bindDeal(next, assignmentId, clientId, item.engagementName, inferDealTx(item.engagementName))
+        : next;
       return appendMv(
-        next,
+        bound,
         `Assigned from Firm pool (${item.id}). Intake logged.`,
         `รับจากคิวสำนักงาน (${item.id}) และบันทึกรับเรื่อง`,
         href,
@@ -659,6 +691,114 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         "intake",
         { assignmentId }
       );
+    });
+  }, [patchLive]);
+  const openDealEngagement = useCallback((input: { clientName: string; engagementName: string; transaction: DealTx }) => {
+    patchLive((p) => {
+      const clientName = input.clientName.trim();
+      const engagementName = input.engagementName.trim();
+      const existingClient = p.practice.clients.find((c) =>
+        c.name.trim().toLowerCase() === clientName.toLowerCase()
+        || c.nameTh.trim().toLowerCase() === clientName.toLowerCase()
+      );
+      const existingAssignment = p.practice.assignments.find((a) =>
+        a.clientId === (existingClient?.id || "")
+        && engagementOf(a.type) === "diligence"
+        && a.stage !== "closed"
+        && a.title.trim().toLowerCase() === engagementName.toLowerCase()
+      );
+      const ids = nextIds(p.practice);
+      const clientId = existingClient?.id || ids.clientId;
+      const assignmentId = existingAssignment?.id || ids.assignmentId;
+      const href = "/diligence?s=deal";
+      let next: LiveState = {
+        ...p,
+        practice: {
+          ...p.practice,
+          activeClientId: clientId,
+          activeAssignmentId: assignmentId,
+          clients: existingClient
+            ? p.practice.clients
+            : [
+                ...p.practice.clients,
+                {
+                  id: clientId,
+                  name: clientName,
+                  nameTh: clientName,
+                  sector: "Legal due diligence",
+                  owner: FIRM_USER.name,
+                  opened: stampDay(),
+                  status: "active" as const,
+                },
+              ],
+          assignments: existingAssignment
+            ? p.practice.assignments
+            : [
+                ...p.practice.assignments,
+                {
+                  id: assignmentId,
+                  clientId,
+                  title: engagementName,
+                  titleTh: engagementName,
+                  type: "diligence" as const,
+                  stage: "intake" as const,
+                  lead: FIRM_USER.name,
+                  due: stampDay("2026-09-30"),
+                  fee: "THB 0",
+                  href,
+                },
+              ],
+        },
+      };
+      next = bindDeal(next, assignmentId, clientId, engagementName, input.transaction);
+      if (existingAssignment) return next;
+      return appendMv(
+        next,
+        "Legal DD engagement opened for Deal X-Ray. Intake logged.",
+        "เปิดงานตรวจสอบสถานะสำหรับ Deal X-Ray และบันทึกรับเรื่อง",
+        href,
+        "intake",
+        { assignmentId }
+      );
+    });
+  }, [patchLive]);
+  const ensureDeal = useCallback(() => {
+    patchLive((p) => {
+      const ctx = ddContextOf(p.practice);
+      if (!ctx) return p;
+      const d = hydrateDeal(p.deal);
+      if (d.assignmentId === ctx.assignment.id && d.clientId === ctx.client.id) return p;
+      return bindDeal(p, ctx.assignment.id, ctx.client.id, ctx.assignment.title);
+    });
+  }, [patchLive]);
+  const setDealTransaction = useCallback((tx: DealTx) => {
+    patchLive((p) => ({ ...p, deal: { ...hydrateDeal(p.deal), transaction: tx } }));
+  }, [patchLive]);
+  const setDealScenario = useCallback((sc: DealScenario) => {
+    patchLive((p) => ({ ...p, deal: { ...hydrateDeal(p.deal), scenario: sc } }));
+  }, [patchLive]);
+  const setDealMateriality = useCallback((partial: Partial<{ contract: number; litigation: number; customerPct: number; supplierPct: number }>) => {
+    patchLive((p) => {
+      const d = hydrateDeal(p.deal);
+      return { ...p, deal: { ...d, materiality: { ...d.materiality, ...partial } } };
+    });
+  }, [patchLive]);
+  const answerDealQuestion = useCallback((id: string, text: string) => {
+    patchLive((p) => {
+      const d = hydrateDeal(p.deal);
+      return { ...p, deal: { ...d, answers: { ...d.answers, [id]: { text } } } };
+    });
+  }, [patchLive]);
+  const setDealCpStatus = useCallback((id: string, status: "open" | "in_progress" | "cleared") => {
+    patchLive((p) => {
+      const d = hydrateDeal(p.deal);
+      return { ...p, deal: { ...d, cpStatus: { ...d.cpStatus, [id]: status } } };
+    });
+  }, [patchLive]);
+  const verifyDeal = useCallback(() => {
+    patchLive((p) => {
+      const next = { ...p, deal: { ...hydrateDeal(p.deal), verified: true } };
+      return appendMv(next, "Counsel verified the Deal X-Ray for this round.", "ทนายยืนยัน Deal X-Ray รอบนี้", "/diligence?s=deal", "review");
     });
   }, [patchLive]);
   const setActiveClient = useCallback((id: string) => {
@@ -800,7 +940,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     alertDone: live.alertDone, completeAlert,
     uploads: live.uploads, addUploads,
     clauseEdits: live.clauseEdits ?? {}, applyClauseEdit, revertClauseEdit,
-    practice: live.practice ?? seedPractice(), addClient, addAssignment, addPoolIntake, assignPoolIntake, openXrayEngagement, setActiveClient, setActiveAssignment,
+    practice: live.practice ?? seedPractice(), addClient, addAssignment, addPoolIntake, assignPoolIntake, openXrayEngagement, openDealEngagement, ensureDeal, setDealTransaction, setDealScenario, setDealMateriality, answerDealQuestion, setDealCpStatus, verifyDeal, setActiveClient, setActiveAssignment,
+    deal: live.deal ?? seedDeal(),
     xrayReady: live.xrayReady,
     xrayLive: live.xrayLive ?? null,
     xrayError,

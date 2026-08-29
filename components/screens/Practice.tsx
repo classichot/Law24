@@ -431,7 +431,7 @@ function aHint(title: string, th: boolean) {
 function startCopy(track: EngagementTrack, th: boolean) {
   if (track === "review") return th ? "วางแผนที่ที่ X-Ray" : "Map on X-Ray";
   if (track === "assemble") return th ? "เปิดคลังประกอบ" : "Open the library";
-  return th ? "ตั้งเรื่อง DD" : "Open the DD matter";
+  return th ? "เปิด Deal X-Ray" : "Open Deal X-Ray";
 }
 
 function EngagementHub({ track }: { track: EngagementTrack }) {

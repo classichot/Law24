@@ -10,7 +10,7 @@ export const ENGINE: { k: Exclude<ModeKey, "home" | "practice" | "command" | "as
   { k: "review", en: "X-Ray", th: "X-Ray" },
   { k: "holistic", en: "Cockpit", th: "ห้องบังคับ" },
   { k: "intel", en: "Twin", th: "ฝาแฝด" },
-  { k: "diligence", en: "War Room", th: "ห้องสงคราม" },
+  { k: "diligence", en: "Deal X-Ray", th: "Deal X-Ray" },
   { k: "negotiate", en: "Copilot", th: "เจรจา" },
   { k: "obligations", en: "Obligations", th: "ข้อผูกพัน" },
   { k: "assemble", en: "Assemble", th: "ประกอบ" },
@@ -26,7 +26,8 @@ export const XRAY_HOPS: { href: string; en: string; th: string; why: { t: string
   { href: "/practice?s=dash", en: "Firm", th: "สำนักงาน", why: { t: "เปิดงานจากฉบับนี้ — ลูกค้า เส้นทาง และห้องตรวจ", e: "Open the assignment from this paper — client, trail and review room" } },
   { href: "/holistic?s=cockpit", en: "Cockpit", th: "ห้องบังคับ", why: { t: "ห้องบังคับของสัญญานี้ — มูลค่า ความเสี่ยง และขั้นเจรจา", e: "Command center for this agreement — value, risk, and negotiation stage" } },
   { href: "/intel?s=twin", en: "Twin", th: "ฝาแฝด", why: { t: "ถามตำแหน่งกฎหมายของฉบับนี้ — ทุกคำตอบชี้ต้นทาง", e: "Ask this paper's legal position — every answer cites a source" } },
-  { href: "/diligence?s=dwar", en: "War Room", th: "ห้องสงคราม", why: { t: "ห้องสงครามของเอกสารนี้ — ธงแดงและตารางตรวจ", e: "War room for this paper — flags and the review grid" } },
+  { href: "/diligence?s=deal", en: "Deal X-Ray", th: "Deal X-Ray", why: { t: "ส่งฉบับนี้เข้าห้องดีล — ความเสี่ยงทั้งธุรกรรม", e: "Feed this paper into the deal room — transaction-level risk" } },
+  { href: "/diligence?s=dwar", en: "Contract flags", th: "ธงสัญญา", why: { t: "ธงแดงของฉบับที่ map — ไม่ใช่ทั้งห้องดีล", e: "Flags for this mapped paper — not the whole deal room" } },
   { href: "/negotiate?s=nladder", en: "Copilot", th: "เจรจา", why: { t: "ถือบันไดจุดยืนที่แผนที่เพิ่งเขียน", e: "Hold the fallback ladder the map just wrote" } },
   { href: "/obligations?s=oreg", en: "Obligations", th: "ข้อผูกพัน", why: { t: "วันที่สำคัญลงทะเบียนและปฏิทินหลังลงนาม", e: "Key dates go on the register and the post-signature calendar" } },
 ];
@@ -43,7 +44,7 @@ export const NAV: Record<Exclude<ModeKey, "home">, [ScreenKey, string, string][]
     ["pool", "คิวรับงาน", "Unassigned pool"],
     ["ereview", "ตรวจสัญญา", "Contract review"],
     ["edraft", "ร่างสัญญา", "Contract drafting"],
-    ["edd", "ความเสี่ยงกฎหมาย", "Legal risk"],
+    ["edd", "Deal X-Ray", "Deal X-Ray"],
     ["clients", "ลูกค้า", "Clients"],
     ["assign", "บันทึกงาน", "Engagement record"],
     ["trace", "เส้นทางงาน", "Movement trail"],
@@ -98,15 +99,33 @@ export const NAV: Record<Exclude<ModeKey, "home">, [ScreenKey, string, string][]
     ["memo", "บันทึกตัดสินใจ", "Decision memo"],
   ],
   diligence: [
-    ["dwar", "ห้องสงคราม DD", "DD War Room"],
-    ["dmatter", "ตั้งเรื่อง", "Matter"],
+    ["deal", "Deal X-Ray", "Deal X-Ray"],
+    ["dmatter", "ธุรกรรม", "Transaction"],
     ["droom", "ห้องข้อมูล", "Data room"],
-    ["dgrid", "ตารางตรวจเอกสาร", "Review grid"],
-    ["dmap", "แผนผังดีล", "Deal Map"],
-    ["dflags", "ธงแดงและข้อค้นพบ", "Findings & red flags"],
-    ["dreq", "คำขอและคำถาม", "Requests & Q&A"],
-    ["dqa", "ความครบถ้วนของงานตรวจ", "Coverage & QA"],
-    ["drep", "รายงาน", "Reports"],
+    ["dclass", "ดัชนีเอกสาร", "Index"],
+    ["dcheck", "ศูนย์ควบคุม DD", "Control Center"],
+    ["dmiss", "เอกสารที่ขาด", "Missing documents"],
+    ["dfacts", "ข้อเท็จจริง", "Legal facts"],
+    ["dclause", "ข้อสัญญา", "Clauses"],
+    ["dcoc", "อำนาจควบคุม", "Change of control"],
+    ["dcontra", "ข้อขัดแย้ง", "Contradictions"],
+    ["dauth", "อำนาจลงนาม", "Authority"],
+    ["dgraph", "กราฟนิติบุคคล", "Legal graph"],
+    ["drisk", "ความเสี่ยง", "Risk"],
+    ["dmat", "นัยสำคัญ", "Materiality"],
+    ["dexpo", "มูลค่าความเสี่ยง", "Exposure"],
+    ["dqa", "คำถามฝ่ายบริหาร", "Management Q&A"],
+    ["dlaw", "กฎหมายที่ใช้", "Applicable law"],
+    ["dev", "พยานหลักฐาน", "Evidence"],
+    ["dbreak", "ข้อที่อาจฆ่าดีล", "Deal breakers"],
+    ["dsim", "จำลองโครงสร้าง", "Impact simulator"],
+    ["dic", "สุขภาพดีล", "Deal health"],
+    ["dcp", "เงื่อนไขปิดดีล", "Closing conditions"],
+    ["dfix", "แก้ไข", "Remediate"],
+    ["ddisc", "ตารางเปิดเผย", "Disclosures"],
+    ["dspa", "เอกสารธุรกรรม", "SPA intelligence"],
+    ["drep", "รายงาน", "Report"],
+    ["dwar", "ธงสัญญา", "Contract flags"],
     ["autopilot", "Autopilot", "DD Autopilot"],
   ],
   negotiate: [
@@ -135,7 +154,9 @@ export const XRAY_REVIEW_HOPS = NAV.review
   .filter(([k]) => k !== "xray")
   .map(([k, th, en]) => ({ href: `/review?s=${k}`, k, th, en }));
 
-/** Every submenu under Firm / Cockpit / Twin / War Room / Copilot / Obligations. */
+const DEAL_FANOUT = new Set(["deal", "dmiss", "dcontra", "dfix", "dsim", "dic", "drep", "dwar"]);
+
+/** Every submenu under Firm / Cockpit / Twin / Deal X-Ray / Copilot / Obligations. */
 export const XRAY_ENGINE_HOPS = (
   [
     ["practice", "/practice"],
@@ -146,7 +167,9 @@ export const XRAY_ENGINE_HOPS = (
     ["obligations", "/obligations"],
   ] as const
 ).flatMap(([mode, path]) =>
-  NAV[mode].map(([k, th, en]) => ({ href: `${path}?s=${k}`, k, th, en, mode }))
+  NAV[mode]
+    .filter(([k]) => mode !== "diligence" || DEAL_FANOUT.has(k))
+    .map(([k, th, en]) => ({ href: `${path}?s=${k}`, k, th, en, mode }))
 );
 
 export function defaultScreen(mode: ModeKey): ScreenKey {
@@ -179,12 +202,15 @@ export const FIRM_CONTROL: FirmControlHop[] = [
   { href: "/assemble?s=asm", en: "Assemble", th: "ประกอบข้อ", kind: "engine", track: "assemble", why: { t: "ประกอบข้อจากคำตอบและเพลย์บุ๊ก", e: "Assemble clauses from answers and the playbook" } },
   { href: "/assemble?s=draft", en: "Draft", th: "ร่าง", kind: "engine", track: "assemble", why: { t: "ร่าง อนุมัติ และลงนาม", e: "Draft, approve and sign" } },
   { href: "/assemble?s=bilingual", en: "Bilingual", th: "คู่ภาษา", kind: "engine", track: "assemble", why: { t: "ร่างคู่ภาษาไทย–อังกฤษ", e: "Thai–English bilingual mirror" } },
-  { href: "/diligence?s=dmatter", en: "Matter", th: "ตั้งเรื่อง", kind: "engine", track: "diligence", why: { t: "ล็อกขอบเขต วัน IC และประเด็นล้มดีล", e: "Lock scope, IC date and kill items" } },
-  { href: "/diligence?s=droom", en: "Data room", th: "ห้องข้อมูล", kind: "engine", track: "diligence", why: { t: "จัดดัชนีหลักฐานก่อนขึ้นธง", e: "Index the evidence before you flag" } },
-  { href: "/diligence?s=dflags", en: "Red flags", th: "ธงแดง", kind: "engine", track: "diligence", why: { t: "ประเด็นความเสี่ยงกฎหมายพร้อมหลักฐาน", e: "Legal-risk items with evidence chains" } },
-  { href: "/diligence?s=dgrid", en: "Review grid", th: "ตารางตรวจ", kind: "engine", track: "diligence", why: { t: "ตารางตรวจเอกสารทั้งห้อง", e: "Document review grid for the room" } },
-  { href: "/diligence?s=drep", en: "Report", th: "รายงาน", kind: "engine", track: "diligence", why: { t: "รายงานความเสี่ยงที่คณะกรรมการอ่าน", e: "The legal-risk report the committee reads" } },
-  { href: "/diligence?s=autopilot", en: "Autopilot", th: "ออโต", kind: "engine", track: "diligence", why: { t: "วิ่งทั้งห้องแล้วส่งธงให้ทนายยืนยัน", e: "Runs the room, then counsel verifies" } },
+  { href: "/diligence?s=deal", en: "Deal X-Ray", th: "Deal X-Ray", kind: "engine", track: "diligence", why: { t: "จอเดียวว่าอะไรฆ่าหรือหน่วงดีล", e: "One screen for what can kill or hold the deal" } },
+  { href: "/diligence?s=droom", en: "Data room", th: "ห้องข้อมูล", kind: "engine", track: "diligence", why: { t: "จัดดัชนีทั้งห้อง แล้วประกอบครอบครัวสัญญา", e: "Index the room and reconstruct contract families" } },
+  { href: "/diligence?s=dmiss", en: "Missing papers", th: "เอกสารที่ขาด", kind: "engine", track: "diligence", why: { t: "สิ่งที่ควรมีแต่ยังไม่ถูกส่ง", e: "What should exist but was not provided" } },
+  { href: "/diligence?s=dcontra", en: "Contradictions", th: "ข้อขัดแย้ง", kind: "engine", track: "diligence", why: { t: "ข้อเท็จจริงที่ขัดกันข้ามเอกสาร", e: "Facts that conflict across documents" } },
+  { href: "/diligence?s=dbreak", en: "Deal breakers", th: "ข้อที่อาจฆ่าดีล", kind: "engine", track: "diligence", why: { t: "เจ็ดอย่างที่อาจฆ่าดีล ไม่ใช่ 842 ข้อค้นพบ", e: "The few things that can kill the deal — not 842 findings" } },
+  { href: "/diligence?s=dsim", en: "Simulator", th: "จำลองดีล", kind: "engine", track: "diligence", why: { t: "เปลี่ยนโครงสร้างแล้วดูความเสี่ยงใหม่", e: "Change the structure and watch exposure move" } },
+  { href: "/diligence?s=dfix", en: "Remediate", th: "แก้ไข", kind: "engine", track: "diligence", why: { t: "จากข้อค้นพบสู่ฉบับแก้ไข ความยินยอม หรือ CP", e: "From a finding to an amendment, consent or CP" } },
+  { href: "/diligence?s=dic", en: "Deal health", th: "สุขภาพดีล", kind: "engine", track: "diligence", why: { t: "โหมดคณะกรรมการ — ความเสี่ยงรวมและเงื่อนไข", e: "IC mode — overall risk and the conditions" } },
+  { href: "/diligence?s=drep", en: "Report", th: "รายงาน", kind: "engine", track: "diligence", why: { t: "รายงานที่ทุกประโยคชี้หลักฐาน", e: "The report in which every line cites evidence" } },
   { href: "/practice?s=clients", en: "Clients", th: "ลูกค้า", kind: "firm", why: { t: "บัญชีลูกค้า — เปิดงานทั้งสามประเภท", e: "Client book — open work on any of the three tracks" } },
   { href: "/practice?s=pool", en: "Unassigned pool", th: "คิวรับงาน", kind: "firm", why: { t: "ลูกค้าและงานใหม่ที่ยังไม่มีผู้รับผิดชอบ", e: "New clients and engagements waiting for allocation" } },
   { href: "/practice?s=assign", en: "Record", th: "บันทึกงาน", kind: "firm", why: { t: "บันทึกงานทั้งสามประเภท — ตรวจ ร่าง DD", e: "Engagement record across review, drafting and DD" } },

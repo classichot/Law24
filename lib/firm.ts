@@ -129,11 +129,11 @@ export const ENGAGEMENT: Record<EngagementTrack, {
     cls: "eng-dd",
     en: "Legal due diligence",
     th: "ตรวจสอบสถานะทางกฎหมาย",
-    tagEn: "Legal risk",
-    tagTh: "ความเสี่ยงกฎหมาย",
-    why: { t: "ตั้งเรื่อง · ห้องข้อมูล · ธงแดง · รายงานความเสี่ยง", e: "Matter · data room · red flags · legal-risk report" },
-    record: { t: "บันทึกงาน DD — ขอบเขต ธงแดง และรายงาน", e: "DD record — scope, flags and the risk report" },
-    href: "/diligence?s=dmatter",
+    tagEn: "Deal X-Ray",
+    tagTh: "Deal X-Ray",
+    why: { t: "Deal X-Ray · เอกสารที่ขาด · ข้อขัดแย้ง · จำลองดีล · แก้ไข", e: "Deal X-Ray · missing papers · contradictions · simulator · remediate" },
+    record: { t: "บันทึกงาน DD — ห้องข้อมูล ข้อค้นพบ และวงปิดดีล", e: "DD record — room, findings and the close loop" },
+    href: "/diligence?s=deal",
     firmHref: "/practice?s=edd",
     recordHref: "/practice?s=assign&eng=diligence",
   },
@@ -169,7 +169,7 @@ export function overdue(a: AssignmentRecord) {
 
 export const HREF_FOR_TYPE: Record<AssignmentType, string> = {
   review: "/review?s=xray",
-  diligence: "/diligence?s=dmatter",
+  diligence: "/diligence?s=deal",
   negotiate: "/negotiate?s=nladder",
   obligations: "/obligations?s=oreg",
   assemble: "/assemble?s=lib",
@@ -193,6 +193,15 @@ export function xrayContextOf(p: PracticeState) {
   if (!assignment || assignment.stage === "closed" || engagementOf(assignment.type) !== "review") return null;
   const client = clientOf(p, assignment.clientId);
   if (!client || client.id !== p.activeClientId) return null;
+  return { client, assignment };
+}
+
+/** Deal X-Ray runs inside an active Firm client + legal-DD engagement. */
+export function ddContextOf(p: PracticeState) {
+  const assignment = assignmentOf(p, p.activeAssignmentId);
+  if (!assignment || assignment.stage === "closed" || engagementOf(assignment.type) !== "diligence") return null;
+  const client = clientOf(p, assignment.clientId);
+  if (!client || (p.activeClientId && client.id !== p.activeClientId)) return null;
   return { client, assignment };
 }
 
