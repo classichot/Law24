@@ -22,9 +22,10 @@ export const MODES = ENGINE;
  * modules — they sit in the top nav, but the result used to dead-end in Review.
  */
 export const XRAY_HOPS: { href: string; en: string; th: string; why: { t: string; e: string } }[] = [
+  { href: "/practice?s=dash", en: "Firm", th: "สำนักงาน", why: { t: "เปิดงานจากฉบับนี้ — ลูกค้า เส้นทาง และห้องตรวจ", e: "Open the assignment from this paper — client, trail and review room" } },
   { href: "/holistic?s=cockpit", en: "Cockpit", th: "ห้องบังคับ", why: { t: "ห้องบังคับของสัญญานี้ — มูลค่า ความเสี่ยง และขั้นเจรจา", e: "Command center for this agreement — value, risk, and negotiation stage" } },
-  { href: "/intel?s=twin", en: "Twin", th: "ฝาแฝด", why: { t: "ถามตำแหน่งกฎหมายขององค์กรนี้ — ทุกคำตอบชี้ต้นทาง", e: "Ask this company's legal position — every answer cites a source" } },
-  { href: "/diligence?s=dwar", en: "War Room", th: "ห้องสงคราม", why: { t: "เปิดห้องสงคราม DD เมื่อเอกสารนี้เป็นส่วนของดีล", e: "Open the DD war room when this paper sits inside a deal" } },
+  { href: "/intel?s=twin", en: "Twin", th: "ฝาแฝด", why: { t: "ถามตำแหน่งกฎหมายของฉบับนี้ — ทุกคำตอบชี้ต้นทาง", e: "Ask this paper's legal position — every answer cites a source" } },
+  { href: "/diligence?s=dwar", en: "War Room", th: "ห้องสงคราม", why: { t: "ห้องสงครามของเอกสารนี้ — ธงแดงและตารางตรวจ", e: "War room for this paper — flags and the review grid" } },
   { href: "/negotiate?s=nladder", en: "Copilot", th: "เจรจา", why: { t: "ถือบันไดจุดยืนที่แผนที่เพิ่งเขียน", e: "Hold the fallback ladder the map just wrote" } },
   { href: "/obligations?s=oreg", en: "Obligations", th: "ข้อผูกพัน", why: { t: "วันที่สำคัญลงทะเบียนและปฏิทินหลังลงนาม", e: "Key dates go on the register and the post-signature calendar" } },
 ];
@@ -128,6 +129,20 @@ export const NAV: Record<Exclude<ModeKey, "home">, [ScreenKey, string, string][]
 export const XRAY_REVIEW_HOPS = NAV.review
   .filter(([k]) => k !== "xray")
   .map(([k, th, en]) => ({ href: `/review?s=${k}`, k, th, en }));
+
+/** Every submenu under Firm / Cockpit / Twin / War Room / Copilot / Obligations. */
+export const XRAY_ENGINE_HOPS = (
+  [
+    ["practice", "/practice"],
+    ["holistic", "/holistic"],
+    ["intel", "/intel"],
+    ["diligence", "/diligence"],
+    ["negotiate", "/negotiate"],
+    ["obligations", "/obligations"],
+  ] as const
+).flatMap(([mode, path]) =>
+  NAV[mode].map(([k, th, en]) => ({ href: `${path}?s=${k}`, k, th, en, mode }))
+);
 
 export function defaultScreen(mode: ModeKey): ScreenKey {
   if (mode === "home") return "home";

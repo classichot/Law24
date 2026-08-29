@@ -20,9 +20,11 @@ import {
   type AssignmentStage,
   type AssignmentType,
 } from "@/lib/firm";
-import { CLIENT_ROOM, FIRM_BRAIN, PACKAGES, ENTRANCES } from "@/lib/product";
+import { FIRM_BRAIN, PACKAGES, ENTRANCES } from "@/lib/product";
 import { downloadText } from "@/lib/demo";
 import { L } from "@/lib/model";
+import { NeedMap } from "@/components/NeedMap";
+import { clientRoomOf, firmBrainOf, withLiveMatter } from "@/lib/ai/fromMap";
 
 const STAGE_CLASS: Record<AssignmentStage, string> = {
   intake: "status-prep",
@@ -47,8 +49,10 @@ export function PracticeScreen({ screen }: { screen: string }) {
 }
 
 function Dash() {
-  const { lang, practice, setActiveAssignment } = useStore();
+  const s = useStore();
+  const { lang, setActiveAssignment } = s;
   const th = lang === "th";
+  const practice = withLiveMatter(s.practice, s.xrayLive, s.reviewLive);
   const d = dashboardOf(practice);
   const maxFunnel = Math.max(1, ...FUNNEL.map((k) => d.funnel[k]));
 
@@ -62,6 +66,14 @@ function Dash() {
           th="ลูกค้า งาน และเส้นทางเคลื่อนไหว — พาร์ทเนอร์ไล่เรื่องได้ตั้งแต่รับงานจนปิด"
         />
       </p>
+      {!s.xrayLive && (
+        <div className="callout" style={{ marginTop: 16 }}>
+          <T en="Map a contract on X-Ray to open a live matter here. The books no longer seed Nimbus, Charoen or PTT." th="วางแผนที่สัญญาที่ X-Ray เพื่อเปิดงานที่นี่ บัญชีไม่เติมนิมบัส เจริญ หรือ PTT แล้ว" />
+          <div className="stack-actions" style={{ marginTop: 10 }}>
+            <Link href="/review?s=xray" className="btn btn-primary">X-Ray</Link>
+          </div>
+        </div>
+      )}
       <div className="stat-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginTop: 24 }}>
         {[
           { v: String(d.clients), k: th ? "ลูกค้าที่เปิด" : "Active clients" },
@@ -163,6 +175,7 @@ function aHint(title: string, th: boolean) {
 
 function Clients() {
   const s = useStore();
+  const practice = withLiveMatter(s.practice, s.xrayLive, s.reviewLive);
   const router = useRouter();
   const th = s.lang === "th";
   const [open, setOpen] = useState(false);
@@ -231,8 +244,8 @@ function Clients() {
           </tr>
         </thead>
         <tbody>
-          {s.practice.clients.map((c) => {
-            const n = s.practice.assignments.filter((a) => a.clientId === c.id).length;
+          {practice.clients.map((c) => {
+            const n = practice.assignments.filter((a) => a.clientId === c.id).length;
             return (
               <tr
                 key={c.id}
@@ -262,11 +275,12 @@ function Clients() {
 
 function Assignments() {
   const s = useStore();
+  const practice = withLiveMatter(s.practice, s.xrayLive, s.reviewLive);
   const router = useRouter();
   const params = useSearchParams();
   const th = s.lang === "th";
   const [open, setOpen] = useState(false);
-  const [clientId, setClientId] = useState(s.practice.activeClientId || s.practice.clients[0]?.id || "");
+  const [clientId, setClientId] = useState(practice.activeClientId || practice.clients[0]?.id || "");
   const [title, setTitle] = useState("");
   const [titleTh, setTitleTh] = useState("");
   const [type, setType] = useState<AssignmentType>("review");
@@ -276,8 +290,8 @@ function Assignments() {
   const [filter, setFilter] = useState(params.get("c") || "all");
 
   const rows = useMemo(() => {
-    return s.practice.assignments.filter((a) => filter === "all" || a.clientId === filter);
-  }, [s.practice.assignments, filter]);
+    return practice.assignments.filter((a) => filter === "all" || a.clientId === filter);
+  }, [practice.assignments, filter]);
 
   function onAdd(e: FormEvent) {
     e.preventDefault();
@@ -320,7 +334,7 @@ function Assignments() {
           <div className="field">
             <label><T en="Client" th="ลูกค้า" /></label>
             <select className="input" value={clientId} onChange={(e) => setClientId(e.target.value)}>
-              {s.practice.clients.map((c) => (
+              {practice.clients.map((c) => (
                 <option key={c.id} value={c.id}>{th ? c.nameTh : c.name}</option>
               ))}
             </select>
@@ -363,7 +377,7 @@ function Assignments() {
         <button type="button" className={`filter-chip${filter === "all" ? " on" : ""}`} onClick={() => setFilter("all")}>
           <T en="All clients" th="ลูกค้าทั้งหมด" />
         </button>
-        {s.practice.clients.map((c) => (
+        {practice.clients.map((c) => (
           <button key={c.id} type="button" className={`filter-chip${filter === c.id ? " on" : ""}`} onClick={() => setFilter(c.id)}>
             {th ? c.nameTh : c.name}
           </button>
@@ -384,7 +398,7 @@ function Assignments() {
         </thead>
         <tbody>
           {rows.map((a) => {
-            const c = clientOf(s.practice, a.clientId);
+            const c = clientOf(practice, a.clientId);
             const late = overdue(a);
             return (
               <tr
@@ -415,11 +429,12 @@ function Assignments() {
 
 function Trace() {
   const s = useStore();
+  const practice = withLiveMatter(s.practice, s.xrayLive, s.reviewLive);
   const th = s.lang === "th";
-  const id = s.practice.activeAssignmentId;
-  const a = assignmentOf(s.practice, id);
-  const c = a ? clientOf(s.practice, a.clientId) : undefined;
-  const trail = trailOf(s.practice, id);
+  const id = practice.activeAssignmentId;
+  const a = assignmentOf(practice, id);
+  const c = a ? clientOf(practice, a.clientId) : undefined;
+  const trail = trailOf(practice, id);
 
   return (
     <div className="pad-page">
@@ -433,7 +448,7 @@ function Trace() {
       </p>
       <div className="trace-layout">
         <aside className="trace-list">
-          {s.practice.assignments.map((row) => (
+          {practice.assignments.map((row) => (
             <button
               key={row.id}
               type="button"
@@ -499,7 +514,13 @@ function Trace() {
 }
 
 function Brain() {
-  const { lang } = useStore();
+  const s = useStore();
+  const { lang } = s;
+  const rows = s.xrayLive ? firmBrainOf(s.xrayLive) : FIRM_BRAIN.map((b) => (
+    b.k.e.includes("playbooks") || b.k.t.includes("เพลย์บุ๊ก")
+      ? { ...b, n: "0", d: { t: "จากฉบับที่วางแผนที่ — ยังไม่มี", e: "From the mapped paper — none yet" } }
+      : { ...b, n: "0", d: { t: "รอแผนที่ X-Ray", e: "Waiting on an X-Ray map" } }
+  ));
   return (
     <div className="pad-page">
       <Kicker>firm · brain</Kicker>
@@ -508,7 +529,7 @@ function Brain() {
         <T en="Precedents, clause library, partner comments, negotiation positions, research memoranda, client playbooks, past advice and successful drafting patterns — juniors benefit from partner knowledge without exposing information across clients. This growing layer is LAW24’s real moat." th="บรรทัดฐาน คลังข้อ ความเห็นหุ้นส่วน จุดยืนเจรจา บันทึกวิจัย เพลย์บุ๊กต่อลูกค้า คำแนะนำในอดีต และแบบร่างที่สำเร็จ — จูเนียร์ใช้ความรู้หุ้นส่วนได้โดยไม่เปิดข้อมูลข้ามลูกค้า ชั้นนี้ที่โตขึ้นคือคูเมืองของ LAW24" />
       </p>
       <div className="grid-2" style={{ marginTop: 20 }}>
-        {FIRM_BRAIN.map((b) => (
+        {rows.map((b) => (
           <Link key={b.k.e} href={b.href} className="xray-layer" style={{ textDecoration: "none", color: "inherit" }}>
             <div className="page-kicker">{b.n}</div>
             <strong>{L(lang, b.k)}</strong>
@@ -522,7 +543,8 @@ function Brain() {
 
 function Room() {
   const s = useStore();
-  const r = CLIENT_ROOM;
+  if (!s.xrayLive) return <NeedMap kicker="firm · client review room" />;
+  const r = clientRoomOf(s.xrayLive, s.reviewLive);
   return (
     <div className="pad-page">
       <Kicker>firm · client review room</Kicker>

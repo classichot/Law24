@@ -3,7 +3,7 @@ import { generateStructured } from "@/lib/ai/server";
 import { extractFromRequest, hasContractText } from "@/lib/ai/extract";
 import { xrayIdent, xrayFacts, xrayGaps, xrayPlan } from "@/lib/ai/schema";
 import { normalizeXray } from "@/lib/ai/normalize";
-import { TENANT_BRIEF } from "@/lib/ai/house";
+import { LIVE_ONLY } from "@/lib/ai/house";
 import { jsonError, requireLive } from "@/lib/ai/http";
 
 export const runtime = "nodejs";
@@ -36,7 +36,7 @@ Approx pages: ${doc.pages}
 ${scan
     ? "The attached PDF is a scan with no text layer. Read the pages. Do not invent clauses that are not visible."
     : `CONTRACT TEXT:\n${doc.text}`}`;
-    const rules = `Playbook for SaaS/cloud: PB-IT v4.2. ${TENANT_BRIEF}
+    const rules = `Playbook for SaaS/cloud: PB-IT v4.2. ${LIVE_ONLY}
 
 Return bilingual TE fields and keep every field to one tight sentence. Answer only the fields in the schema — other parts of the X-Ray are minted by a parallel call, so do not attempt them here.`;
 

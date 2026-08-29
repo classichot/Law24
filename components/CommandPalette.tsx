@@ -4,9 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DEMO_STEPS, catalogHits, type SearchHit } from "@/lib/demo";
 import { practiceHits } from "@/lib/firm";
-import { FX, TAX_LIST } from "@/lib/taxonomy";
+import { TAX_LIST } from "@/lib/taxonomy";
 import { useStore } from "@/lib/store";
 import { L } from "@/lib/model";
+import { withLiveMatter } from "@/lib/ai/fromMap";
 import { T } from "@/lib/i18n";
 import { PLAYBOOKS, modeFromHref, playbookKeyFor } from "@/lib/guides";
 import { isMode } from "@/lib/nav";
@@ -55,11 +56,11 @@ export function CommandPalette() {
           title: th ? st.th.title : st.en.title,
           sub: th ? st.th.action : st.en.action,
         })),
-        ...catalogHits(s.lang).filter((h) => h.kind === (th ? "เรื่อง" : "Matter") || h.id === "home").slice(0, 4),
+        ...catalogHits(s.lang).filter((h) => h.id === "home").slice(0, 4),
       ].slice(0, 10);
     }
     const extra: SearchHit[] = [];
-    if (s.edition === "firm") extra.push(...practiceHits(s.practice, s.lang));
+    if (s.edition === "firm") extra.push(...practiceHits(withLiveMatter(s.practice, s.xrayLive, s.reviewLive), s.lang));
     TAX_LIST.forEach((r) => {
       extra.push({
         id: r.id,
@@ -69,7 +70,8 @@ export function CommandPalette() {
         sub: th ? r.nameEn : r.nameTh,
       });
     });
-    FX.review.findings.forEach((f) => {
+    const findings = s.reviewLive?.findings || [];
+    findings.forEach((f) => {
       extra.push({
         id: f.id,
         href: "/review?s=find",
@@ -77,7 +79,8 @@ export function CommandPalette() {
         title: `${f.id} · ${L(s.lang, f.issue)}`,
       });
     });
-    FX.dil.flags.forEach((f) => {
+    const flags = s.ddLive?.flags || [];
+    flags.forEach((f) => {
       extra.push({
         id: f.id,
         href: "/diligence?s=dflags",
@@ -88,10 +91,11 @@ export function CommandPalette() {
     return [...catalogHits(s.lang), ...extra]
       .filter((h) => s.edition === "firm" || !h.href.startsWith("/practice"))
       .filter((h) => s.edition !== "firm" || !h.href.startsWith("/command"))
+      .filter((h) => !s.xrayLive || !h.id.startsWith("matter-"))
       .filter((h) => !invite || (h.href !== "/host" && h.id !== "host"))
       .filter((h) => `${h.kind} ${h.title} ${h.sub || ""}`.toLowerCase().includes(needle))
       .slice(0, 12);
-  }, [q, s.lang, s.edition, s.practice]);
+  }, [q, s.lang, s.edition, s.practice, s.xrayLive, s.reviewLive, s.ddLive]);
 
   if (!s.searchOpen) return null;
 

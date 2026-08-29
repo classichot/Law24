@@ -11,7 +11,7 @@ import { XRAY } from "@/lib/product";
 import { copyText, downloadText } from "@/lib/demo";
 import { AiLiveMark } from "@/components/AiLiveMark";
 import { CONTRACT_ACCEPT } from "@/lib/ai/files";
-import { XRAY_HOPS, XRAY_REVIEW_HOPS } from "@/lib/nav";
+import { XRAY_ENGINE_HOPS, XRAY_HOPS, XRAY_REVIEW_HOPS } from "@/lib/nav";
 
 export function XRayScreen() {
   const s = useStore();
@@ -294,6 +294,18 @@ export function XRayScreen() {
       <div className="stack-actions" style={{ marginTop: 10 }}>
         {XRAY_HOPS.map((h) => (
           <Link key={h.href} href={h.href} className="btn btn-secondary">{th ? h.th : h.en}</Link>
+        ))}
+      </div>
+      <h5 style={{ marginTop: 22 }}><T en="Every submenu on those modules" th="ทุกเมนูย่อยในโมดูลเหล่านั้น" /></h5>
+      <p className="text-muted" style={{ margin: "6px 0 0", fontSize: 13, maxWidth: "72ch" }}>
+        <T
+          en="Firm, Cockpit, Twin, War Room, Copilot and Obligations now read this map — not the Nimbus sample."
+          th="สำนักงาน ห้องบังคับ ฝาแฝด ห้องสงคราม เจรจา และข้อผูกพันอ่านแผนที่นี้ — ไม่ใช่ตัวอย่างนิมบัส"
+        />
+      </p>
+      <div className="stack-actions" style={{ marginTop: 10 }}>
+        {XRAY_ENGINE_HOPS.map((h) => (
+          <Link key={h.href} href={h.href} className="btn btn-ghost" style={{ fontSize: 12 }}>{th ? h.th : h.en}</Link>
         ))}
       </div>
 
