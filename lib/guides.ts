@@ -258,7 +258,7 @@ export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
     rule: P("ห้ามข้ามกฎในเล่มเพื่อปิดงานเร็ว", "Do not skip a rule in the book to close the work faster"),
   },
   "practice/dash": {
-    why: P("ศูนย์ควบคุมสำนักงานแยกงานเป็นสามประเภท — ตรวจ ร่าง และความเสี่ยงกฎหมาย", "Firm control splits work into three engagements — review, drafting and legal risk"),
+    why: P("ศูนย์ควบคุมสำนักงานแยกงานเป็นสามประเภท — ตรวจ ร่าง และ Deal X-Ray", "Firm control splits work into three engagements — review, drafting and Deal X-Ray"),
     do: P("เลือกประเภท แล้วเปิดควบคุมหรือบันทึกของประเภทนั้น", "Pick the engagement, then open that track’s control or record"),
     rule: P("งานทุกชิ้นต้องอยู่ใต้หนึ่งในสามประเภท — ห้ามมีงานนอกระบบ", "Every live assignment sits on one of the three tracks — no work off-system"),
   },

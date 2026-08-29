@@ -302,8 +302,8 @@ function Dash() {
       <Title><T en="Firm control" th="ศูนย์ควบคุมสำนักงาน" /></Title>
       <p className="page-sub">
         <T
-          en="Three engagements. Green is contract review (X-Ray through Obligations). Blue is contract drafting (Assemble). Amber is legal due diligence — legal risk."
-          th="งานสามประเภท เขียวคือตรวจสัญญา (X-Ray ถึงข้อผูกพัน) น้ำเงินคือร่างสัญญา (ประกอบ) ส้มคือตรวจสอบสถานะทางกฎหมาย — ความเสี่ยงกฎหมาย"
+          en="Three engagements. Green is contract review (X-Ray through Obligations). Blue is contract drafting (Assemble). Amber is Deal X-Ray — legal due diligence of the whole transaction."
+          th="งานสามประเภท เขียวคือตรวจสัญญา (X-Ray ถึงข้อผูกพัน) น้ำเงินคือร่างสัญญา (ประกอบ) ส้มคือ Deal X-Ray — ตรวจสอบสถานะทั้งธุรกรรม"
         />
       </p>
       <ActiveMatter practice={practice} />
@@ -431,7 +431,7 @@ function aHint(title: string, th: boolean) {
 function startCopy(track: EngagementTrack, th: boolean) {
   if (track === "review") return th ? "วางแผนที่ที่ X-Ray" : "Map on X-Ray";
   if (track === "assemble") return th ? "เปิดคลังประกอบ" : "Open the library";
-  return th ? "เปิด Deal X-Ray" : "Open Deal X-Ray";
+  return "Deal X-Ray";
 }
 
 function EngagementHub({ track }: { track: EngagementTrack }) {

@@ -260,9 +260,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Link href="/home" className={mode === "home" ? "active" : ""}>Home</Link>
         <Link href="/review?s=xray" className={mode === "review" ? "active" : ""}>X-Ray</Link>
         <Link href="/intel?s=twin" className={mode === "intel" ? "active" : ""}>Twin</Link>
-        {s.edition === "firm"
-          ? <Link href="/practice?s=room" className={screen === "room" ? "active" : ""}>Room</Link>
-          : <Link href="/diligence?s=deal" className={mode === "diligence" ? "active" : ""}>DD</Link>}
+        <Link href="/diligence?s=deal" className={mode === "diligence" ? "active" : ""}>Deal X-Ray</Link>
+        {s.edition === "firm" && <Link href="/practice?s=room" className={screen === "room" ? "active" : ""}>Room</Link>}
       </nav>
 
       {menu && (
