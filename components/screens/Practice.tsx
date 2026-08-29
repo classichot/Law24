@@ -985,10 +985,10 @@ function Trace() {
             <>
               <div className={`trace-head eng-card ${ENGAGEMENT[engagementOf(a.type)].cls}`}>
                 <div>
-                  <div style={{ font: "800 11px/1 var(--font-heading)", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--color-neutral-600)", marginBottom: 8 }}>{a.id}</div>
-                  <div style={{ marginBottom: 8 }}><EngPill track={engagementOf(a.type)} /></div>
-                  <h3 style={{ margin: "0 0 8px", fontSize: 20 }}>{th ? a.titleTh : a.title}</h3>
-                  <div style={{ fontSize: 13, color: "var(--color-neutral-600)" }}>
+                  <div className="trace-head-id">{a.id}</div>
+                  <div style={{ marginBottom: 4 }}><EngPill track={engagementOf(a.type)} /></div>
+                  <h3>{th ? a.titleTh : a.title}</h3>
+                  <div className="trace-head-meta">
                     {c ? (th ? c.nameTh : c.name) : a.clientId} · {typeCopy(a.type, s.lang)} · {a.lead} · {th ? "กำหนด" : "Due"} {a.due}
                   </div>
                 </div>
@@ -1002,7 +1002,7 @@ function Trace() {
                   </Link>
                 </div>
               </div>
-              <div className="stack-actions" style={{ margin: "12px 0 18px" }}>
+              <div className="stack-actions" style={{ margin: "8px 0 28px" }}>
                 {firmControlFor(engagementOf(a.type)).map((h) => (
                   <Link key={h.href} href={h.href} className="btn btn-ghost" style={{ fontSize: 12 }}>
                     {th ? h.th : h.en}
