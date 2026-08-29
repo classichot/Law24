@@ -39,8 +39,13 @@ const EDITION_KEY = "law24-edition";
 const LIVE_KEY = "law24-live";
 /** Stays under the route's maxDuration so the user gets our message, not a gateway timeout. */
 const AI_STAGE_MS = 70_000;
-/** Scanned PDFs OCR then map — needs the longer X-Ray window. */
-const AI_XRAY_MS = 115_000;
+/**
+ * The map and the board are minted in parallel stages that Anthropic queues, so
+ * both routinely run past a minute. These sit just above the server's own abort
+ * so the browser receives the server's message instead of cancelling first.
+ */
+const AI_REVIEW_MS = 110_000;
+const AI_XRAY_MS = 110_000;
 
 type Store = {
   ready: boolean;
@@ -536,7 +541,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const fd = new FormData();
       fd.append("file", file);
       fd.append("filename", file.name);
-      const pack = await postAi<ReviewLive>("/api/ai/review", fd, AI_STAGE_MS);
+      const pack = await postAi<ReviewLive>("/api/ai/review", fd, AI_REVIEW_MS);
       if (pack?.findings?.length) patchLive({ reviewLive: pack });
     } catch {
       /* the map still stands on its own */

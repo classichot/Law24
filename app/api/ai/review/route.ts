@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { TE } from "@/lib/model";
 import { generateStructured } from "@/lib/ai/server";
 import { extractFromRequest, hasContractText } from "@/lib/ai/extract";
 import { reviewFindings, reviewBoard } from "@/lib/ai/schema";
@@ -74,15 +75,21 @@ Keep every field to one tight sentence. Answer only the fields in the schema —
       return jsonError(parts.find((p) => p.error)?.error || "Review failed", 500, { stages });
     }
     const merged = Object.assign({}, ...parts.map((p) => p.value || {}));
-    // Both card stages rank the same paper, so drop anything the other already named.
+    // Both card stages rank the same paper independently, so they can land on the
+    // same clause. Keep the first card per cited clause, and per issue opening.
     const seen = new Set<string>();
+    const fresh = (key: string) => {
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    };
+    const flat = (key: string) => key.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
     merged.findings = parts
-      .flatMap((p) => (p.value as { findings?: { issue: { e: string } }[] } | undefined)?.findings || [])
+      .flatMap((p) => (p.value as { findings?: { issue?: TE; src?: TE }[] } | undefined)?.findings || [])
       .filter((f) => {
-        const key = (f.issue?.e || "").toLowerCase().replace(/\W+/g, " ").trim();
-        if (!key || seen.has(key)) return false;
-        seen.add(key);
-        return true;
+        const clause = (flat(f.src?.e || "").match(/cl\s*\d+(\s*\d+)?/) || [""])[0];
+        const opening = flat(f.issue?.e || "").split(" ").slice(0, 6).join(" ");
+        return fresh(opening) && (!clause || fresh(clause));
       });
     return NextResponse.json({ ...normalizeReview(merged), stages });
   } catch (err) {
