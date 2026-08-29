@@ -120,6 +120,9 @@ export function XRayScreen() {
   }
 
   const X = s.xrayLive ?? XRAY;
+  // Live review stages are minted after the map, so the board may still be in
+  // flight. A fixture map is served by fixture cards, which are always there.
+  const reviewReady = !s.xrayLive || Boolean(s.reviewLive?.findings?.length || s.reviewLive?.board?.length);
   const heatColor = (sev: string) => sev === "high" ? "var(--color-hot)" : sev === "med" ? "var(--color-warn)" : "var(--color-ok)";
 
   return (
@@ -246,6 +249,23 @@ export function XRayScreen() {
         <button type="button" className="btn btn-secondary" onClick={() => { downloadText("LAW24-management-brief.txt", L(s.lang, X.brief)); s.flash(th ? "ส่งออกสรุปแล้ว" : "Brief exported"); }}><T en="Export brief" th="ส่งออกสรุป" /></button>
         <button type="button" className="btn btn-secondary" onClick={() => { copyText(L(s.lang, X.email)); s.flash(th ? "คัดลอกอีเมลคู่สัญญาแล้ว" : "Counterparty email copied"); }}><T en="Copy email to counterparty" th="คัดลอกอีเมลถึงคู่สัญญา" /></button>
         <Link href="/holistic?s=dna" className="btn btn-secondary"><T en="Clause DNA" th="Clause DNA" /></Link>
+      </div>
+
+      <h5 style={{ marginTop: 24 }}><T en="Continue the review" th="ตรวจต่อ" /></h5>
+      <p className="text-muted" style={{ margin: "6px 0 0", fontSize: 13, maxWidth: "72ch" }}>
+        {reviewReady
+          ? <T
+              en="Issue cards and the seven-seat board are ready for this document."
+              th="บัตรประเด็นและคณะทบทวนเจ็ดที่นั่งพร้อมแล้วสำหรับเอกสารนี้"
+            />
+          : <T
+              en="Issue cards and the board are still being written for this document. The map above stands on its own."
+              th="กำลังเขียนบัตรประเด็นและคณะทบทวนสำหรับเอกสารนี้ แผนที่ด้านบนใช้ได้ด้วยตัวเอง"
+            />}
+      </p>
+      <div className="stack-actions" style={{ marginTop: 10 }}>
+        <Link href="/review?s=find" className="btn btn-primary"><T en="Issue cards" th="บัตรประเด็น" /></Link>
+        <Link href="/review?s=board" className="btn btn-secondary"><T en="AI Legal Review Board" th="คณะทบทวน AI" /></Link>
         <Link href="/negotiate?s=nladder" className="btn btn-secondary"><T en="Negotiation copilot" th="ผู้ช่วยเจรจา" /></Link>
       </div>
 

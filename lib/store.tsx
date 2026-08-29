@@ -542,7 +542,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       fd.append("file", file);
       fd.append("filename", file.name);
       const pack = await postAi<ReviewLive>("/api/ai/review", fd, AI_REVIEW_MS);
-      if (pack?.findings?.length) patchLive({ reviewLive: pack });
+      // Cards and the board are separate stages — keep whichever one arrived.
+      if (pack?.findings?.length || pack?.board?.length) patchLive({ reviewLive: pack });
     } catch {
       /* the map still stands on its own */
     }
