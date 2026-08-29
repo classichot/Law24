@@ -25,6 +25,7 @@ import {
   seedPractice,
   stampDay,
   stampNow,
+  xrayContextOf,
   type AssignmentStage,
   type AssignmentType,
   type Movement,
@@ -133,6 +134,7 @@ type Store = {
   practice: PracticeState;
   addClient: (input: { name: string; nameTh?: string; sector: string; owner: string }) => void;
   addAssignment: (input: { clientId: string; title: string; titleTh?: string; type: AssignmentType; due: string; lead: string; fee?: string }) => void;
+  openXrayEngagement: (input: { clientName: string; engagementName: string }) => void;
   setActiveClient: (id: string) => void;
   setActiveAssignment: (id: string) => void;
   xrayReady: boolean;
@@ -519,6 +521,64 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       );
     });
   }, [patchLive]);
+  const openXrayEngagement = useCallback((input: { clientName: string; engagementName: string }) => {
+    patchLive((p) => {
+      const clientName = input.clientName.trim();
+      const engagementName = input.engagementName.trim();
+      const existingClient = p.practice.clients.find((c) =>
+        c.name.trim().toLowerCase() === clientName.toLowerCase()
+        || c.nameTh.trim().toLowerCase() === clientName.toLowerCase()
+      );
+      const ids = nextIds(p.practice);
+      const clientId = existingClient?.id || ids.clientId;
+      const assignmentId = ids.assignmentId;
+      const next = {
+        ...p,
+        practice: {
+          ...p.practice,
+          activeClientId: clientId,
+          activeAssignmentId: assignmentId,
+          clients: existingClient
+            ? p.practice.clients
+            : [
+                ...p.practice.clients,
+                {
+                  id: clientId,
+                  name: clientName,
+                  nameTh: clientName,
+                  sector: "Contract review",
+                  owner: FIRM_USER.name,
+                  opened: stampDay(),
+                  status: "active" as const,
+                },
+              ],
+          assignments: [
+            ...p.practice.assignments,
+            {
+              id: assignmentId,
+              clientId,
+              title: engagementName,
+              titleTh: engagementName,
+              type: "review" as const,
+              stage: "intake" as const,
+              lead: FIRM_USER.name,
+              due: stampDay("2026-09-30"),
+              fee: "THB 0",
+              href: "/review?s=xray",
+            },
+          ],
+        },
+      };
+      return appendMv(
+        next,
+        "Contract review engagement opened for X-Ray. Intake logged.",
+        "เปิดงานตรวจสัญญาสำหรับ X-Ray และบันทึกรับเรื่อง",
+        "/review?s=xray",
+        "intake",
+        { assignmentId }
+      );
+    });
+  }, [patchLive]);
   const setActiveClient = useCallback((id: string) => {
     patchLive((p) => ({ ...p, practice: { ...p.practice, activeClientId: id } }));
   }, [patchLive]);
@@ -527,17 +587,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [patchLive]);
   const startXray = useCallback((name?: string) => {
     setXrayError(null);
-    patchLive((p) => ({
-      ...p,
-      xrayReady: true,
-      xrayLive: null,
-      reviewLive: null,
-      sel: p.sel || DEMO_TYPE_ID,
-      matter: p.matter || "nimbus",
-      uploads: p.uploads.some((u) => u.bucket === "xray")
-        ? p.uploads
-        : [{ name: name || "Nimbus_Cloud_SaaS_CT-291.pdf", size: 842_110, bucket: "xray" }, ...p.uploads].slice(0, 40),
-    }));
+    patchLive((p) => {
+      // Navigation may request X-Ray before Firm intake exists. Keep the map
+      // closed and let the X-Ray screen collect client + engagement first.
+      if (!xrayContextOf(p.practice)) {
+        return { ...p, xrayReady: false, xrayLive: null, reviewLive: null };
+      }
+      return {
+        ...p,
+        xrayReady: true,
+        xrayLive: null,
+        reviewLive: null,
+        sel: p.sel || DEMO_TYPE_ID,
+        matter: p.matter || "nimbus",
+        uploads: p.uploads.some((u) => u.bucket === "xray")
+          ? p.uploads
+          : [{ name: name || "Nimbus_Cloud_SaaS_CT-291.pdf", size: 842_110, bucket: "xray" }, ...p.uploads].slice(0, 40),
+      };
+    });
     setQ("SaaS");
     setCat("C15");
     setOpenF("F-01");
@@ -566,6 +633,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [patchLive]);
   const runXray = useCallback(async (opts?: { demo?: boolean; name?: string }) => {
+    if (!xrayContextOf(live.practice)) {
+      setXrayError("Choose a Firm client and contract-review engagement before Contract X-Ray can process a document.");
+      return "error" as const;
+    }
     if (opts?.demo) {
       startXray(opts.name);
       return "demo" as const;
@@ -575,8 +646,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setXrayError("That upload is no longer held in this browser session. Drop the file again, or run the Nimbus sample.");
       return "error" as const;
     }
-    const live = await fetchAiStatus();
-    if (!live) {
+    const providerLive = await fetchAiStatus();
+    if (!providerLive) {
       startXray(file.name);
       return "demo" as const;
     }
@@ -609,7 +680,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setXrayError(err instanceof Error ? err.message : "Live X-Ray failed");
       return "error" as const;
     }
-  }, [loadReview, patchLive, startXray]);
+  }, [live.practice, loadReview, patchLive, startXray]);
   const setReviewLive = useCallback((v: ReviewLive | null) => patchLive({ reviewLive: v }), [patchLive]);
   const setDdLive = useCallback((v: DdLive | null) => patchLive({ ddLive: v }), [patchLive]);
   const setNegotiateLive = useCallback((v: NegotiateLive | null) => patchLive({ negotiateLive: v }), [patchLive]);
@@ -647,7 +718,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     alertDone: live.alertDone, completeAlert,
     uploads: live.uploads, addUploads,
     clauseEdits: live.clauseEdits ?? {}, applyClauseEdit, revertClauseEdit,
-    practice: live.practice ?? seedPractice(), addClient, addAssignment, setActiveClient, setActiveAssignment,
+    practice: live.practice ?? seedPractice(), addClient, addAssignment, openXrayEngagement, setActiveClient, setActiveAssignment,
     xrayReady: live.xrayReady,
     xrayLive: live.xrayLive ?? null,
     xrayError,

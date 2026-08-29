@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Kicker, Title } from "@/components/ui";
 import { Dropzone } from "@/components/Dropzone";
@@ -12,7 +12,7 @@ import { copyText, downloadText } from "@/lib/demo";
 import { AiLiveMark } from "@/components/AiLiveMark";
 import { CONTRACT_ACCEPT } from "@/lib/ai/files";
 import { XRAY_ENGINE_HOPS, XRAY_HOPS, XRAY_REVIEW_HOPS } from "@/lib/nav";
-import { assignmentOf, clientOf, engagementOf } from "@/lib/firm";
+import { assignmentOf, clientOf, engagementOf, xrayContextOf } from "@/lib/firm";
 import { withLiveMatter } from "@/lib/ai/fromMap";
 import { EngPill } from "@/components/EngagementMark";
 
@@ -21,6 +21,10 @@ export function XRayScreen() {
   const th = s.lang === "th";
   const [mapping, setMapping] = useState(false);
   const [drop, setDrop] = useState(0);
+  const [clientName, setClientName] = useState("");
+  const [engagementName, setEngagementName] = useState("");
+  const firmContext = xrayContextOf(s.practice);
+  const contextKey = firmContext ? `${firmContext.client.id}:${firmContext.assignment.id}` : "";
   const xrayKey = s.uploads.filter((u) => u.bucket === "xray").map((u) => `${u.name}:${u.size}`).join("|");
   const queued = Boolean(xrayKey);
   // Re-dropping the identical file leaves xrayKey unchanged, so the drop counter is what re-arms the run.
@@ -28,6 +32,10 @@ export function XRayScreen() {
   const attempted = useRef<string | null>(null);
 
   useEffect(() => {
+    if (!contextKey) {
+      setMapping(false);
+      return;
+    }
     if (s.xrayReady) {
       setMapping(false);
       return;
@@ -40,7 +48,14 @@ export function XRayScreen() {
         s.flash(th ? "แผนที่สัญญาเสร็จ — AI สด (ทนายเป็นผู้ยืนยัน)" : "Contract mapped — live AI (counsel confirms)");
       }
     }).finally(() => setMapping(false));
-  }, [attemptKey, xrayKey, s.xrayReady, s.runXray, s.flash, th]);
+  }, [attemptKey, contextKey, xrayKey, s.xrayReady, s.runXray, s.flash, th]);
+
+  function openFirmIntake(e: FormEvent) {
+    e.preventDefault();
+    if (!clientName.trim() || !engagementName.trim()) return;
+    s.openXrayEngagement({ clientName, engagementName });
+    s.flash(th ? "เปิดลูกค้าและงานตรวจแล้ว — พร้อมรับเอกสาร" : "Client and review engagement opened — ready for the document");
+  }
 
   async function runDemo() {
     setMapping(true);
@@ -62,7 +77,7 @@ export function XRayScreen() {
     }
   }
 
-  if (!s.xrayReady || mapping) {
+  if (!firmContext || !s.xrayReady || mapping) {
     return (
       <div className="pad-page">
         <Kicker>review · contract x-ray · <AiLiveMark compact /></Kicker>
@@ -73,7 +88,50 @@ export function XRayScreen() {
             th="อัปโหลดสัญญาไทยหรืออังกฤษ ระบบทำ X-Ray ครบในไม่ถึงสามนาที — คำตัดสิน แผนความร้อน ข้อที่ขาด อ้างอิงกฎหมายไทย ไม่ใช่หน้าต่างแชต"
           />
         </p>
-        {mapping ? (
+        {!firmContext ? (
+          <form className="practice-form eng-card eng-review" style={{ marginTop: 20 }} onSubmit={openFirmIntake}>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <div className="eng-pill eng-review"><T en="Firm-controlled intake" th="รับเรื่องภายใต้สำนักงาน" /></div>
+              <h3 style={{ margin: "12px 0 6px", fontSize: 20 }}>
+                <T en="Client and engagement required" th="ต้องระบุลูกค้าและงานก่อน" />
+              </h3>
+              <p className="text-muted" style={{ margin: 0, fontSize: 13, maxWidth: "70ch" }}>
+                <T
+                  en="Contract X-Ray cannot process a document outside a Firm workspace. Name the client and contract-review engagement first; the map, verdict and movement trail will stay under that record."
+                  th="Contract X-Ray ไม่ประมวลผลเอกสารนอกพื้นที่งานสำนักงาน ระบุชื่อลูกค้าและงานตรวจสัญญาก่อน แผนที่ คำตัดสิน และเส้นทางจะอยู่ใต้บันทึกนี้"
+                />
+              </p>
+            </div>
+            <div className="field">
+              <label><T en="Client name" th="ชื่อลูกค้า" /></label>
+              <input
+                className="input"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                placeholder={th ? "เช่น บริษัท นอร์ธวินด์ จำกัด" : "e.g. Northwind Ltd"}
+                required
+              />
+            </div>
+            <div className="field">
+              <label><T en="Engagement name" th="ชื่องาน" /></label>
+              <input
+                className="input"
+                value={engagementName}
+                onChange={(e) => setEngagementName(e.target.value)}
+                placeholder={th ? "เช่น ตรวจสัญญา SaaS MSA" : "e.g. SaaS MSA contract review"}
+                required
+              />
+            </div>
+            <div style={{ gridColumn: "1 / -1" }} className="stack-actions">
+              <button className="btn btn-primary" type="submit">
+                <T en="Open engagement and continue" th="เปิดงานและดำเนินการต่อ" />
+              </button>
+              <Link href="/practice?s=clients" className="btn btn-secondary">
+                <T en="Open Firm clients" th="เปิดบัญชีลูกค้า" />
+              </Link>
+            </div>
+          </form>
+        ) : mapping ? (
           <div className="xray-map">
             <div className="xray-scan" />
             <strong><T en="Mapping the contract…" th="กำลังวางแผนที่สัญญา…" /></strong>
@@ -81,6 +139,24 @@ export function XRayScreen() {
           </div>
         ) : (
           <>
+            <div className="xray-layer eng-card eng-review" style={{ marginBottom: 18 }}>
+              <div className="page-kicker"><T en="Firm-controlled X-Ray" th="X-Ray ภายใต้สำนักงาน" /></div>
+              <div style={{ marginTop: 8 }}><EngPill track="review" /></div>
+              <strong style={{ display: "block", marginTop: 8 }}>
+                {th ? firmContext.client.nameTh : firmContext.client.name}
+              </strong>
+              <p className="text-muted" style={{ margin: "5px 0 0", fontSize: 13 }}>
+                {firmContext.assignment.id} · {th ? firmContext.assignment.titleTh : firmContext.assignment.title}
+              </p>
+              <div className="stack-actions" style={{ marginTop: 10 }}>
+                <Link href="/practice?s=ereview" className="btn btn-secondary">
+                  <T en="Review control" th="ควบคุมงานตรวจ" />
+                </Link>
+                <Link href="/practice?s=assign&eng=review" className="btn btn-ghost">
+                  <T en="Change engagement" th="เปลี่ยนงาน" />
+                </Link>
+              </div>
+            </div>
             {s.xrayError && (
               <div className="xray-fail">
                 <strong><T en="The live X-Ray did not complete" th="X-Ray สดไม่สำเร็จ" /></strong>

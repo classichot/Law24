@@ -1,7 +1,7 @@
 import type { TE } from "@/lib/model";
 import { FIRM_USER } from "@/lib/model";
 import type { AssignmentRecord, ClientRecord, PracticeState } from "@/lib/firm";
-import { nextIds, stampDay, stampNow } from "@/lib/firm";
+import { engagementOf, nextIds, stampDay, stampNow } from "@/lib/firm";
 import type { ReviewLive, XrayView } from "./types";
 
 const P = (t: string, e: string): TE => ({ t, e });
@@ -713,7 +713,7 @@ function findMappedAssignment(p: PracticeState, X: XrayView, party: { t: string;
     if (byRef) return byRef;
   }
   const active = p.assignments.find((a) => a.id === p.activeAssignmentId);
-  if (active && active.stage !== "closed" && !active.ref) return active;
+  if (active && active.stage !== "closed" && engagementOf(active.type) === "review" && !active.ref) return active;
   const client = p.clients.find((c) => clientMatchesParty(c, party));
   if (!client) return undefined;
   return [...p.assignments].reverse().find((a) =>
@@ -736,22 +736,10 @@ export function applyMapToPractice(p: PracticeState, X: XrayView, R?: ReviewLive
   const existing = findMappedAssignment(p, X, party);
 
   if (existing) {
-    const clients = p.clients.map((c) =>
-      c.id === existing.clientId
-        ? {
-            ...c,
-            name: party.e && party.e !== "—" ? party.e : c.name,
-            nameTh: party.t && party.t !== "—" ? party.t : c.nameTh,
-            status: "active" as const,
-          }
-        : c
-    );
     const assignments = p.assignments.map((a) =>
       a.id === existing.id
         ? {
             ...a,
-            title: titleE && titleE !== "—" ? titleE : a.title,
-            titleTh: titleT && titleT !== "—" ? titleT : a.titleTh,
             type: "review" as const,
             stage: a.stage === "intake" ? "work" as const : a.stage,
             due: due || a.due,
@@ -763,7 +751,9 @@ export function applyMapToPractice(p: PracticeState, X: XrayView, R?: ReviewLive
     );
     return {
       ...p,
-      clients,
+      // Client and engagement names came from Firm intake. Contract parties
+      // and document title belong to the X-Ray map and must not rename them.
+      clients: p.clients,
       assignments,
       movements: mergeMovements(p.movements, xrayMovement(existing.id, X, R)),
       activeClientId: existing.clientId,

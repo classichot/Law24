@@ -177,6 +177,15 @@ export function latestAssignmentForClient(p: PracticeState, clientId: string) {
   return rows[rows.length - 1];
 }
 
+/** X-Ray may only run inside an active Firm client + contract-review engagement. */
+export function xrayContextOf(p: PracticeState) {
+  const assignment = assignmentOf(p, p.activeAssignmentId);
+  if (!assignment || assignment.stage === "closed" || engagementOf(assignment.type) !== "review") return null;
+  const client = clientOf(p, assignment.clientId);
+  if (!client || client.id !== p.activeClientId) return null;
+  return { client, assignment };
+}
+
 export function nextIds(p: PracticeState) {
   const cMax = Math.max(0, ...p.clients.map((c) => parseInt(c.id.replace(/\D/g, ""), 10) || 0));
   const aMax = Math.max(0, ...p.assignments.map((a) => parseInt(a.id.replace(/\D/g, ""), 10) || 0));
