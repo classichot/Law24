@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Check, Link2, LogOut, Menu, Search, Timer, X } from "lucide-react";
 import { CORPORATE_USER, FIRM_USER } from "@/lib/model";
-import { NAV, isMode, navModes } from "@/lib/nav";
+import { ENGAGEMENT, engagementOf } from "@/lib/firm";
+import { NAV, isMode, modeTrack, navModes, practiceScreenTrack } from "@/lib/nav";
 import { modeHref, useStore } from "@/lib/store";
 import { DEMO_STEPS, MATTERS, matterForMode, type MatterId } from "@/lib/demo";
 import { LangToggle } from "@/components/LangToggle";
@@ -185,12 +186,16 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="os-modes">
             <Link href="/home" style={{ color: "var(--color-neutral-600)", fontSize: 11, textDecoration: "none", padding: "13px 0" }}>← <T en="All modules" th="โมดูลทั้งหมด" /></Link>
             <span style={{ width: 1, height: 16, background: "var(--color-neutral-400)", flex: "none" }} />
-            {tabs.map((m) => (
-              <Link key={m.k} href={modeHref(m.k)} className={mode === m.k ? "on" : ""}>
+            {tabs.map((m) => {
+              const track = modeTrack(m.k);
+              const cls = track ? ENGAGEMENT[track].cls : "";
+              return (
+              <Link key={m.k} href={modeHref(m.k)} className={`${mode === m.k ? "on" : ""} ${cls}`.trim()}>
                 <span className="os-mode-label">{s.lang === "th" ? m.th : m.en}</span>
                 <span className="os-mode-pb">{PLAYBOOKS[playbookKeyFor(m.k)].id}</span>
               </Link>
-            ))}
+              );
+            })}
             {mode !== "practice" && mode !== "command" && mode !== "assist" && mode !== "help" && !s.xrayLive && s.demoOn && (
             <div className="os-matters header-hide-sm">
               {(Object.keys(MATTERS) as MatterId[]).map((id) => (
@@ -202,17 +207,21 @@ export function AppShell({ children }: { children: ReactNode }) {
             )}
           </div>
           <div className="os-subnav">
-            {sub.map(([k, th, en]) => (
-              <Link key={k} href={modeHref(mode as "assemble", k)} className={screen === k ? "on" : ""}>
+            {sub.map(([k, th, en]) => {
+              const track = mode === "practice" ? practiceScreenTrack(k) : modeTrack(mode);
+              const cls = track ? ENGAGEMENT[track].cls : "";
+              return (
+              <Link key={k} href={modeHref(mode as "assemble", k)} className={`${screen === k ? "on" : ""} ${cls}`.trim()}>
                 {s.lang === "th" ? th : en}
               </Link>
-            ))}
+              );
+            })}
             <span className="os-subnav-end">
             <PlaybookMark mode={mode} screen={screen} compact />
             <span className="os-matter-line header-hide-sm">
               {mode === "practice"
                 ? (assignment
-                  ? `${assignment.id} · ${s.lang === "th" ? assignment.titleTh : assignment.title}`
+                  ? `${assignment.id} · ${s.lang === "th" ? ENGAGEMENT[engagementOf(assignment.type)].tagTh : ENGAGEMENT[engagementOf(assignment.type)].tagEn} · ${s.lang === "th" ? assignment.titleTh : assignment.title}`
                   : (s.lang === "th" ? "สำนักงานที่ปรึกษา" : "Advisory practice"))
                 : mode === "command"
                   ? (s.lang === "th" ? "ศูนย์บัญชาการกฎหมายของบริษัท" : "Company legal command center")
@@ -251,9 +260,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Link href="/home" className={mode === "home" ? "active" : ""}>Home</Link>
         <Link href="/review?s=xray" className={mode === "review" ? "active" : ""}>X-Ray</Link>
         <Link href="/intel?s=twin" className={mode === "intel" ? "active" : ""}>Twin</Link>
-        {s.edition === "firm"
-          ? <Link href="/practice?s=room" className={screen === "room" ? "active" : ""}>Room</Link>
-          : <Link href="/diligence?s=dwar" className={mode === "diligence" ? "active" : ""}>DD</Link>}
+        <Link href="/diligence?s=deal" className={mode === "diligence" ? "active" : ""}>Deal X-Ray</Link>
+        {s.edition === "firm" && <Link href="/practice?s=room" className={screen === "room" ? "active" : ""}>Room</Link>}
       </nav>
 
       {menu && (

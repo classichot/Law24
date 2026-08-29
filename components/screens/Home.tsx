@@ -9,7 +9,10 @@ import { EditionBadge } from "@/components/EditionBadge";
 import { Dropzone } from "@/components/Dropzone";
 import { TrustStrip } from "@/components/TrustStrip";
 import { PlaybookMark } from "@/components/PlaybookMark";
-import { CLIENT_ROOM, ENTRANCES, PACKAGES, POSITION, TWIN_ASKS, WEDGE_TYPES } from "@/lib/product";
+import { ENTRANCES, PACKAGES, POSITION, TWIN_ASKS, WEDGE_TYPES } from "@/lib/product";
+import { assignmentOf, clientOf, ENGAGEMENT, ENGAGEMENT_TYPES, engagementOf, trackStats } from "@/lib/firm";
+import { clientRoomOf, withLiveMatter } from "@/lib/ai/fromMap";
+import { EngPill, TrackCard } from "@/components/EngagementMark";
 import { OS_FLOW, PLAYBOOKS, copyTE, helpBookHref, playbookKeyFor } from "@/lib/guides";
 import { ReviewerPath } from "@/components/ui";
 import { CONTRACT_ACCEPT } from "@/lib/ai/files";
@@ -126,7 +129,7 @@ function CorporateHome() {
         {[
           { href: "/holistic?s=cockpit", k: "Contract Cockpit", d: th ? "มูลค่า ขั้น ความเสี่ยง อนุมัติ" : "Value, stage, risk, approvals" },
           { href: "/holistic?s=dna", k: "Clause DNA", d: th ? "เทียบเพลย์บุ๊กและสัญญาที่ลงนามแล้ว" : "Vs playbook and signed history" },
-          { href: "/diligence?s=dwar", k: th ? "ห้องสงคราม DD" : "DD War Room", d: th ? "ดัชนี ธงแดง รายงานชี้แหล่ง" : "Index, flags, source-linked report" },
+          { href: "/diligence?s=deal", k: "Deal X-Ray", d: th ? "เข้าใจธุรกรรม เปิดความเสี่ยง แล้วแก้ไข" : "Understand the deal, expose the risk, fix it" },
           { href: "/obligations?s=oreg", k: th ? "ข้อผูกพัน" : "Obligations", d: th ? "ปฏิทินหลังลงนาม" : "Post-signature calendar" },
         ].map((c) => (
           <Link key={c.href} href={c.href} className="home-card" style={{ textDecoration: "none", color: "inherit" }}>
@@ -142,9 +145,14 @@ function CorporateHome() {
 }
 
 function FirmHome() {
-  const { lang, startXray } = useStore();
+  const s = useStore();
+  const { lang, startXray } = s;
   const router = useRouter();
   const th = lang === "th";
+  const practice = withLiveMatter(s.practice, s.xrayLive, s.reviewLive);
+  const a = assignmentOf(practice, practice.activeAssignmentId) || practice.assignments[0];
+  const c = a ? clientOf(practice, a.clientId) : undefined;
+  const room = s.xrayLive ? clientRoomOf(s.xrayLive, s.reviewLive) : null;
   return (
     <div className="home-wrap">
       <InviteHomeStrip />
@@ -159,23 +167,48 @@ function FirmHome() {
           <p className="text-muted" style={{ fontSize: 13 }}>{L(lang, ENTRANCES.firm.fear)}</p>
           <div style={{ marginTop: 12 }}><PlaybookMark mode="practice" screen="dash" /></div>
         </div>
-        <div className="xray-layer">
-          <div className="page-kicker"><T en="Client Review Room" th="ห้องตรวจลูกค้า" /></div>
-          <PlaybookMark href="/practice?s=room" compact />
-          <strong style={{ display: "block", marginTop: 8 }}>{L(lang, CLIENT_ROOM.client)}</strong>
-          <p className="text-muted" style={{ fontSize: 13 }}>{L(lang, CLIENT_ROOM.progress)}</p>
-          <Link href="/practice?s=room" className="btn btn-secondary" style={{ marginTop: 10 }}><T en="Open branded room" th="เปิดห้องภายใต้แบรนด์" /></Link>
+        <div className={`xray-layer${a ? ` eng-card ${ENGAGEMENT[engagementOf(a.type)].cls}` : ""}`}>
+          <div className="page-kicker"><T en="Active matter" th="งานที่เปิดอยู่" /></div>
+          <PlaybookMark href="/practice?s=dash" compact />
+          {c && a ? (
+            <>
+              <div style={{ marginTop: 8 }}><EngPill track={engagementOf(a.type)} /></div>
+              <strong style={{ display: "block", marginTop: 8 }}>{th ? c.nameTh : c.name}</strong>
+              <p className="text-muted" style={{ fontSize: 13 }}>
+                {a.id} · {th ? a.titleTh : a.title}
+                {room ? ` · ${L(lang, room.progress)}` : ""}
+              </p>
+            </>
+          ) : (
+            <>
+              <strong style={{ display: "block", marginTop: 8 }}>
+                <T en="No mapped matter yet" th="ยังไม่มีงานจากแผนที่" />
+              </strong>
+              <p className="text-muted" style={{ fontSize: 13 }}>
+                <T en="X-Ray opens a client and assignment. Firm then controls the rest of the OS." th="X-Ray เปิดลูกค้าและงาน สำนักงานควบคุมโมดูลอื่นต่อ" />
+              </p>
+            </>
+          )}
+          <Link href="/practice?s=dash" className="btn btn-secondary" style={{ marginTop: 10 }}>
+            <T en="Open firm control" th="เปิดศูนย์ควบคุมสำนักงาน" />
+          </Link>
         </div>
       </div>
       <div className="stack-actions" style={{ marginBottom: 28 }}>
         <button type="button" className="btn btn-primary" onClick={() => { startXray(); router.push("/review?s=xray"); }}>
           <T en="Analyse a contract" th="วิเคราะห์สัญญา" />
         </button>
+        <Link href="/practice?s=dash" className="btn btn-secondary"><T en="Firm control" th="ศูนย์ควบคุม" /></Link>
         <Link href="/practice?s=packages" className="btn btn-secondary"><T en="Sell packaged services" th="ขายบริการสำเร็จรูป" /></Link>
-        <Link href="/practice?s=brain" className="btn btn-secondary"><T en="Firm Brain" th="สมองสำนักงาน" /></Link>
         {!readInviteSession() && (
           <Link href="/host" className="btn btn-ghost"><T en="Host desk" th="โต๊ะโฮสต์" /></Link>
         )}
+      </div>
+      <h5><T en="Three engagements from the firm" th="สามประเภทงานจากสำนักงาน" /></h5>
+      <div className="track-grid" style={{ marginBottom: 28 }}>
+        {ENGAGEMENT_TYPES.map((track) => (
+          <TrackCard key={track} track={track} open={trackStats(practice)[track]} />
+        ))}
       </div>
       <TrustStrip />
       <ReviewerPath />

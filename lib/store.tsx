@@ -16,18 +16,24 @@ import {
   type UploadFile,
 } from "./demo";
 import type { ClauseEdit } from "./clauses";
-import { isDemoFixturePractice } from "./ai/fromMap";
+import { applyMapToPractice, isDemoFixturePractice } from "./ai/fromMap";
 import {
+  ENGAGEMENT,
   HREF_FOR_TYPE,
+  ddContextOf,
+  engagementOf,
   nextIds,
+  nextPoolId,
   seedPractice,
   stampDay,
   stampNow,
+  xrayContextOf,
   type AssignmentStage,
   type AssignmentType,
   type Movement,
   type PracticeState,
 } from "./firm";
+import { hydrateDeal, inferDealTx, seedDeal, type DealScenario, type DealState, type DealTx } from "./deal";
 import { clearInviteSession } from "./invite";
 import { fetchAiStatus, postAi } from "./ai/client";
 import { peekFile } from "./ai/files";
@@ -129,8 +135,20 @@ type Store = {
   applyClauseEdit: (id: string, edit: ClauseEdit) => void;
   revertClauseEdit: (id: string) => void;
   practice: PracticeState;
+  deal: DealState;
   addClient: (input: { name: string; nameTh?: string; sector: string; owner: string }) => void;
   addAssignment: (input: { clientId: string; title: string; titleTh?: string; type: AssignmentType; due: string; lead: string; fee?: string }) => void;
+  addPoolIntake: (input: { clientName: string; engagementName: string; type: AssignmentType }) => void;
+  assignPoolIntake: (id: string) => void;
+  openXrayEngagement: (input: { clientName: string; engagementName: string }) => void;
+  openDealEngagement: (input: { clientName: string; engagementName: string; transaction: DealTx }) => void;
+  ensureDeal: () => void;
+  setDealTransaction: (tx: DealTx) => void;
+  setDealScenario: (sc: DealScenario) => void;
+  setDealMateriality: (partial: Partial<{ contract: number; litigation: number; customerPct: number; supplierPct: number }>) => void;
+  answerDealQuestion: (id: string, text: string) => void;
+  setDealCpStatus: (id: string, status: "open" | "in_progress" | "cleared") => void;
+  verifyDeal: () => void;
   setActiveClient: (id: string) => void;
   setActiveAssignment: (id: string) => void;
   xrayReady: boolean;
@@ -176,13 +194,37 @@ function readLive(): LiveState {
     merged.lawyerSent = Boolean(merged.lawyerSent);
     merged.roomVotes = merged.roomVotes || {};
     merged.quotePkg = merged.quotePkg || "nda";
+    merged.deal = hydrateDeal(merged.deal);
     if (!merged.practice || isDemoFixturePractice(merged.practice)) {
       merged.practice = seedPractice();
+    } else {
+      merged.practice = {
+        ...merged.practice,
+        pool: merged.practice.pool || [],
+        assignments: (merged.practice.assignments || []).map((a) => {
+          const track = engagementOf(a.type);
+          return { ...a, type: track, href: a.href || ENGAGEMENT[track].href };
+        }),
+      };
     }
     return merged;
   } catch {
     return defaultLive();
   }
+}
+
+function bindDeal(p: LiveState, assignmentId: string, clientId: string, title: string, transaction?: DealTx): LiveState {
+  const prev = hydrateDeal(p.deal);
+  const same = prev.assignmentId === assignmentId;
+  return {
+    ...p,
+    deal: {
+      ...(same ? prev : seedDeal()),
+      assignmentId,
+      clientId,
+      transaction: transaction || inferDealTx(title) || (same ? prev.transaction : "share"),
+    },
+  };
 }
 
 function appendMv(
@@ -475,7 +517,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const addAssignment = useCallback((input: { clientId: string; title: string; titleTh?: string; type: AssignmentType; due: string; lead: string; fee?: string }) => {
     patchLive((p) => {
       const { assignmentId } = nextIds(p.practice);
-      const href = HREF_FOR_TYPE[input.type];
+      const href = ENGAGEMENT[engagementOf(input.type)].href || HREF_FOR_TYPE[input.type];
       const next = {
         ...p,
         practice: {
@@ -499,14 +541,264 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ],
         },
       };
+      const bound = engagementOf(input.type) === "diligence"
+        ? bindDeal(next, assignmentId, input.clientId, input.title, inferDealTx(input.title))
+        : next;
       return appendMv(
-        next,
+        bound,
         "Assignment opened. Intake logged.",
         "เปิดงาน บันทึกการรับเรื่อง",
         href,
         "intake",
         { assignmentId }
       );
+    });
+  }, [patchLive]);
+  const addPoolIntake = useCallback((input: { clientName: string; engagementName: string; type: AssignmentType }) => {
+    patchLive((p) => ({
+      ...p,
+      practice: {
+        ...p.practice,
+        pool: [
+          ...(p.practice.pool || []),
+          {
+            id: nextPoolId(p.practice),
+            clientName: input.clientName.trim(),
+            engagementName: input.engagementName.trim(),
+            type: engagementOf(input.type),
+            received: stampNow(),
+          },
+        ],
+      },
+    }));
+  }, [patchLive]);
+  const assignPoolIntake = useCallback((id: string) => {
+    patchLive((p) => {
+      const item = (p.practice.pool || []).find((row) => row.id === id);
+      if (!item) return p;
+      const existingClient = p.practice.clients.find((c) =>
+        c.name.trim().toLowerCase() === item.clientName.toLowerCase()
+        || c.nameTh.trim().toLowerCase() === item.clientName.toLowerCase()
+      );
+      const ids = nextIds(p.practice);
+      const clientId = existingClient?.id || ids.clientId;
+      const assignmentId = ids.assignmentId;
+      const href = ENGAGEMENT[item.type].href;
+      const next = {
+        ...p,
+        practice: {
+          ...p.practice,
+          activeClientId: clientId,
+          activeAssignmentId: assignmentId,
+          pool: (p.practice.pool || []).filter((row) => row.id !== id),
+          clients: existingClient
+            ? p.practice.clients
+            : [
+                ...p.practice.clients,
+                {
+                  id: clientId,
+                  name: item.clientName,
+                  nameTh: item.clientName,
+                  sector: ENGAGEMENT[item.type].en,
+                  owner: FIRM_USER.name,
+                  opened: stampDay(),
+                  status: "active" as const,
+                },
+              ],
+          assignments: [
+            ...p.practice.assignments,
+            {
+              id: assignmentId,
+              clientId,
+              title: item.engagementName,
+              titleTh: item.engagementName,
+              type: item.type,
+              stage: "intake" as const,
+              lead: FIRM_USER.name,
+              due: stampDay("2026-09-30"),
+              fee: "THB 0",
+              href,
+            },
+          ],
+        },
+      };
+      const bound = item.type === "diligence"
+        ? bindDeal(next, assignmentId, clientId, item.engagementName, inferDealTx(item.engagementName))
+        : next;
+      return appendMv(
+        bound,
+        `Assigned from Firm pool (${item.id}). Intake logged.`,
+        `รับจากคิวสำนักงาน (${item.id}) และบันทึกรับเรื่อง`,
+        href,
+        "intake",
+        { assignmentId }
+      );
+    });
+  }, [patchLive]);
+  const openXrayEngagement = useCallback((input: { clientName: string; engagementName: string }) => {
+    patchLive((p) => {
+      const clientName = input.clientName.trim();
+      const engagementName = input.engagementName.trim();
+      const existingClient = p.practice.clients.find((c) =>
+        c.name.trim().toLowerCase() === clientName.toLowerCase()
+        || c.nameTh.trim().toLowerCase() === clientName.toLowerCase()
+      );
+      const ids = nextIds(p.practice);
+      const clientId = existingClient?.id || ids.clientId;
+      const assignmentId = ids.assignmentId;
+      const next = {
+        ...p,
+        practice: {
+          ...p.practice,
+          activeClientId: clientId,
+          activeAssignmentId: assignmentId,
+          clients: existingClient
+            ? p.practice.clients
+            : [
+                ...p.practice.clients,
+                {
+                  id: clientId,
+                  name: clientName,
+                  nameTh: clientName,
+                  sector: "Contract review",
+                  owner: FIRM_USER.name,
+                  opened: stampDay(),
+                  status: "active" as const,
+                },
+              ],
+          assignments: [
+            ...p.practice.assignments,
+            {
+              id: assignmentId,
+              clientId,
+              title: engagementName,
+              titleTh: engagementName,
+              type: "review" as const,
+              stage: "intake" as const,
+              lead: FIRM_USER.name,
+              due: stampDay("2026-09-30"),
+              fee: "THB 0",
+              href: "/review?s=xray",
+            },
+          ],
+        },
+      };
+      return appendMv(
+        next,
+        "Contract review engagement opened for X-Ray. Intake logged.",
+        "เปิดงานตรวจสัญญาสำหรับ X-Ray และบันทึกรับเรื่อง",
+        "/review?s=xray",
+        "intake",
+        { assignmentId }
+      );
+    });
+  }, [patchLive]);
+  const openDealEngagement = useCallback((input: { clientName: string; engagementName: string; transaction: DealTx }) => {
+    patchLive((p) => {
+      const clientName = input.clientName.trim();
+      const engagementName = input.engagementName.trim();
+      const existingClient = p.practice.clients.find((c) =>
+        c.name.trim().toLowerCase() === clientName.toLowerCase()
+        || c.nameTh.trim().toLowerCase() === clientName.toLowerCase()
+      );
+      const existingAssignment = p.practice.assignments.find((a) =>
+        a.clientId === (existingClient?.id || "")
+        && engagementOf(a.type) === "diligence"
+        && a.stage !== "closed"
+        && a.title.trim().toLowerCase() === engagementName.toLowerCase()
+      );
+      const ids = nextIds(p.practice);
+      const clientId = existingClient?.id || ids.clientId;
+      const assignmentId = existingAssignment?.id || ids.assignmentId;
+      const href = "/diligence?s=deal";
+      let next: LiveState = {
+        ...p,
+        practice: {
+          ...p.practice,
+          activeClientId: clientId,
+          activeAssignmentId: assignmentId,
+          clients: existingClient
+            ? p.practice.clients
+            : [
+                ...p.practice.clients,
+                {
+                  id: clientId,
+                  name: clientName,
+                  nameTh: clientName,
+                  sector: "Legal due diligence",
+                  owner: FIRM_USER.name,
+                  opened: stampDay(),
+                  status: "active" as const,
+                },
+              ],
+          assignments: existingAssignment
+            ? p.practice.assignments
+            : [
+                ...p.practice.assignments,
+                {
+                  id: assignmentId,
+                  clientId,
+                  title: engagementName,
+                  titleTh: engagementName,
+                  type: "diligence" as const,
+                  stage: "intake" as const,
+                  lead: FIRM_USER.name,
+                  due: stampDay("2026-09-30"),
+                  fee: "THB 0",
+                  href,
+                },
+              ],
+        },
+      };
+      next = bindDeal(next, assignmentId, clientId, engagementName, input.transaction);
+      if (existingAssignment) return next;
+      return appendMv(
+        next,
+        "Legal DD engagement opened for Deal X-Ray. Intake logged.",
+        "เปิดงานตรวจสอบสถานะสำหรับ Deal X-Ray และบันทึกรับเรื่อง",
+        href,
+        "intake",
+        { assignmentId }
+      );
+    });
+  }, [patchLive]);
+  const ensureDeal = useCallback(() => {
+    patchLive((p) => {
+      const ctx = ddContextOf(p.practice);
+      if (!ctx) return p;
+      const d = hydrateDeal(p.deal);
+      if (d.assignmentId === ctx.assignment.id && d.clientId === ctx.client.id) return p;
+      return bindDeal(p, ctx.assignment.id, ctx.client.id, ctx.assignment.title);
+    });
+  }, [patchLive]);
+  const setDealTransaction = useCallback((tx: DealTx) => {
+    patchLive((p) => ({ ...p, deal: { ...hydrateDeal(p.deal), transaction: tx } }));
+  }, [patchLive]);
+  const setDealScenario = useCallback((sc: DealScenario) => {
+    patchLive((p) => ({ ...p, deal: { ...hydrateDeal(p.deal), scenario: sc } }));
+  }, [patchLive]);
+  const setDealMateriality = useCallback((partial: Partial<{ contract: number; litigation: number; customerPct: number; supplierPct: number }>) => {
+    patchLive((p) => {
+      const d = hydrateDeal(p.deal);
+      return { ...p, deal: { ...d, materiality: { ...d.materiality, ...partial } } };
+    });
+  }, [patchLive]);
+  const answerDealQuestion = useCallback((id: string, text: string) => {
+    patchLive((p) => {
+      const d = hydrateDeal(p.deal);
+      return { ...p, deal: { ...d, answers: { ...d.answers, [id]: { text } } } };
+    });
+  }, [patchLive]);
+  const setDealCpStatus = useCallback((id: string, status: "open" | "in_progress" | "cleared") => {
+    patchLive((p) => {
+      const d = hydrateDeal(p.deal);
+      return { ...p, deal: { ...d, cpStatus: { ...d.cpStatus, [id]: status } } };
+    });
+  }, [patchLive]);
+  const verifyDeal = useCallback(() => {
+    patchLive((p) => {
+      const next = { ...p, deal: { ...hydrateDeal(p.deal), verified: true } };
+      return appendMv(next, "Counsel verified the Deal X-Ray for this round.", "ทนายยืนยัน Deal X-Ray รอบนี้", "/diligence?s=deal", "review");
     });
   }, [patchLive]);
   const setActiveClient = useCallback((id: string) => {
@@ -517,17 +809,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [patchLive]);
   const startXray = useCallback((name?: string) => {
     setXrayError(null);
-    patchLive((p) => ({
-      ...p,
-      xrayReady: true,
-      xrayLive: null,
-      reviewLive: null,
-      sel: p.sel || DEMO_TYPE_ID,
-      matter: p.matter || "nimbus",
-      uploads: p.uploads.some((u) => u.bucket === "xray")
-        ? p.uploads
-        : [{ name: name || "Nimbus_Cloud_SaaS_CT-291.pdf", size: 842_110, bucket: "xray" }, ...p.uploads].slice(0, 40),
-    }));
+    patchLive((p) => {
+      // Navigation may request X-Ray before Firm intake exists. Keep the map
+      // closed and let the X-Ray screen collect client + engagement first.
+      if (!xrayContextOf(p.practice)) {
+        return { ...p, xrayReady: false, xrayLive: null, reviewLive: null };
+      }
+      return {
+        ...p,
+        xrayReady: true,
+        xrayLive: null,
+        reviewLive: null,
+        sel: p.sel || DEMO_TYPE_ID,
+        matter: p.matter || "nimbus",
+        uploads: p.uploads.some((u) => u.bucket === "xray")
+          ? p.uploads
+          : [{ name: name || "Nimbus_Cloud_SaaS_CT-291.pdf", size: 842_110, bucket: "xray" }, ...p.uploads].slice(0, 40),
+      };
+    });
     setQ("SaaS");
     setCat("C15");
     setOpenF("F-01");
@@ -544,12 +843,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       fd.append("filename", file.name);
       const pack = await postAi<ReviewLive>("/api/ai/review", fd, AI_REVIEW_MS);
       // Cards and the board are separate stages — keep whichever one arrived.
-      if (pack?.findings?.length || pack?.board?.length) patchLive({ reviewLive: pack });
+      if (pack?.findings?.length || pack?.board?.length) {
+        patchLive((p) => ({
+          ...p,
+          reviewLive: pack,
+          practice: p.xrayLive ? applyMapToPractice(p.practice, p.xrayLive, pack) : p.practice,
+        }));
+      }
     } catch {
       /* the map still stands on its own */
     }
   }, [patchLive]);
   const runXray = useCallback(async (opts?: { demo?: boolean; name?: string }) => {
+    if (!xrayContextOf(live.practice)) {
+      setXrayError("Choose a Firm client and contract-review engagement before Contract X-Ray can process a document.");
+      return "error" as const;
+    }
     if (opts?.demo) {
       startXray(opts.name);
       return "demo" as const;
@@ -559,8 +868,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setXrayError("That upload is no longer held in this browser session. Drop the file again, or run the Nimbus sample.");
       return "error" as const;
     }
-    const live = await fetchAiStatus();
-    if (!live) {
+    const providerLive = await fetchAiStatus();
+    if (!providerLive) {
       startXray(file.name);
       return "demo" as const;
     }
@@ -581,6 +890,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         uploads: p.uploads.some((u) => u.bucket === "xray")
           ? p.uploads
           : [{ name: file.name, size: file.size, bucket: "xray" }, ...p.uploads].slice(0, 40),
+        practice: applyMapToPractice(p.practice, pack.xray),
       }));
       setQ("SaaS");
       setCat("C15");
@@ -592,7 +902,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setXrayError(err instanceof Error ? err.message : "Live X-Ray failed");
       return "error" as const;
     }
-  }, [loadReview, patchLive, startXray]);
+  }, [live.practice, loadReview, patchLive, startXray]);
   const setReviewLive = useCallback((v: ReviewLive | null) => patchLive({ reviewLive: v }), [patchLive]);
   const setDdLive = useCallback((v: DdLive | null) => patchLive({ ddLive: v }), [patchLive]);
   const setNegotiateLive = useCallback((v: NegotiateLive | null) => patchLive({ negotiateLive: v }), [patchLive]);
@@ -630,7 +940,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     alertDone: live.alertDone, completeAlert,
     uploads: live.uploads, addUploads,
     clauseEdits: live.clauseEdits ?? {}, applyClauseEdit, revertClauseEdit,
-    practice: live.practice ?? seedPractice(), addClient, addAssignment, setActiveClient, setActiveAssignment,
+    practice: live.practice ?? seedPractice(), addClient, addAssignment, addPoolIntake, assignPoolIntake, openXrayEngagement, openDealEngagement, ensureDeal, setDealTransaction, setDealScenario, setDealMateriality, answerDealQuestion, setDealCpStatus, verifyDeal, setActiveClient, setActiveAssignment,
+    deal: live.deal ?? seedDeal(),
     xrayReady: live.xrayReady,
     xrayLive: live.xrayLive ?? null,
     xrayError,

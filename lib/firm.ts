@@ -1,7 +1,10 @@
 import type { Lang } from "./model";
 
 export type AssignmentStage = "intake" | "work" | "review" | "client" | "closed";
+/** Stored assignment types. New work uses the three engagement tracks; older rows map via `engagementOf`. */
 export type AssignmentType = "review" | "diligence" | "negotiate" | "obligations" | "assemble" | "advisory";
+/** The three Firm engagements: review, drafting, legal DD. */
+export type EngagementTrack = "review" | "assemble" | "diligence";
 
 export type ClientRecord = {
   id: string;
@@ -24,6 +27,8 @@ export type AssignmentRecord = {
   due: string;
   fee: string;
   href: string;
+  /** Contract X-Ray document ref — wires this assignment to the live map. */
+  ref?: string;
   matter?: "nimbus" | "charoen" | "portfolio";
 };
 
@@ -38,10 +43,19 @@ export type Movement = {
   href?: string;
 };
 
+export type PoolRecord = {
+  id: string;
+  clientName: string;
+  engagementName: string;
+  type: EngagementTrack;
+  received: string;
+};
+
 export type PracticeState = {
   clients: ClientRecord[];
   assignments: AssignmentRecord[];
   movements: Movement[];
+  pool: PoolRecord[];
   activeClientId: string;
   activeAssignmentId: string;
 };
@@ -56,11 +70,73 @@ export const STAGE_LABEL: Record<AssignmentStage, { en: string; th: string }> = 
 
 export const TYPE_LABEL: Record<AssignmentType, { en: string; th: string }> = {
   review: { en: "Contract review", th: "ตรวจสัญญา" },
-  diligence: { en: "Due diligence", th: "ตรวจสอบสถานะ" },
-  negotiate: { en: "Negotiation", th: "เจรจา" },
-  obligations: { en: "Obligations", th: "ภาระผูกพัน" },
-  assemble: { en: "Assemble", th: "ประกอบสัญญา" },
-  advisory: { en: "Advisory", th: "ให้คำปรึกษา" },
+  assemble: { en: "Contract drafting", th: "ร่างสัญญา" },
+  diligence: { en: "Legal due diligence", th: "ตรวจสอบสถานะทางกฎหมาย" },
+  negotiate: { en: "Contract review", th: "ตรวจสัญญา" },
+  obligations: { en: "Contract review", th: "ตรวจสัญญา" },
+  advisory: { en: "Contract drafting", th: "ร่างสัญญา" },
+};
+
+export const ENGAGEMENT_TYPES: EngagementTrack[] = ["review", "assemble", "diligence"];
+
+export function engagementOf(type: AssignmentType | string): EngagementTrack {
+  if (type === "assemble" || type === "advisory") return "assemble";
+  if (type === "diligence") return "diligence";
+  return "review";
+}
+
+export const ENGAGEMENT: Record<EngagementTrack, {
+  id: EngagementTrack;
+  cls: string;
+  en: string;
+  th: string;
+  tagEn: string;
+  tagTh: string;
+  why: { t: string; e: string };
+  record: { t: string; e: string };
+  href: string;
+  firmHref: string;
+  recordHref: string;
+}> = {
+  review: {
+    id: "review",
+    cls: "eng-review",
+    en: "Contract review",
+    th: "ตรวจสัญญา",
+    tagEn: "Review",
+    tagTh: "ตรวจ",
+    why: { t: "X-Ray · ห้องบังคับ · ฝาแฝด · ห้องสงคราม · เจรจา · ข้อผูกพัน", e: "X-Ray · Cockpit · Twin · War Room · Copilot · Obligations" },
+    record: { t: "บันทึกงานตรวจ — ลูกค้า แผนที่ คำตัดสิน เส้นทาง", e: "Review record — client, map, verdict, trail" },
+    href: "/review?s=xray",
+    firmHref: "/practice?s=ereview",
+    recordHref: "/practice?s=assign&eng=review",
+  },
+  assemble: {
+    id: "assemble",
+    cls: "eng-draft",
+    en: "Contract drafting",
+    th: "ร่างสัญญา",
+    tagEn: "Draft",
+    tagTh: "ร่าง",
+    why: { t: "คลังประเภท · สัมภาษณ์ · ประกอบข้อ · ร่างคู่ภาษา", e: "Type library · interview · clause assembly · bilingual draft" },
+    record: { t: "บันทึกงานร่าง — ประเภท ร่าง และเส้นทางอนุมัติ", e: "Drafting record — type, draft and approval trail" },
+    href: "/assemble?s=lib",
+    firmHref: "/practice?s=edraft",
+    recordHref: "/practice?s=assign&eng=assemble",
+  },
+  diligence: {
+    id: "diligence",
+    cls: "eng-dd",
+    en: "Legal due diligence",
+    th: "ตรวจสอบสถานะทางกฎหมาย",
+    tagEn: "Deal X-Ray",
+    tagTh: "Deal X-Ray",
+    why: { t: "Deal X-Ray · เอกสารที่ขาด · ข้อขัดแย้ง · จำลองดีล · แก้ไข", e: "Deal X-Ray · missing papers · contradictions · simulator · remediate" },
+    record: { t: "บันทึกงาน DD — ห้องข้อมูล ข้อค้นพบ และวงปิดดีล", e: "DD record — room, findings and the close loop" },
+    href: "/diligence?s=deal",
+    firmHref: "/practice?s=edd",
+    recordHref: "/practice?s=assign&eng=diligence",
+  },
 };
 
 /** Empty books. The mapped X-Ray fills a live matter; Nimbus/Charoen/PTT are not seeded. */
@@ -71,6 +147,7 @@ export function seedPractice(): PracticeState {
     clients: [],
     assignments: [],
     movements: [],
+    pool: [],
   };
 }
 
@@ -91,18 +168,52 @@ export function overdue(a: AssignmentRecord) {
 }
 
 export const HREF_FOR_TYPE: Record<AssignmentType, string> = {
-  review: "/review?s=rsetup",
-  diligence: "/diligence?s=dmatter",
-  negotiate: "/negotiate?s=nstrat",
+  review: "/review?s=xray",
+  diligence: "/diligence?s=deal",
+  negotiate: "/negotiate?s=nladder",
   obligations: "/obligations?s=oreg",
   assemble: "/assemble?s=lib",
-  advisory: "/assemble?s=type",
+  advisory: "/assemble?s=lib",
 };
+
+/** Open the engine that belongs to this engagement track. */
+export function assignmentEngineHref(a: AssignmentRecord) {
+  if (a.ref) return "/review?s=xray";
+  return ENGAGEMENT[engagementOf(a.type)].href;
+}
+
+export function latestAssignmentForClient(p: PracticeState, clientId: string) {
+  const rows = p.assignments.filter((a) => a.clientId === clientId);
+  return rows[rows.length - 1];
+}
+
+/** X-Ray may only run inside an active Firm client + contract-review engagement. */
+export function xrayContextOf(p: PracticeState) {
+  const assignment = assignmentOf(p, p.activeAssignmentId);
+  if (!assignment || assignment.stage === "closed" || engagementOf(assignment.type) !== "review") return null;
+  const client = clientOf(p, assignment.clientId);
+  if (!client || client.id !== p.activeClientId) return null;
+  return { client, assignment };
+}
+
+/** Deal X-Ray runs inside an active Firm client + legal-DD engagement. */
+export function ddContextOf(p: PracticeState) {
+  const assignment = assignmentOf(p, p.activeAssignmentId);
+  if (!assignment || assignment.stage === "closed" || engagementOf(assignment.type) !== "diligence") return null;
+  const client = clientOf(p, assignment.clientId);
+  if (!client || (p.activeClientId && client.id !== p.activeClientId)) return null;
+  return { client, assignment };
+}
 
 export function nextIds(p: PracticeState) {
   const cMax = Math.max(0, ...p.clients.map((c) => parseInt(c.id.replace(/\D/g, ""), 10) || 0));
   const aMax = Math.max(0, ...p.assignments.map((a) => parseInt(a.id.replace(/\D/g, ""), 10) || 0));
   return { clientId: `CL-${String(cMax + 1).padStart(2, "0")}`, assignmentId: `A-${aMax + 1}` };
+}
+
+export function nextPoolId(p: PracticeState) {
+  const max = Math.max(0, ...(p.pool || []).map((row) => parseInt(row.id.replace(/\D/g, ""), 10) || 0));
+  return `P-${max + 1}`;
 }
 
 export function stampNow() {
@@ -169,7 +280,7 @@ export function practiceHits(p: PracticeState, lang: Lang) {
   p.assignments.forEach((a) => {
     hits.push({
       id: `assign-${a.id}`,
-      href: "/practice?s=trace",
+      href: assignmentEngineHref(a),
       kind: th ? "งาน" : "Assignment",
       title: `${a.id} · ${th ? a.titleTh : a.title}`,
       sub: stageCopy(a.stage, lang),
@@ -183,5 +294,15 @@ export function stageCopy(stage: AssignmentStage, lang: Lang) {
 }
 
 export function typeCopy(type: AssignmentType, lang: Lang) {
-  return lang === "th" ? TYPE_LABEL[type].th : TYPE_LABEL[type].en;
+  const e = ENGAGEMENT[engagementOf(type)];
+  return lang === "th" ? e.th : e.en;
+}
+
+export function trackStats(p: PracticeState) {
+  const open = p.assignments.filter((a) => a.stage !== "closed");
+  return {
+    review: open.filter((a) => engagementOf(a.type) === "review").length,
+    assemble: open.filter((a) => engagementOf(a.type) === "assemble").length,
+    diligence: open.filter((a) => engagementOf(a.type) === "diligence").length,
+  };
 }

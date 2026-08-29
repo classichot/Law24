@@ -1,6 +1,7 @@
 import type { Lang, ModeKey } from "./model";
 import { NAV } from "./nav";
 import { seedPractice, type PracticeState } from "./firm";
+import { seedDeal, type DealState } from "./deal";
 import { PLAYBOOKS, copyTE, helpBookHref, type PlaybookKey } from "./guides";
 import type { ClauseEdit } from "./clauses";
 import type { DdLive, NegotiateLive, ReviewLive, XrayView } from "./ai/types";
@@ -224,6 +225,7 @@ export type LiveState = {
   lawyerSent: boolean;
   roomVotes: Record<string, "approve" | "reject">;
   quotePkg: string;
+  deal: DealState;
 };
 
 export function defaultLive(): LiveState {
@@ -257,6 +259,7 @@ export function defaultLive(): LiveState {
     lawyerSent: false,
     roomVotes: {},
     quotePkg: "nda",
+    deal: seedDeal(),
   };
 }
 

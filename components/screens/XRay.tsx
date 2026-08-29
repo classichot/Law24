@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Kicker, Title } from "@/components/ui";
 import { Dropzone } from "@/components/Dropzone";
@@ -12,12 +12,19 @@ import { copyText, downloadText } from "@/lib/demo";
 import { AiLiveMark } from "@/components/AiLiveMark";
 import { CONTRACT_ACCEPT } from "@/lib/ai/files";
 import { XRAY_ENGINE_HOPS, XRAY_HOPS, XRAY_REVIEW_HOPS } from "@/lib/nav";
+import { assignmentOf, clientOf, engagementOf, xrayContextOf } from "@/lib/firm";
+import { withLiveMatter } from "@/lib/ai/fromMap";
+import { EngPill } from "@/components/EngagementMark";
 
 export function XRayScreen() {
   const s = useStore();
   const th = s.lang === "th";
   const [mapping, setMapping] = useState(false);
   const [drop, setDrop] = useState(0);
+  const [clientName, setClientName] = useState("");
+  const [engagementName, setEngagementName] = useState("");
+  const firmContext = xrayContextOf(s.practice);
+  const contextKey = firmContext ? `${firmContext.client.id}:${firmContext.assignment.id}` : "";
   const xrayKey = s.uploads.filter((u) => u.bucket === "xray").map((u) => `${u.name}:${u.size}`).join("|");
   const queued = Boolean(xrayKey);
   // Re-dropping the identical file leaves xrayKey unchanged, so the drop counter is what re-arms the run.
@@ -25,6 +32,10 @@ export function XRayScreen() {
   const attempted = useRef<string | null>(null);
 
   useEffect(() => {
+    if (!contextKey) {
+      setMapping(false);
+      return;
+    }
     if (s.xrayReady) {
       setMapping(false);
       return;
@@ -37,7 +48,14 @@ export function XRayScreen() {
         s.flash(th ? "แผนที่สัญญาเสร็จ — AI สด (ทนายเป็นผู้ยืนยัน)" : "Contract mapped — live AI (counsel confirms)");
       }
     }).finally(() => setMapping(false));
-  }, [attemptKey, xrayKey, s.xrayReady, s.runXray, s.flash, th]);
+  }, [attemptKey, contextKey, xrayKey, s.xrayReady, s.runXray, s.flash, th]);
+
+  function openFirmIntake(e: FormEvent) {
+    e.preventDefault();
+    if (!clientName.trim() || !engagementName.trim()) return;
+    s.openXrayEngagement({ clientName, engagementName });
+    s.flash(th ? "เปิดลูกค้าและงานตรวจแล้ว — พร้อมรับเอกสาร" : "Client and review engagement opened — ready for the document");
+  }
 
   async function runDemo() {
     setMapping(true);
@@ -59,7 +77,7 @@ export function XRayScreen() {
     }
   }
 
-  if (!s.xrayReady || mapping) {
+  if (!firmContext || !s.xrayReady || mapping) {
     return (
       <div className="pad-page">
         <Kicker>review · contract x-ray · <AiLiveMark compact /></Kicker>
@@ -70,7 +88,50 @@ export function XRayScreen() {
             th="อัปโหลดสัญญาไทยหรืออังกฤษ ระบบทำ X-Ray ครบในไม่ถึงสามนาที — คำตัดสิน แผนความร้อน ข้อที่ขาด อ้างอิงกฎหมายไทย ไม่ใช่หน้าต่างแชต"
           />
         </p>
-        {mapping ? (
+        {!firmContext ? (
+          <form className="practice-form eng-card eng-review" style={{ marginTop: 20 }} onSubmit={openFirmIntake}>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <div className="eng-pill eng-review"><T en="Firm-controlled intake" th="รับเรื่องภายใต้สำนักงาน" /></div>
+              <h3 style={{ margin: "12px 0 6px", fontSize: 20 }}>
+                <T en="Client and engagement required" th="ต้องระบุลูกค้าและงานก่อน" />
+              </h3>
+              <p className="text-muted" style={{ margin: 0, fontSize: 13, maxWidth: "70ch" }}>
+                <T
+                  en="Contract X-Ray cannot process a document outside a Firm workspace. Name the client and contract-review engagement first; the map, verdict and movement trail will stay under that record."
+                  th="Contract X-Ray ไม่ประมวลผลเอกสารนอกพื้นที่งานสำนักงาน ระบุชื่อลูกค้าและงานตรวจสัญญาก่อน แผนที่ คำตัดสิน และเส้นทางจะอยู่ใต้บันทึกนี้"
+                />
+              </p>
+            </div>
+            <div className="field">
+              <label><T en="Client name" th="ชื่อลูกค้า" /></label>
+              <input
+                className="input"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                placeholder={th ? "เช่น บริษัท นอร์ธวินด์ จำกัด" : "e.g. Northwind Ltd"}
+                required
+              />
+            </div>
+            <div className="field">
+              <label><T en="Engagement name" th="ชื่องาน" /></label>
+              <input
+                className="input"
+                value={engagementName}
+                onChange={(e) => setEngagementName(e.target.value)}
+                placeholder={th ? "เช่น ตรวจสัญญา SaaS MSA" : "e.g. SaaS MSA contract review"}
+                required
+              />
+            </div>
+            <div style={{ gridColumn: "1 / -1" }} className="stack-actions">
+              <button className="btn btn-primary" type="submit">
+                <T en="Open engagement and continue" th="เปิดงานและดำเนินการต่อ" />
+              </button>
+              <Link href="/practice?s=clients" className="btn btn-secondary">
+                <T en="Open Firm clients" th="เปิดบัญชีลูกค้า" />
+              </Link>
+            </div>
+          </form>
+        ) : mapping ? (
           <div className="xray-map">
             <div className="xray-scan" />
             <strong><T en="Mapping the contract…" th="กำลังวางแผนที่สัญญา…" /></strong>
@@ -78,6 +139,24 @@ export function XRayScreen() {
           </div>
         ) : (
           <>
+            <div className="xray-layer eng-card eng-review" style={{ marginBottom: 18 }}>
+              <div className="page-kicker"><T en="Firm-controlled X-Ray" th="X-Ray ภายใต้สำนักงาน" /></div>
+              <div style={{ marginTop: 8 }}><EngPill track="review" /></div>
+              <strong style={{ display: "block", marginTop: 8 }}>
+                {th ? firmContext.client.nameTh : firmContext.client.name}
+              </strong>
+              <p className="text-muted" style={{ margin: "5px 0 0", fontSize: 13 }}>
+                {firmContext.assignment.id} · {th ? firmContext.assignment.titleTh : firmContext.assignment.title}
+              </p>
+              <div className="stack-actions" style={{ marginTop: 10 }}>
+                <Link href="/practice?s=ereview" className="btn btn-secondary">
+                  <T en="Review control" th="ควบคุมงานตรวจ" />
+                </Link>
+                <Link href="/practice?s=assign&eng=review" className="btn btn-ghost">
+                  <T en="Change engagement" th="เปลี่ยนงาน" />
+                </Link>
+              </div>
+            </div>
             {s.xrayError && (
               <div className="xray-fail">
                 <strong><T en="The live X-Ray did not complete" th="X-Ray สดไม่สำเร็จ" /></strong>
@@ -121,6 +200,9 @@ export function XRayScreen() {
   }
 
   const X = s.xrayLive ?? XRAY;
+  const practice = withLiveMatter(s.practice, s.xrayLive, s.reviewLive);
+  const matterA = s.xrayLive ? (assignmentOf(practice, practice.activeAssignmentId) || practice.assignments[0]) : undefined;
+  const matterC = matterA ? clientOf(practice, matterA.clientId) : undefined;
   // Live review stages are minted after the map, so the board may still be in
   // flight. A fixture map is served by fixture cards, which are always there.
   const reviewReady = !s.xrayLive || Boolean(s.reviewLive?.findings?.length || s.reviewLive?.board?.length);
@@ -142,11 +224,32 @@ export function XRayScreen() {
       </div>
       <p style={{ maxWidth: "72ch", margin: "0 0 22px" }}>{L(s.lang, X.verdictWhy)}</p>
 
+      {s.xrayLive && (matterC || matterA) && (
+        <div className="xray-layer eng-card eng-review" style={{ marginBottom: 22 }}>
+          <div className="page-kicker"><T en="Firm client · assignment" th="ลูกค้า · งานในสำนักงาน" /></div>
+          <div style={{ marginTop: 8 }}><EngPill track={matterA ? engagementOf(matterA.type) : "review"} /></div>
+          <div style={{ font: "800 18px/1.25 var(--font-heading)", marginTop: 8 }}>
+            {matterC ? (th ? matterC.nameTh : matterC.name) : (th ? "ลูกค้าจากแผนที่" : "Mapped client")}
+          </div>
+          <p className="text-muted" style={{ margin: "6px 0 0", fontSize: 13 }}>
+            {matterA
+              ? `${matterA.id} · ${th ? matterA.titleTh : matterA.title}${matterA.ref ? ` · ${matterA.ref}` : ""}`
+              : X.ref}
+          </p>
+          <div className="stack-actions" style={{ marginTop: 12 }}>
+            <Link href="/practice?s=dash" className="btn btn-primary"><T en="Firm control" th="ศูนย์ควบคุมสำนักงาน" /></Link>
+            <Link href="/practice?s=clients" className="btn btn-secondary"><T en="Clients" th="ลูกค้า" /></Link>
+            <Link href="/practice?s=assign" className="btn btn-secondary"><T en="Assignments" th="งาน" /></Link>
+            <Link href="/practice?s=trace" className="btn btn-secondary"><T en="Trail" th="เส้นทาง" /></Link>
+          </div>
+        </div>
+      )}
+
       <h5><T en="Open the rest of the OS" th="เปิดโมดูลถัดไปของระบบ" /></h5>
       <p className="text-muted" style={{ margin: "6px 0 12px", fontSize: 13, maxWidth: "72ch" }}>
         <T
-          en="The map is the entry, not the end. Cockpit, Twin, War Room, Copilot and Obligations take this document into the rest of the engine."
-          th="แผนที่เป็นทางเข้า ไม่ใช่จุดจบ ห้องบังคับ ฝาแฝด ห้องสงคราม เจรจา และข้อผูกพันพาเอกสารนี้เข้าโมดูลอื่นของเครื่องยนต์"
+          en="The map is the entry, not the end. Cockpit, Twin, Deal X-Ray, Copilot and Obligations take this document into the rest of the engine."
+          th="แผนที่เป็นทางเข้า ไม่ใช่จุดจบ ห้องบังคับ ฝาแฝด Deal X-Ray เจรจา และข้อผูกพันพาเอกสารนี้เข้าโมดูลอื่นของเครื่องยนต์"
         />
       </p>
       <div className="home-cards" style={{ marginBottom: 22 }}>
@@ -299,8 +402,8 @@ export function XRayScreen() {
       <h5 style={{ marginTop: 22 }}><T en="Every submenu on those modules" th="ทุกเมนูย่อยในโมดูลเหล่านั้น" /></h5>
       <p className="text-muted" style={{ margin: "6px 0 0", fontSize: 13, maxWidth: "72ch" }}>
         <T
-          en="Firm, Cockpit, Twin, War Room, Copilot and Obligations now read this map — not the Nimbus sample."
-          th="สำนักงาน ห้องบังคับ ฝาแฝด ห้องสงคราม เจรจา และข้อผูกพันอ่านแผนที่นี้ — ไม่ใช่ตัวอย่างนิมบัส"
+          en="Firm, Cockpit, Twin, Deal X-Ray, Copilot and Obligations now read this map — not the Nimbus sample."
+          th="สำนักงาน ห้องบังคับ ฝาแฝด Deal X-Ray เจรจา และข้อผูกพันอ่านแผนที่นี้ — ไม่ใช่ตัวอย่างนิมบัส"
         />
       </p>
       <div className="stack-actions" style={{ marginTop: 10 }}>

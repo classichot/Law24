@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { generateStructured } from "@/lib/ai/server";
 import { extractFromRequest } from "@/lib/ai/extract";
 import { ddPack } from "@/lib/ai/schema";
-import { TENANT_BRIEF } from "@/lib/ai/house";
+import { LIVE_ONLY } from "@/lib/ai/house";
 import { jsonError, requireLive } from "@/lib/ai/http";
 
 export const runtime = "nodejs";
@@ -13,21 +13,21 @@ export async function POST(req: Request) {
   if (blocked) return blocked;
   try {
     let text = "";
-    let filename = "Charoen data room";
+    let filename = "Deal room";
     try {
       const doc = await extractFromRequest(req);
       text = doc.text;
       filename = doc.filename;
     } catch {
-      /* tenant brief */
+      /* live room may send JSON without a file */
     }
     const object = await generateStructured(
       ddPack,
-      `${TENANT_BRIEF}
+      `${LIVE_ONLY}
 
-Produce buy-side DD flags with evidence for ${filename}. Playbook PB-DD v3.1. Kill items must reach partner before the IC pack. Cite contracts (CT-…) in flag titles/impact. Do not sign. Counsel verifies.
+Produce buy-side Deal X-Ray flags with evidence for ${filename}. Playbook PB-DD v3.1. Ask what should exist but is not in the extract. Distinguish contract fact from interpretation. Kill items must reach partner before the IC pack. Do not invent counterparties, values, or clause numbers. Do not sign. Counsel verifies.
 
-${text ? `EXTRACT:\n${text}` : "No new room extract — reason over the Charoen Logistics demo in the tenant brief."}
+${text ? `EXTRACT:\n${text}` : "No room extract was attached. Return an empty flags array and missing items that a share-acquisition checklist would still require (corporate, material contracts, licences). Do not use any demo tenant."}
 
 st is open|progress|escalated|closed. sev is vhigh|high|med|low.`,
     );

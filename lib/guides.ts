@@ -201,8 +201,8 @@ export const MODULE_GUIDES: Record<Exclude<ModeKey, "home">, {
   },
   diligence: {
     playbook: "dd",
-    purpose: P("สืบห้องข้อมูล หาประเด็นล้มดีล และส่งชุดคณะกรรมการด้วยหลักฐาน", "Investigate the data room, surface kill items, and issue an IC pack with evidence"),
-    osFlow: P("ตั้งเรื่อง → ห้องข้อมูล → ตารางตรวจ → แผนผังดีล → ธงแดง → คำขอ → QA → รายงาน / Autopilot", "Matter → room → grid → deal map → flags → requests → QA → reports / Autopilot"),
+    purpose: P("เข้าใจทั้งธุรกรรม เปิดความเสี่ยง แล้วสร้างเอกสารที่ต้องใช้แก้ไข", "Understand the whole transaction, expose the risk, and create the papers that fix it"),
+    osFlow: P("ธุรกรรม → ห้องข้อมูล → ความครบถ้วน → ข้อขัดแย้ง → Deal X-Ray → ทนายยืนยัน → CP / เปิดเผย / ร่างแก้ไข", "Transaction → room → completeness → contradictions → Deal X-Ray → counsel verifies → CP / disclosure / remediate"),
   },
   negotiate: {
     playbook: "mandate",
@@ -258,9 +258,29 @@ export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
     rule: P("ห้ามข้ามกฎในเล่มเพื่อปิดงานเร็ว", "Do not skip a rule in the book to close the work faster"),
   },
   "practice/dash": {
-    why: P("ฝ่ายบริหารเห็นภาระงาน ค้าง และกรวยสถานะในหน้าเดียว", "Management sees load, overdue and the stage funnel in one place"),
-    do: P("อ่านตัวเลข แล้วเปิดเส้นทางของงานที่ค้างหรือเกินกำหนด", "Read the numbers, then open the trail of anything overdue or stuck"),
-    rule: P("งานทุกชิ้นต้องมองเห็นจากแดชบอร์ด — ห้ามมีงานนอกระบบ", "Every live assignment must be visible here — no work off-system"),
+    why: P("ศูนย์ควบคุมสำนักงานแยกงานเป็นสามประเภท — ตรวจ ร่าง และ Deal X-Ray", "Firm control splits work into three engagements — review, drafting and Deal X-Ray"),
+    do: P("เลือกประเภท แล้วเปิดควบคุมหรือบันทึกของประเภทนั้น", "Pick the engagement, then open that track’s control or record"),
+    rule: P("งานทุกชิ้นต้องอยู่ใต้หนึ่งในสามประเภท — ห้ามมีงานนอกระบบ", "Every live assignment sits on one of the three tracks — no work off-system"),
+  },
+  "practice/pool": {
+    why: P("คิวรับงานพักลูกค้าและงานใหม่ที่ยังไม่มีผู้รับผิดชอบ", "The intake pool holds new clients and engagements without an owner"),
+    do: P("ตรวจชื่อลูกค้า ประเภท และชื่องาน แล้วกดรับงานเพื่อเปิดบันทึก", "Check the client, track and engagement name, then assign it to open the records"),
+    rule: P("รายการในคิวยังไม่ใช่งานเปิด — ต้องมีทนายรับผิดชอบก่อนเข้าเครื่องยนต์", "A pool item is not open work — a lawyer must take ownership before it enters an engine"),
+  },
+  "practice/ereview": {
+    why: P("งานตรวจสัญญา — X-Ray ห้องบังคับ ฝาแฝด ห้องสงคราม เจรจา ข้อผูกพัน", "Contract review — X-Ray, Cockpit, Twin, War Room, Copilot, Obligations"),
+    do: P("วางแผนที่ที่ X-Ray แล้วเปิดโมดูลตรวจ หรือเปิดบันทึกงานตรวจ", "Map on X-Ray, then open a review module or the review record"),
+    rule: P("งานตรวจต้องมีแผนที่ก่อนลงนาม — เครื่องยนต์ไม่ลงนามแทน", "A review assignment needs a map before signing — the engine never signs"),
+  },
+  "practice/edraft": {
+    why: P("งานร่างสัญญา — คลังประเภท สัมภาษณ์ ประกอบข้อ และร่างคู่ภาษา", "Contract drafting — type library, interview, assembly and bilingual draft"),
+    do: P("เลือกประเภทจากคลัง แล้วเปิดบันทึกงานร่างใต้ลูกค้า", "Pick the type from the library, then open the drafting record under the client"),
+    rule: P("ห้ามร่างลอยโดยไม่มีรหัสประเภท", "No freehand draft without a type id"),
+  },
+  "practice/edd": {
+    why: P("ตรวจสอบสถานะทางกฎหมาย — Deal X-Ray ของทั้งธุรกรรม", "Legal due diligence — Deal X-Ray of the whole transaction"),
+    do: P("ตั้งเรื่อง จัดห้องข้อมูล แล้วขึ้นธงให้ทนายยืนยัน", "Open the matter, index the room, then raise flags for counsel"),
+    rule: P("ธงแดงต้องมีหลักฐาน — ห้ามขึ้นธงจากความจำอย่างเดียว", "A red flag needs evidence — not memory alone"),
   },
   "practice/clients": {
     why: P("ลูกค้าคือจุดเริ่มของทุกงานที่ปรึกษา", "The client is the root of every advisory assignment"),
@@ -268,8 +288,8 @@ export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
     rule: P("ห้ามเปิดงานถ้ายังไม่มีลูกค้าในทะเบียน", "No assignment without a client on the register"),
   },
   "practice/assign": {
-    why: P("งานหนึ่งชิ้นเท่ากับคำสั่งหนึ่งครั้ง มีหัวหน้า กำหนด และประเภท", "One assignment is one instruction — lead, due date and type"),
-    do: P("เพิ่มงาน หรือเปิดแถวเพื่อไล่เส้นทางจากรับเรื่องถึงปัจจุบัน", "Add an assignment, or open a row to trace it from intake to now"),
+    why: P("บันทึกงานทั้งสามประเภท — ตรวจสัญญา ร่างสัญญา และความเสี่ยงกฎหมาย", "The engagement record across review, drafting and legal DD"),
+    do: P("กรองประเภท เพิ่มงาน หรือเปิดแถวเข้าเครื่องยนต์ของประเภทนั้น", "Filter the track, add an assignment, or open a row into that engine"),
     rule: P("เปิดงานได้เมื่อตรวจผลประโยชน์ทับซ้อนผ่านแล้วเท่านั้น", "Open only after conflict check has cleared"),
   },
   "practice/trace": {
@@ -367,15 +387,50 @@ export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
     do: P("ออกบันทึกท่าทีเจรจาใหม่ แล้วส่ง Negotiate", "Issue the memo as renegotiate, then go to Negotiate"),
     rule: P("ท่าทีมีได้สามอย่าง: ลงนาม เจรจาใหม่ ปฏิเสธ — ห้ามคลุมเครือ", "Three postures only: sign, renegotiate, reject — no fudge"),
   },
+  "diligence/deal": {
+    why: P("Deal X-Ray คือจอตัดสินใจของทั้งธุรกรรม — ไม่ใช่สรุป PDF", "Deal X-Ray is the decision screen for the whole transaction — not a PDF summary"),
+    do: P("อ่านสุขภาพดีล แล้วเจาะเอกสารที่ขาด ข้อขัดแย้ง หรือข้อที่อาจฆ่าดีล", "Read deal health, then drill into missing papers, contradictions or breakers"),
+    rule: P("ทุกข้อสรุปต้องชี้หลักฐาน และเครื่องยนต์ไม่ลงนามแทน", "Every conclusion cites evidence, and the engine never signs"),
+  },
   "diligence/dmatter": {
-    why: P("ตั้งเรื่องดีล — ขอบเขต วัน IC และสิ่งที่ถือว่าล้มดีล", "Open the deal — scope, IC date, and what counts as a kill item"),
-    do: P("ยืนยันฝั่งผู้ซื้อ มูลค่า และวันที่คณะกรรมการลงทุน", "Confirm buy-side, value and the IC date"),
-    rule: P("ขอบเขตที่ไม่ได้เขียน = ไม่ได้อยู่ในรายงาน", "Unscoped work does not belong in the report"),
+    why: P("ล็อกประเภทธุรกรรมก่อนสร้างรายการตรวจ", "Lock the transaction type before the checklist is born"),
+    do: P("เลือกซื้อหุ้น ซื้อสินทรัพย์ ลงทุน หรือตรวจสุขภาพ แล้วเปิดศูนย์ควบคุม", "Pick share, asset, investment or a health check, then open the Control Center"),
+    rule: P("รายการตรวจที่ไม่มีประเภทธุรกรรม = รายการว่าง", "A checklist without a transaction type is an empty list"),
   },
   "diligence/droom": {
-    why: P("ห้องข้อมูลคือหลักฐาน — จัดดัชนี เวอร์ชัน OCR", "The data room is the evidence — index, version, OCR"),
-    do: P("ดูจำนวนที่เข้าแล้วและช่องที่ยังว่าง", "Check what has landed and which folders are still empty"),
+    why: P("ห้องข้อมูลคือหลักฐาน — จัดประเภท ครอบครัวสัญญา และเวอร์ชัน", "The data room is the evidence — class, contract family and version"),
+    do: P("วางห้อง แล้วดูครอบครัวสัญญาไม่ใช่รายชื่อไฟล์", "Drop the room, then read families — not a file list"),
     rule: P("เอกสารที่ไม่อยู่ในดัชนีใช้เป็นหลักฐานในธงแดงไม่ได้", "A document not in the index cannot support a red flag"),
+  },
+  "diligence/dmiss": {
+    why: P("เครื่องเอกสารที่ขาดถามว่าอะไรควรมีแต่ยังไม่ถูกส่ง", "Missing-document AI asks what should exist but was not provided"),
+    do: P("ออกคำขอ DD-xxx แล้วส่งเข้าคำถามฝ่ายบริหาร", "Issue DD-xxx requests and push them into management Q&A"),
+    rule: P("อย่าเขียนว่ารับครบทั้งที่รายการตรวจยังขาด", "Do not report the room as complete while the checklist is open"),
+  },
+  "diligence/dcontra": {
+    why: P("ข้อขัดแย้งข้ามเอกสารคือสมมติฐานที่ต้องพิสูจน์", "Cross-document contradictions are hypotheses to prove"),
+    do: P("อ่านคู่ A/B แล้วตั้งคำถามฝ่ายบริหาร", "Read the A/B pair, then put the question to management"),
+    rule: P("ระบบไม่ invent ตัวเลขหุ้น — ชี้สองแหล่งให้ทนายเทียบ", "The engine does not invent share counts — it sends counsel to two sources"),
+  },
+  "diligence/dbreak": {
+    why: P("รายการที่อาจฆ่าดีลคือสิ่งที่ผู้ตัดสินใจต้องเห็นก่อน", "The deal-breaker list is what decision-makers need first"),
+    do: P("อ่านไม่เกินเจ็ดข้อ แล้วแปลงเป็น CP หรือเอกสารแก้ไข", "Read at most seven items, then turn them into CPs or fix papers"),
+    rule: P("ห้ามฝังประเด็นฆ่าดีลไว้ในรายงาน 150 หน้า", "Do not bury a kill item in a 150-page report"),
+  },
+  "diligence/dsim": {
+    why: P("จำลองโครงสร้างเพื่อดูว่าความเสี่ยงกฎหมายขยับอย่างไร", "Simulate structure to see how legal exposure moves"),
+    do: P("สลับ 100% / 49% / สินทรัพย์ แล้วอ่านแถวใบอนุญาตและความยินยอม", "Toggle 100% / 49% / assets, then read the licence and consent rows"),
+    rule: P("การจำลองเปลี่ยนสมมติฐาน ไม่เปลี่ยนข้อเท็จจริงในเอกสาร", "The simulator changes assumptions, not the facts in the papers"),
+  },
+  "diligence/dfix": {
+    why: P("ข้อค้นพบต้องกลายเป็นฉบับแก้ไข ความยินยอม หรือ CP", "A finding must become an amendment, a consent or a CP"),
+    do: P("คลิกแก้ไข แล้วกระโดดไป Assemble หรือ Review", "Click remediate, then hop to Assemble or Review"),
+    rule: P("ค้นพบโดยไม่แก้ไข = งานยังไม่ปิด", "A finding without a fix is unfinished work"),
+  },
+  "diligence/dic": {
+    why: P("โหมดคณะกรรมการแสดงสุขภาพดีลก่อนรายงานเต็ม", "IC mode shows deal health before the full report"),
+    do: P("อ่านคำแนะนำธุรกรรม แล้วเจาะข้อที่อาจฆ่าดีล", "Read the transaction recommendation, then drill into breakers"),
+    rule: P("ผู้บริหารเห็นสี่ความเสี่ยงใหญ่สุดก่อน 150 หน้า", "Executives see the four biggest risks before 150 pages"),
   },
   "diligence/dgrid": {
     why: P("ตารางตรวจสกัดแนวคิดข้ามเอกสารพร้อมทนายยืนยัน", "The grid extracts concepts across documents with lawyer verification"),
@@ -488,9 +543,9 @@ export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
     rule: P("miss ต่อเพลย์บุ๊กต้องมีการกระทำ — ไม่ใช่ผ่าน", "A miss against the playbook needs an act — not a pass"),
   },
   "diligence/dwar": {
-    why: P("ห้องสงคราม DD คือดัชนีดีล ธงแดง และรายงานที่ชี้แหล่ง", "The DD War Room is the deal index, flags and source-linked report"),
-    do: P("เปิดประเด็นล้มดีล แล้วดูความครบของห้องข้อมูล", "Open the kill items, then the data-room coverage"),
-    rule: P("ประเด็นล้มดีลต้องถึงพาร์ทเนอร์ก่อนชุดคณะกรรมการลงทุน", "Kill items reach partner before the IC pack"),
+    why: P("ธงสัญญาคือฉบับที่ map — ทั้งธุรกรรมอยู่ที่ Deal X-Ray", "Contract flags are the mapped paper — the whole deal lives on Deal X-Ray"),
+    do: P("อ่านธงของฉบับนี้ แล้วกระโดดกลับ Deal X-Ray", "Read this paper's flags, then jump back to Deal X-Ray"),
+    rule: P("อย่าใช้ธงฉบับเดียวแทนสุขภาพทั้งดีล", "Do not treat one paper's flags as the health of the deal"),
   },
   "negotiate/nladder": {
     why: P("บันไดเจรจาคือทางเดินจากฉบับปัจจุบันถึงอำนาจที่ต้องได้", "The negotiation ladder is the walk from current paper to the mandate"),
@@ -610,7 +665,7 @@ export const OS_FLOW: { k: Exclude<ModeKey, "home">; en: string; th: string }[] 
   { k: "review", en: "X-Ray", th: "X-Ray" },
   { k: "holistic", en: "Cockpit", th: "ห้องบังคับ" },
   { k: "intel", en: "Twin", th: "ฝาแฝด" },
-  { k: "diligence", en: "War Room", th: "ห้องสงคราม" },
+  { k: "diligence", en: "Deal X-Ray", th: "Deal X-Ray" },
   { k: "negotiate", en: "Copilot", th: "เจรจา" },
   { k: "obligations", en: "Obligations", th: "ข้อผูกพัน" },
   { k: "assemble", en: "Assemble", th: "ประกอบ" },
