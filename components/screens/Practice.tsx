@@ -7,27 +7,32 @@ import { Kicker, Title } from "@/components/ui";
 import { useStore } from "@/lib/store";
 import { T } from "@/lib/i18n";
 import {
+  ENGAGEMENT,
+  ENGAGEMENT_TYPES,
   STAGE_LABEL,
-  TYPE_LABEL,
   assignmentEngineHref,
   assignmentOf,
   clientOf,
   dashboardOf,
+  engagementOf,
   formatThb,
   latestAssignmentForClient,
   overdue,
   stageCopy,
+  trackStats,
   trailOf,
   typeCopy,
   type AssignmentStage,
   type AssignmentType,
+  type EngagementTrack,
 } from "@/lib/firm";
-import { FIRM_CONTROL } from "@/lib/nav";
+import { FIRM_CONTROL, firmControlFor } from "@/lib/nav";
 import { FIRM_BRAIN, PACKAGES, ENTRANCES } from "@/lib/product";
 import { downloadText } from "@/lib/demo";
 import { L } from "@/lib/model";
 import { NeedMap } from "@/components/NeedMap";
 import { clientRoomOf, firmBrainOf, withLiveMatter } from "@/lib/ai/fromMap";
+import { EngPill, TrackCard } from "@/components/EngagementMark";
 
 const STAGE_CLASS: Record<AssignmentStage, string> = {
   intake: "status-prep",
@@ -37,10 +42,13 @@ const STAGE_CLASS: Record<AssignmentStage, string> = {
   closed: "status-done",
 };
 
-const TYPES = Object.keys(TYPE_LABEL) as AssignmentType[];
+const TYPES = ENGAGEMENT_TYPES as AssignmentType[];
 const FUNNEL = Object.keys(STAGE_LABEL) as AssignmentStage[];
 
 export function PracticeScreen({ screen }: { screen: string }) {
+  if (screen === "ereview") return <EngagementHub track="review" />;
+  if (screen === "edraft") return <EngagementHub track="assemble" />;
+  if (screen === "edd") return <EngagementHub track="diligence" />;
   if (screen === "clients") return <Clients />;
   if (screen === "assign") return <Assignments />;
   if (screen === "trace") return <Trace />;
@@ -51,34 +59,16 @@ export function PracticeScreen({ screen }: { screen: string }) {
   return <Dash />;
 }
 
-function FirmControl() {
+function FirmBooks() {
   const s = useStore();
   const th = s.lang === "th";
-  const engine = FIRM_CONTROL.filter((h) => h.kind === "engine");
   const firm = FIRM_CONTROL.filter((h) => h.kind === "firm");
   return (
     <>
-      <h5 style={{ marginTop: 8 }}>
-        <T en="OS control" th="ควบคุมทั้งระบบ" />
+      <h5 style={{ marginTop: 28 }}>
+        <T en="Firm books" th="บัญชีสำนักงาน" />
       </h5>
-      <p className="text-muted" style={{ margin: "4px 0 12px", fontSize: 13, maxWidth: "72ch" }}>
-        <T
-          en="Firm is the hub. X-Ray opens a client and assignment; the other menus read that matter."
-          th="สำนักงานคือศูนย์ควบคุม X-Ray เปิดลูกค้าและงาน เมนูอื่นอ่านงานนั้น"
-        />
-      </p>
       <div className="firm-control">
-        {engine.map((h) => (
-          <Link key={h.href} href={h.href} className="home-card firm-control-card" style={{ textDecoration: "none", color: "inherit" }}>
-            <div style={{ font: "800 10px/1 var(--font-heading)", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--color-neutral-600)" }}>
-              {th ? "เครื่องยนต์" : "Engine"}
-            </div>
-            <div style={{ fontWeight: 800 }}>{th ? h.th : h.en}</div>
-            <div className="text-muted" style={{ fontSize: 12 }}>{th ? h.why.t : h.why.e}</div>
-          </Link>
-        ))}
-      </div>
-      <div className="firm-control" style={{ marginTop: 10 }}>
         {firm.map((h) => (
           <Link key={h.href} href={h.href} className="home-card firm-control-card" style={{ textDecoration: "none", color: "inherit" }}>
             <div style={{ font: "800 10px/1 var(--font-heading)", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--color-neutral-600)" }}>
@@ -99,21 +89,29 @@ function ActiveMatter({ practice }: { practice: ReturnType<typeof withLiveMatter
   const a = assignmentOf(practice, practice.activeAssignmentId) || practice.assignments[0];
   const c = a ? clientOf(practice, a.clientId) : undefined;
   const X = s.xrayLive;
+  const track = a ? engagementOf(a.type) : (X ? "review" as const : null);
+  const e = track ? ENGAGEMENT[track] : null;
   if (!a && !X) return null;
   return (
-    <div className="xray-layer" style={{ margin: "18px 0 8px" }}>
+    <div className={`xray-layer eng-card ${e?.cls || "eng-review"}`} style={{ margin: "18px 0 8px" }}>
       <div className="page-kicker"><T en="Active matter" th="งานที่เปิดอยู่" /></div>
+      {track && <div style={{ marginTop: 8 }}><EngPill track={track} /></div>}
       <div style={{ font: "800 20px/1.2 var(--font-heading)", marginTop: 8 }}>
         {c ? (th ? c.nameTh : c.name) : (th ? "ยังไม่มีลูกค้า" : "No client yet")}
       </div>
       <p className="text-muted" style={{ margin: "6px 0 0", fontSize: 13 }}>
         {a
           ? `${a.id} · ${th ? a.titleTh : a.title}${a.ref ? ` · ${a.ref}` : ""}`
-          : (th ? "วางแผนที่ที่ X-Ray เพื่อเปิดงาน" : "Map a contract on X-Ray to open an assignment")}
-        {X ? ` · ${th ? asVerdict(X, true) : asVerdict(X, false)}` : ""}
+          : (th ? "วางแผนที่ที่ X-Ray เพื่อเปิดงานตรวจ" : "Map a contract on X-Ray to open a review assignment")}
+        {X && track === "review" ? ` · ${th ? asVerdict(X, true) : asVerdict(X, false)}` : ""}
       </p>
       <div className="stack-actions" style={{ marginTop: 12 }}>
-        <Link href="/review?s=xray" className="btn btn-primary">X-Ray</Link>
+        {e && <Link href={e.href} className="btn btn-primary">{track === "review" ? "X-Ray" : (th ? e.th : e.en)}</Link>}
+        {e && (
+          <Link href={e.firmHref} className="btn btn-secondary">
+            <T en="Track control" th="ควบคุมประเภทนี้" />
+          </Link>
+        )}
         {c && (
           <Link href="/practice?s=clients" className="btn btn-secondary" onClick={() => s.setActiveClient(c.id)}>
             <T en="Client" th="ลูกค้า" />
@@ -124,7 +122,6 @@ function ActiveMatter({ practice }: { practice: ReturnType<typeof withLiveMatter
             <T en="Trail" th="เส้นทาง" />
           </Link>
         )}
-        <Link href="/holistic?s=cockpit" className="btn btn-secondary"><T en="Cockpit" th="ห้องบังคับ" /></Link>
       </div>
     </div>
   );
@@ -148,35 +145,29 @@ function Dash() {
       <Title><T en="Firm control" th="ศูนย์ควบคุมสำนักงาน" /></Title>
       <p className="page-sub">
         <T
-          en="The firm book is the hub for the rest of the OS — X-Ray, Cockpit, Twin, War Room, Copilot, Obligations and Assemble all read the open client and assignment."
-          th="บัญชีสำนักงานคือศูนย์ของระบบ — X-Ray ห้องบังคับ ฝาแฝด ห้องสงคราม เจรจา ข้อผูกพัน และประกอบ อ่านลูกค้าและงานที่เปิดอยู่"
+          en="Three engagements. Green is contract review (X-Ray through Obligations). Blue is contract drafting (Assemble). Amber is legal due diligence — legal risk."
+          th="งานสามประเภท เขียวคือตรวจสัญญา (X-Ray ถึงข้อผูกพัน) น้ำเงินคือร่างสัญญา (ประกอบ) ส้มคือตรวจสอบสถานะทางกฎหมาย — ความเสี่ยงกฎหมาย"
         />
       </p>
       <ActiveMatter practice={practice} />
-      {!s.xrayLive && (
-        practice.assignments.length ? (
-          <div className="callout" style={{ marginTop: 16 }}>
-            <T
-              en="The assignment is open. Map the contract on X-Ray so Cockpit, Twin and the rest of the OS read this matter — not a Nimbus sample."
-              th="เปิดงานแล้ว วางแผนที่สัญญาที่ X-Ray เพื่อให้ห้องบังคับ ฝาแฝด และโมดูลอื่นอ่านงานนี้ — ไม่ใช่ตัวอย่างนิมบัส"
-            />
-            <div className="stack-actions" style={{ marginTop: 10 }}>
-              <Link href="/review?s=xray" className="btn btn-primary">X-Ray</Link>
-            </div>
+      {!s.xrayLive && !practice.assignments.length && (
+        <div className="callout" style={{ marginTop: 16 }}>
+          <T en="Open a client, then start one of the three engagements — or map a contract on X-Ray to open a review assignment." th="เพิ่มลูกค้า แล้วเปิดงานหนึ่งในสามประเภท — หรือวางแผนที่ที่ X-Ray เพื่อเปิดงานตรวจ" />
+          <div className="stack-actions" style={{ marginTop: 10 }}>
+            <Link href="/review?s=xray" className="btn btn-primary">X-Ray</Link>
+            <Link href="/practice?s=clients" className="btn btn-secondary"><T en="Add a client first" th="เพิ่มลูกค้าก่อน" /></Link>
           </div>
-        ) : (
-          <div className="callout" style={{ marginTop: 16 }}>
-            <T en="Map a contract on X-Ray to open a live client and assignment here. The books no longer seed Nimbus, Charoen or PTT." th="วางแผนที่สัญญาที่ X-Ray เพื่อเปิดลูกค้าและงานที่นี่ บัญชีไม่เติมนิมบัส เจริญ หรือ PTT แล้ว" />
-            <div className="stack-actions" style={{ marginTop: 10 }}>
-              <Link href="/review?s=xray" className="btn btn-primary">X-Ray</Link>
-              <Link href="/practice?s=clients" className="btn btn-secondary"><T en="Add a client first" th="เพิ่มลูกค้าก่อน" /></Link>
-            </div>
-          </div>
-        )
+        </div>
       )}
-      <div style={{ marginTop: 28 }}>
-        <FirmControl />
+      <h5 style={{ marginTop: 28 }}>
+        <T en="Engagements — control and record" th="ประเภทงาน — ควบคุมและบันทึก" />
+      </h5>
+      <div className="track-grid" style={{ marginTop: 12 }}>
+        {ENGAGEMENT_TYPES.map((track) => (
+          <TrackCard key={track} track={track} open={trackStats(practice)[track]} />
+        ))}
       </div>
+      <FirmBooks />
       <div className="stat-grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginTop: 28 }}>
         {[
           { v: String(d.clients), k: th ? "ลูกค้าที่เปิด" : "Active clients" },
@@ -278,6 +269,178 @@ function aHint(title: string, th: boolean) {
   return th
     ? `งานหลักที่เปิดอยู่: ${title || "—"} · เปิดแท็บเส้นทางงานเพื่อไล่จากรับเรื่องถึงสถานะปัจจุบัน`
     : `Lead open matter: ${title || "—"} · Open Movement trail to read intake through the current stage.`;
+}
+
+function startCopy(track: EngagementTrack, th: boolean) {
+  if (track === "review") return th ? "วางแผนที่ที่ X-Ray" : "Map on X-Ray";
+  if (track === "assemble") return th ? "เปิดคลังประกอบ" : "Open the library";
+  return th ? "ตั้งเรื่อง DD" : "Open the DD matter";
+}
+
+function EngagementHub({ track }: { track: EngagementTrack }) {
+  const s = useStore();
+  const router = useRouter();
+  const th = s.lang === "th";
+  const e = ENGAGEMENT[track];
+  const practice = withLiveMatter(s.practice, s.xrayLive, s.reviewLive);
+  const hops = firmControlFor(track);
+  const rows = practice.assignments.filter((a) => engagementOf(a.type) === track);
+  const [open, setOpen] = useState(false);
+  const [clientId, setClientId] = useState(practice.activeClientId || practice.clients[0]?.id || "");
+  const [title, setTitle] = useState("");
+  const [titleTh, setTitleTh] = useState("");
+  const [due, setDue] = useState("2026-09-30");
+  const [lead, setLead] = useState("Kanit S.");
+  const [fee, setFee] = useState("150000");
+
+  function onAdd(ev: FormEvent) {
+    ev.preventDefault();
+    if (!title.trim() || !clientId) return;
+    s.addAssignment({
+      clientId,
+      title: title.trim(),
+      titleTh: titleTh.trim() || title.trim(),
+      type: track,
+      due,
+      lead: lead.trim() || "Kanit S.",
+      fee: fee.trim() ? `THB ${Number(fee.replace(/[^\d]/g, "") || 0).toLocaleString("en-US")}` : "THB 0",
+    });
+    s.flash(th ? `เปิดงาน${e.th}แล้ว` : `${e.en} opened`);
+    setTitle("");
+    setTitleTh("");
+    setOpen(false);
+  }
+
+  return (
+    <div className="pad-page">
+      <div className={`eng-card ${e.cls}`} style={{ padding: "4px 0 0 14px", marginBottom: 8 }}>
+        <Kicker>practice · {e.tagEn.toLowerCase()}</Kicker>
+        <div style={{ margin: "8px 0 10px" }}><EngPill track={track} /></div>
+        <Title>{th ? e.th : e.en}</Title>
+        <p className="page-sub">{th ? e.why.t : e.why.e}</p>
+      </div>
+      <h5><T en="Control" th="ควบคุม" /></h5>
+      <p className="text-muted" style={{ margin: "4px 0 12px", fontSize: 13 }}>{th ? e.record.t : e.record.e}</p>
+      <div className="firm-control">
+        {hops.map((h) => (
+          <Link key={h.href} href={h.href} className={`home-card firm-control-card eng-card ${e.cls}`} style={{ textDecoration: "none", color: "inherit" }}>
+            <div style={{ fontWeight: 800 }}>{th ? h.th : h.en}</div>
+            <div className="text-muted" style={{ fontSize: 12 }}>{th ? h.why.t : h.why.e}</div>
+          </Link>
+        ))}
+      </div>
+      <div className="stack-actions" style={{ marginTop: 16 }}>
+        <Link href={e.href} className="btn btn-primary">{startCopy(track, th)}</Link>
+        <Link href="/practice?s=dash" className="btn btn-secondary"><T en="Firm control" th="ศูนย์ควบคุม" /></Link>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap", marginTop: 32 }}>
+        <div>
+          <h5 style={{ margin: 0 }}><T en="Record" th="บันทึก" /></h5>
+          <p className="text-muted" style={{ margin: "6px 0 0", fontSize: 13 }}>
+            {rows.length} {th ? "งานในประเภทนี้" : "assignments on this track"}
+          </p>
+        </div>
+        <button type="button" className="btn btn-primary" onClick={() => setOpen((v) => !v)}>
+          {open ? <T en="Cancel" th="ยกเลิก" /> : <T en="Open assignment" th="เปิดงาน" />}
+        </button>
+      </div>
+
+      {open && (
+        <form className="practice-form" onSubmit={onAdd}>
+          <div className="field">
+            <label><T en="Client" th="ลูกค้า" /></label>
+            <select className="input" value={clientId} onChange={(ev) => setClientId(ev.target.value)}>
+              {practice.clients.map((c) => (
+                <option key={c.id} value={c.id}>{th ? c.nameTh : c.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="field" style={{ gridColumn: "1 / -1" }}>
+            <label><T en="Title" th="ชื่องาน" /></label>
+            <input className="input" value={title} onChange={(ev) => setTitle(ev.target.value)} required />
+          </div>
+          <div className="field" style={{ gridColumn: "1 / -1" }}>
+            <label><T en="Thai title" th="ชื่องานภาษาไทย" /></label>
+            <input className="input" value={titleTh} onChange={(ev) => setTitleTh(ev.target.value)} />
+          </div>
+          <div className="field">
+            <label><T en="Due" th="กำหนด" /></label>
+            <input className="input" type="date" value={due} onChange={(ev) => setDue(ev.target.value)} />
+          </div>
+          <div className="field">
+            <label><T en="Lead" th="หัวหน้างาน" /></label>
+            <input className="input" value={lead} onChange={(ev) => setLead(ev.target.value)} />
+          </div>
+          <div className="field">
+            <label><T en="Fee (THB)" th="ค่าธรรมเนียม (บาท)" /></label>
+            <input className="input" value={fee} onChange={(ev) => setFee(ev.target.value)} />
+          </div>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <button className="btn btn-primary" type="submit"><T en="Save record" th="บันทึกงาน" /></button>
+          </div>
+        </form>
+      )}
+
+      <table className="table" style={{ marginTop: 16 }}>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th><T en="Assignment" th="งาน" /></th>
+            <th><T en="Client" th="ลูกค้า" /></th>
+            <th><T en="Stage" th="สถานะ" /></th>
+            <th><T en="Due" th="กำหนด" /></th>
+            <th />
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((a) => {
+            const c = clientOf(practice, a.clientId);
+            return (
+              <tr
+                key={a.id}
+                className={`clickable eng-row ${e.cls}`}
+                onClick={() => {
+                  s.setActiveAssignment(a.id);
+                  s.setActiveClient(a.clientId);
+                  router.push(assignmentEngineHref(a));
+                }}
+              >
+                <td style={{ fontWeight: 800 }}>{a.id}</td>
+                <td style={{ fontWeight: 700 }}>{th ? a.titleTh : a.title}</td>
+                <td>{c ? (th ? c.nameTh : c.name) : a.clientId}</td>
+                <td><span className={STAGE_CLASS[a.stage]}>{stageCopy(a.stage, s.lang)}</span></td>
+                <td>{a.due}</td>
+                <td onClick={(ev) => ev.stopPropagation()}>
+                  <div className="stack-actions" style={{ justifyContent: "flex-end" }}>
+                    <Link
+                      href={e.href}
+                      className="btn btn-primary"
+                      style={{ fontSize: 11, padding: "4px 10px" }}
+                      onClick={() => {
+                        s.setActiveAssignment(a.id);
+                        s.setActiveClient(a.clientId);
+                      }}
+                    >
+                      {startCopy(track, th)}
+                    </Link>
+                    <Link
+                      href="/practice?s=trace"
+                      className="btn btn-secondary"
+                      style={{ fontSize: 11, padding: "4px 10px" }}
+                      onClick={() => s.setActiveAssignment(a.id)}
+                    >
+                      <T en="Trail" th="เส้นทาง" />
+                    </Link>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 function Clients() {
@@ -420,16 +583,21 @@ function Assignments() {
   const [clientId, setClientId] = useState(practice.activeClientId || practice.clients[0]?.id || "");
   const [title, setTitle] = useState("");
   const [titleTh, setTitleTh] = useState("");
-  const [type, setType] = useState<AssignmentType>("review");
+  const [type, setType] = useState<AssignmentType>((params.get("eng") as AssignmentType) || "review");
   const [due, setDue] = useState("2026-09-30");
   const [lead, setLead] = useState("Kanit S.");
   const [fee, setFee] = useState("150000");
   const [filter, setFilter] = useState(params.get("c") || "all");
+  const [eng, setEng] = useState(params.get("eng") || "all");
   const [justOpened, setJustOpened] = useState(false);
 
   const rows = useMemo(() => {
-    return practice.assignments.filter((a) => filter === "all" || a.clientId === filter);
-  }, [practice.assignments, filter]);
+    return practice.assignments.filter((a) => {
+      if (filter !== "all" && a.clientId !== filter) return false;
+      if (eng !== "all" && engagementOf(a.type) !== eng) return false;
+      return true;
+    });
+  }, [practice.assignments, filter, eng]);
 
   function onAdd(e: FormEvent) {
     e.preventDefault();
@@ -443,7 +611,7 @@ function Assignments() {
       lead: lead.trim() || "Kanit S.",
       fee: fee.trim() ? `THB ${Number(fee.replace(/[^\d]/g, "") || 0).toLocaleString("en-US")}` : "THB 0",
     });
-    s.flash(th ? "เปิดงานแล้ว — map สัญญาที่ X-Ray" : "Assignment opened — map a contract on X-Ray");
+    s.flash(th ? `เปิดงานแล้ว — ${ENGAGEMENT[engagementOf(type)].th}` : `Assignment opened — ${ENGAGEMENT[engagementOf(type)].en}`);
     setTitle("");
     setTitleTh("");
     setOpen(false);
@@ -455,8 +623,8 @@ function Assignments() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
         <div>
           <Kicker>practice · assignments</Kicker>
-          <Title><T en="Assignments" th="งาน" /></Title>
-          <p className="page-sub"><T en="Open a row to map the contract on X-Ray (or the matching engine). Trail stays one click away." th="เปิดแถวเพื่อวางแผนที่สัญญาที่ X-Ray (หรือเครื่องยนต์ที่ตรงประเภท) เส้นทางอยู่คลิกเดียว" /></p>
+          <Title><T en="Engagement record" th="บันทึกงาน" /></Title>
+          <p className="page-sub"><T en="Every assignment is one of three engagements — review, drafting or legal DD. Open a row to enter that track." th="ทุกงานเป็นหนึ่งในสามประเภท — ตรวจ ร่าง หรือ DD เปิดแถวเพื่อเข้าประเภทนั้น" /></p>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <Link href="/assist?s=ask" className="btn btn-secondary">
@@ -482,7 +650,7 @@ function Assignments() {
             <label><T en="Type" th="ประเภท" /></label>
             <select className="input" value={type} onChange={(e) => setType(e.target.value as AssignmentType)}>
               {TYPES.map((k) => (
-                <option key={k} value={k}>{th ? TYPE_LABEL[k].th : TYPE_LABEL[k].en}</option>
+                <option key={k} value={k}>{th ? ENGAGEMENT[k as EngagementTrack].th : ENGAGEMENT[k as EngagementTrack].en}</option>
               ))}
             </select>
           </div>
@@ -513,16 +681,25 @@ function Assignments() {
       )}
 
       {justOpened && (
-        <div className="callout" style={{ marginTop: 16 }}>
-          <T en="Assignment is open. Map the contract so X-Ray, Cockpit and the rest of the OS read this matter." th="เปิดงานแล้ว วางแผนที่สัญญาเพื่อให้ X-Ray ห้องบังคับ และโมดูลอื่นอ่านงานนี้" />
+        <div className={`callout eng-card ${ENGAGEMENT[engagementOf(type)].cls}`} style={{ marginTop: 16 }}>
+          <T en="Assignment is on the record. Open the engine for this engagement." th="บันทึกงานแล้ว เปิดเครื่องยนต์ของประเภทนี้" />
           <div className="stack-actions" style={{ marginTop: 10 }}>
-            <Link href="/review?s=xray" className="btn btn-primary">X-Ray</Link>
+            <Link href={ENGAGEMENT[engagementOf(type)].href} className="btn btn-primary">{startCopy(engagementOf(type), th)}</Link>
+            <Link href={ENGAGEMENT[engagementOf(type)].firmHref} className="btn btn-secondary"><T en="Track control" th="ควบคุมประเภทนี้" /></Link>
             <Link href="/practice?s=trace" className="btn btn-secondary"><T en="Trail" th="เส้นทาง" /></Link>
           </div>
         </div>
       )}
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "16px 0 8px" }}>
+        <button type="button" className={`filter-chip${eng === "all" ? " on" : ""}`} onClick={() => setEng("all")}>
+          <T en="All engagements" th="ทุกประเภท" />
+        </button>
+        {ENGAGEMENT_TYPES.map((k) => (
+          <button key={k} type="button" className={`filter-chip ${ENGAGEMENT[k].cls}${eng === k ? " on" : ""}`} onClick={() => { setEng(k); setType(k); }}>
+            {th ? ENGAGEMENT[k].th : ENGAGEMENT[k].en}
+          </button>
+        ))}
         <button type="button" className={`filter-chip${filter === "all" ? " on" : ""}`} onClick={() => setFilter("all")}>
           <T en="All clients" th="ลูกค้าทั้งหมด" />
         </button>
@@ -550,11 +727,12 @@ function Assignments() {
           {rows.map((a) => {
             const c = clientOf(practice, a.clientId);
             const late = overdue(a);
+            const track = engagementOf(a.type);
             const engineHref = assignmentEngineHref(a);
             return (
               <tr
                 key={a.id}
-                className="clickable"
+                className={`clickable eng-row ${ENGAGEMENT[track].cls}`}
                 onClick={() => {
                   s.setActiveAssignment(a.id);
                   s.setActiveClient(a.clientId);
@@ -567,7 +745,7 @@ function Assignments() {
                   {a.ref && <div style={{ fontSize: 11, color: "var(--color-neutral-600)", fontWeight: 400 }}>{a.ref}</div>}
                 </td>
                 <td>{c ? (th ? c.nameTh : c.name) : a.clientId}</td>
-                <td>{typeCopy(a.type, s.lang)}</td>
+                <td><EngPill track={track} /></td>
                 <td><span className={STAGE_CLASS[a.stage]}>{stageCopy(a.stage, s.lang)}</span></td>
                 <td style={{ color: late ? "var(--color-hot)" : undefined, fontWeight: late ? 800 : 400 }}>
                   {a.due}{late ? (th ? " · เกิน" : " · late") : ""}
@@ -576,7 +754,7 @@ function Assignments() {
                 <td onClick={(e) => e.stopPropagation()}>
                   <div className="stack-actions" style={{ justifyContent: "flex-end" }}>
                     <Link
-                      href="/review?s=xray"
+                      href={ENGAGEMENT[track].href}
                       className="btn btn-primary"
                       style={{ fontSize: 11, padding: "4px 10px" }}
                       onClick={() => {
@@ -584,7 +762,7 @@ function Assignments() {
                         s.setActiveClient(a.clientId);
                       }}
                     >
-                      X-Ray
+                      {startCopy(track, th)}
                     </Link>
                     <Link
                       href="/practice?s=trace"
@@ -636,6 +814,7 @@ function Trace() {
               <div className="trace-item-id">{row.id}</div>
               <div className="trace-item-title">{th ? row.titleTh : row.title}</div>
               <div className="trace-item-meta">
+                <EngPill track={engagementOf(row.type)} />
                 <span className={STAGE_CLASS[row.stage]}>{stageCopy(row.stage, s.lang)}</span>
                 {overdue(row) && <span style={{ color: "var(--color-hot)", fontWeight: 800 }}>{th ? "เกินกำหนด" : "Overdue"}</span>}
               </div>
@@ -647,9 +826,10 @@ function Trace() {
             <p className="text-muted"><T en="Select an assignment." th="เลือกงาน" /></p>
           ) : (
             <>
-              <div className="trace-head">
+              <div className={`trace-head eng-card ${ENGAGEMENT[engagementOf(a.type)].cls}`}>
                 <div>
                   <div style={{ font: "800 11px/1 var(--font-heading)", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--color-neutral-600)", marginBottom: 8 }}>{a.id}</div>
+                  <div style={{ marginBottom: 8 }}><EngPill track={engagementOf(a.type)} /></div>
                   <h3 style={{ margin: "0 0 8px", fontSize: 20 }}>{th ? a.titleTh : a.title}</h3>
                   <div style={{ fontSize: 13, color: "var(--color-neutral-600)" }}>
                     {c ? (th ? c.nameTh : c.name) : a.clientId} · {typeCopy(a.type, s.lang)} · {a.lead} · {th ? "กำหนด" : "Due"} {a.due}
@@ -657,8 +837,8 @@ function Trace() {
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <span className={STAGE_CLASS[a.stage]}>{stageCopy(a.stage, s.lang)}</span>
-                  <Link href="/review?s=xray" className="btn btn-primary" style={{ fontSize: 12 }}>
-                    X-Ray
+                  <Link href={ENGAGEMENT[engagementOf(a.type)].href} className="btn btn-primary" style={{ fontSize: 12 }}>
+                    {startCopy(engagementOf(a.type), th)}
                   </Link>
                   <Link href={assignmentEngineHref(a)} className="btn btn-secondary" style={{ fontSize: 12 }}>
                     <T en="Open in engine" th="เปิดในเครื่องยนต์" />
@@ -666,7 +846,7 @@ function Trace() {
                 </div>
               </div>
               <div className="stack-actions" style={{ margin: "12px 0 18px" }}>
-                {FIRM_CONTROL.filter((h) => h.kind === "engine").map((h) => (
+                {firmControlFor(engagementOf(a.type)).map((h) => (
                   <Link key={h.href} href={h.href} className="btn btn-ghost" style={{ fontSize: 12 }}>
                     {th ? h.th : h.en}
                   </Link>

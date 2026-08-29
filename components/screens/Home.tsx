@@ -10,9 +10,9 @@ import { Dropzone } from "@/components/Dropzone";
 import { TrustStrip } from "@/components/TrustStrip";
 import { PlaybookMark } from "@/components/PlaybookMark";
 import { ENTRANCES, PACKAGES, POSITION, TWIN_ASKS, WEDGE_TYPES } from "@/lib/product";
-import { FIRM_CONTROL } from "@/lib/nav";
-import { assignmentOf, clientOf } from "@/lib/firm";
+import { assignmentOf, clientOf, ENGAGEMENT, ENGAGEMENT_TYPES, engagementOf, trackStats } from "@/lib/firm";
 import { clientRoomOf, withLiveMatter } from "@/lib/ai/fromMap";
+import { EngPill, TrackCard } from "@/components/EngagementMark";
 import { OS_FLOW, PLAYBOOKS, copyTE, helpBookHref, playbookKeyFor } from "@/lib/guides";
 import { ReviewerPath } from "@/components/ui";
 import { CONTRACT_ACCEPT } from "@/lib/ai/files";
@@ -167,11 +167,12 @@ function FirmHome() {
           <p className="text-muted" style={{ fontSize: 13 }}>{L(lang, ENTRANCES.firm.fear)}</p>
           <div style={{ marginTop: 12 }}><PlaybookMark mode="practice" screen="dash" /></div>
         </div>
-        <div className="xray-layer">
+        <div className={`xray-layer${a ? ` eng-card ${ENGAGEMENT[engagementOf(a.type)].cls}` : ""}`}>
           <div className="page-kicker"><T en="Active matter" th="งานที่เปิดอยู่" /></div>
           <PlaybookMark href="/practice?s=dash" compact />
           {c && a ? (
             <>
+              <div style={{ marginTop: 8 }}><EngPill track={engagementOf(a.type)} /></div>
               <strong style={{ display: "block", marginTop: 8 }}>{th ? c.nameTh : c.name}</strong>
               <p className="text-muted" style={{ fontSize: 13 }}>
                 {a.id} · {th ? a.titleTh : a.title}
@@ -203,13 +204,10 @@ function FirmHome() {
           <Link href="/host" className="btn btn-ghost"><T en="Host desk" th="โต๊ะโฮสต์" /></Link>
         )}
       </div>
-      <h5><T en="OS control from the firm" th="ควบคุมทั้งระบบจากสำนักงาน" /></h5>
-      <div className="firm-control" style={{ marginBottom: 28 }}>
-        {FIRM_CONTROL.filter((h) => h.kind === "engine").map((h) => (
-          <Link key={h.href} href={h.href} className="home-card firm-control-card" style={{ textDecoration: "none", color: "inherit" }}>
-            <div style={{ fontWeight: 800 }}>{th ? h.th : h.en}</div>
-            <div className="text-muted" style={{ fontSize: 12, marginTop: 6 }}>{th ? h.why.t : h.why.e}</div>
-          </Link>
+      <h5><T en="Three engagements from the firm" th="สามประเภทงานจากสำนักงาน" /></h5>
+      <div className="track-grid" style={{ marginBottom: 28 }}>
+        {ENGAGEMENT_TYPES.map((track) => (
+          <TrackCard key={track} track={track} open={trackStats(practice)[track]} />
         ))}
       </div>
       <TrustStrip />

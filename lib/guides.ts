@@ -258,9 +258,24 @@ export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
     rule: P("ห้ามข้ามกฎในเล่มเพื่อปิดงานเร็ว", "Do not skip a rule in the book to close the work faster"),
   },
   "practice/dash": {
-    why: P("ฝ่ายบริหารเห็นภาระงาน ค้าง และกรวยสถานะในหน้าเดียว", "Management sees load, overdue and the stage funnel in one place"),
-    do: P("อ่านตัวเลข แล้วเปิดเส้นทางของงานที่ค้างหรือเกินกำหนด", "Read the numbers, then open the trail of anything overdue or stuck"),
-    rule: P("งานทุกชิ้นต้องมองเห็นจากแดชบอร์ด — ห้ามมีงานนอกระบบ", "Every live assignment must be visible here — no work off-system"),
+    why: P("ศูนย์ควบคุมสำนักงานแยกงานเป็นสามประเภท — ตรวจ ร่าง และความเสี่ยงกฎหมาย", "Firm control splits work into three engagements — review, drafting and legal risk"),
+    do: P("เลือกประเภท แล้วเปิดควบคุมหรือบันทึกของประเภทนั้น", "Pick the engagement, then open that track’s control or record"),
+    rule: P("งานทุกชิ้นต้องอยู่ใต้หนึ่งในสามประเภท — ห้ามมีงานนอกระบบ", "Every live assignment sits on one of the three tracks — no work off-system"),
+  },
+  "practice/ereview": {
+    why: P("งานตรวจสัญญา — X-Ray ห้องบังคับ ฝาแฝด ห้องสงคราม เจรจา ข้อผูกพัน", "Contract review — X-Ray, Cockpit, Twin, War Room, Copilot, Obligations"),
+    do: P("วางแผนที่ที่ X-Ray แล้วเปิดโมดูลตรวจ หรือเปิดบันทึกงานตรวจ", "Map on X-Ray, then open a review module or the review record"),
+    rule: P("งานตรวจต้องมีแผนที่ก่อนลงนาม — เครื่องยนต์ไม่ลงนามแทน", "A review assignment needs a map before signing — the engine never signs"),
+  },
+  "practice/edraft": {
+    why: P("งานร่างสัญญา — คลังประเภท สัมภาษณ์ ประกอบข้อ และร่างคู่ภาษา", "Contract drafting — type library, interview, assembly and bilingual draft"),
+    do: P("เลือกประเภทจากคลัง แล้วเปิดบันทึกงานร่างใต้ลูกค้า", "Pick the type from the library, then open the drafting record under the client"),
+    rule: P("ห้ามร่างลอยโดยไม่มีรหัสประเภท", "No freehand draft without a type id"),
+  },
+  "practice/edd": {
+    why: P("ตรวจสอบสถานะทางกฎหมาย — ความเสี่ยงกฎหมาย ธงแดง และรายงาน", "Legal due diligence — legal risk, red flags and the report"),
+    do: P("ตั้งเรื่อง จัดห้องข้อมูล แล้วขึ้นธงให้ทนายยืนยัน", "Open the matter, index the room, then raise flags for counsel"),
+    rule: P("ธงแดงต้องมีหลักฐาน — ห้ามขึ้นธงจากความจำอย่างเดียว", "A red flag needs evidence — not memory alone"),
   },
   "practice/clients": {
     why: P("ลูกค้าคือจุดเริ่มของทุกงานที่ปรึกษา", "The client is the root of every advisory assignment"),
@@ -268,8 +283,8 @@ export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
     rule: P("ห้ามเปิดงานถ้ายังไม่มีลูกค้าในทะเบียน", "No assignment without a client on the register"),
   },
   "practice/assign": {
-    why: P("งานหนึ่งชิ้นเท่ากับคำสั่งหนึ่งครั้ง มีหัวหน้า กำหนด และประเภท", "One assignment is one instruction — lead, due date and type"),
-    do: P("เพิ่มงาน หรือเปิดแถวเพื่อไล่เส้นทางจากรับเรื่องถึงปัจจุบัน", "Add an assignment, or open a row to trace it from intake to now"),
+    why: P("บันทึกงานทั้งสามประเภท — ตรวจสัญญา ร่างสัญญา และความเสี่ยงกฎหมาย", "The engagement record across review, drafting and legal DD"),
+    do: P("กรองประเภท เพิ่มงาน หรือเปิดแถวเข้าเครื่องยนต์ของประเภทนั้น", "Filter the track, add an assignment, or open a row into that engine"),
     rule: P("เปิดงานได้เมื่อตรวจผลประโยชน์ทับซ้อนผ่านแล้วเท่านั้น", "Open only after conflict check has cleared"),
   },
   "practice/trace": {

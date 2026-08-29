@@ -18,7 +18,9 @@ import {
 import type { ClauseEdit } from "./clauses";
 import { applyMapToPractice, isDemoFixturePractice } from "./ai/fromMap";
 import {
+  ENGAGEMENT,
   HREF_FOR_TYPE,
+  engagementOf,
   nextIds,
   seedPractice,
   stampDay,
@@ -178,6 +180,14 @@ function readLive(): LiveState {
     merged.quotePkg = merged.quotePkg || "nda";
     if (!merged.practice || isDemoFixturePractice(merged.practice)) {
       merged.practice = seedPractice();
+    } else {
+      merged.practice = {
+        ...merged.practice,
+        assignments: (merged.practice.assignments || []).map((a) => {
+          const track = engagementOf(a.type);
+          return { ...a, type: track, href: a.href || ENGAGEMENT[track].href };
+        }),
+      };
     }
     return merged;
   } catch {
@@ -475,7 +485,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const addAssignment = useCallback((input: { clientId: string; title: string; titleTh?: string; type: AssignmentType; due: string; lead: string; fee?: string }) => {
     patchLive((p) => {
       const { assignmentId } = nextIds(p.practice);
-      const href = HREF_FOR_TYPE[input.type];
+      const href = ENGAGEMENT[engagementOf(input.type)].href || HREF_FOR_TYPE[input.type];
       const next = {
         ...p,
         practice: {

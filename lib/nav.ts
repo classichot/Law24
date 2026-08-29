@@ -1,4 +1,5 @@
 import type { Edition, ModeKey, ScreenKey } from "./model";
+import type { EngagementTrack } from "./firm";
 
 export const PRACTICE_MODE = { k: "practice" as const, en: "Firm", th: "สำนักงาน" };
 export const COMMAND_MODE = { k: "command" as const, en: "Control", th: "ควบคุม" };
@@ -39,8 +40,11 @@ export function navModes(edition: Edition) {
 export const NAV: Record<Exclude<ModeKey, "home">, [ScreenKey, string, string][]> = {
   practice: [
     ["dash", "ศูนย์ควบคุม", "Firm control"],
+    ["ereview", "ตรวจสัญญา", "Contract review"],
+    ["edraft", "ร่างสัญญา", "Contract drafting"],
+    ["edd", "ความเสี่ยงกฎหมาย", "Legal risk"],
     ["clients", "ลูกค้า", "Clients"],
-    ["assign", "งาน", "Assignments"],
+    ["assign", "บันทึกงาน", "Engagement record"],
     ["trace", "เส้นทางงาน", "Movement trail"],
     ["brain", "สมองสำนักงาน", "Firm Brain"],
     ["room", "ห้องตรวจลูกค้า", "Client Review Room"],
@@ -149,24 +153,61 @@ export function defaultScreen(mode: ModeKey): ScreenKey {
   return NAV[mode][0][0];
 }
 
+export type FirmControlHop = {
+  href: string;
+  en: string;
+  th: string;
+  kind: "engine" | "firm";
+  track?: EngagementTrack;
+  why: { t: string; e: string };
+};
+
 /**
- * Firm dashboard as the OS control hub — engine modules plus the firm books.
- * X-Ray is first: mapping a contract opens the client and assignment.
+ * Firm dashboard as the OS control hub, split into the three engagements.
+ * Review owns X-Ray through Obligations; drafting owns Assemble; DD owns legal risk.
  */
-export const FIRM_CONTROL: { href: string; en: string; th: string; kind: "engine" | "firm"; why: { t: string; e: string } }[] = [
-  { href: "/review?s=xray", en: "X-Ray", th: "X-Ray", kind: "engine", why: { t: "วางแผนที่สัญญา — เปิดลูกค้าและงานในสำนักงาน", e: "Map a contract — opens the client and assignment in the firm" } },
-  { href: "/holistic?s=cockpit", en: "Cockpit", th: "ห้องบังคับ", kind: "engine", why: { t: "มูลค่า ความเสี่ยง และขั้นเจรจาของงานที่เปิด", e: "Value, risk and negotiation stage for the open matter" } },
-  { href: "/intel?s=twin", en: "Twin", th: "ฝาแฝด", kind: "engine", why: { t: "ถามตำแหน่งกฎหมายของฉบับที่ map", e: "Ask the legal position of the mapped paper" } },
-  { href: "/diligence?s=dwar", en: "War Room", th: "ห้องสงคราม", kind: "engine", why: { t: "ธงแดงและตารางตรวจของงานนี้", e: "Flags and the review grid for this matter" } },
-  { href: "/negotiate?s=nladder", en: "Copilot", th: "เจรจา", kind: "engine", why: { t: "ถือบันไดจุดยืนของงานนี้", e: "Hold the fallback ladder for this assignment" } },
-  { href: "/obligations?s=oreg", en: "Obligations", th: "ข้อผูกพัน", kind: "engine", why: { t: "วันที่สำคัญลงทะเบียนและปฏิทิน", e: "Key dates onto the register and calendar" } },
-  { href: "/assemble?s=lib", en: "Assemble", th: "ประกอบ", kind: "engine", why: { t: "ประกอบร่างจากคลัง 500 ประเภท", e: "Assemble a draft from the 500-type library" } },
-  { href: "/practice?s=clients", en: "Clients", th: "ลูกค้า", kind: "firm", why: { t: "บัญชีลูกค้า — เปิดงานและ X-Ray", e: "Client book — open work and X-Ray" } },
-  { href: "/practice?s=assign", en: "Assignments", th: "งาน", kind: "firm", why: { t: "งานทั้งหมด — map สัญญาหรือเปิดเครื่องยนต์", e: "Every assignment — map a contract or open the engine" } },
+export const FIRM_CONTROL: FirmControlHop[] = [
+  { href: "/review?s=xray", en: "X-Ray", th: "X-Ray", kind: "engine", track: "review", why: { t: "วางแผนที่สัญญา — เปิดลูกค้าและงานตรวจ", e: "Map a contract — opens the review client and assignment" } },
+  { href: "/holistic?s=cockpit", en: "Cockpit", th: "ห้องบังคับ", kind: "engine", track: "review", why: { t: "มูลค่า ความเสี่ยง และขั้นเจรจาของฉบับที่ map", e: "Value, risk and negotiation stage of the mapped paper" } },
+  { href: "/intel?s=twin", en: "Twin", th: "ฝาแฝด", kind: "engine", track: "review", why: { t: "ถามตำแหน่งกฎหมายของฉบับที่ map", e: "Ask the legal position of the mapped paper" } },
+  { href: "/diligence?s=dwar", en: "War Room", th: "ห้องสงคราม", kind: "engine", track: "review", why: { t: "ธงแดงและตารางตรวจของสัญญานี้", e: "Flags and the review grid for this contract" } },
+  { href: "/negotiate?s=nladder", en: "Copilot", th: "เจรจา", kind: "engine", track: "review", why: { t: "ถือบันไดจุดยืนของงานตรวจนี้", e: "Hold the fallback ladder for this review" } },
+  { href: "/obligations?s=oreg", en: "Obligations", th: "ข้อผูกพัน", kind: "engine", track: "review", why: { t: "วันที่สำคัญลงทะเบียนหลังลงนาม", e: "Key dates onto the post-signature register" } },
+  { href: "/assemble?s=lib", en: "Library", th: "คลังประเภท", kind: "engine", track: "assemble", why: { t: "เลือกประเภทจากคลัง 500 ก่อนร่าง", e: "Pick the type from the 500-type library" } },
+  { href: "/assemble?s=iv", en: "Interview", th: "สัมภาษณ์", kind: "engine", track: "assemble", why: { t: "ล็อกท่าทีเชิงพาณิชย์ก่อนประกอบข้อ", e: "Lock commercial positions before clauses fire" } },
+  { href: "/assemble?s=asm", en: "Assemble", th: "ประกอบข้อ", kind: "engine", track: "assemble", why: { t: "ประกอบข้อจากคำตอบและเพลย์บุ๊ก", e: "Assemble clauses from answers and the playbook" } },
+  { href: "/assemble?s=draft", en: "Draft", th: "ร่าง", kind: "engine", track: "assemble", why: { t: "ร่าง อนุมัติ และลงนาม", e: "Draft, approve and sign" } },
+  { href: "/assemble?s=bilingual", en: "Bilingual", th: "คู่ภาษา", kind: "engine", track: "assemble", why: { t: "ร่างคู่ภาษาไทย–อังกฤษ", e: "Thai–English bilingual mirror" } },
+  { href: "/diligence?s=dmatter", en: "Matter", th: "ตั้งเรื่อง", kind: "engine", track: "diligence", why: { t: "ล็อกขอบเขต วัน IC และประเด็นล้มดีล", e: "Lock scope, IC date and kill items" } },
+  { href: "/diligence?s=droom", en: "Data room", th: "ห้องข้อมูล", kind: "engine", track: "diligence", why: { t: "จัดดัชนีหลักฐานก่อนขึ้นธง", e: "Index the evidence before you flag" } },
+  { href: "/diligence?s=dflags", en: "Red flags", th: "ธงแดง", kind: "engine", track: "diligence", why: { t: "ประเด็นความเสี่ยงกฎหมายพร้อมหลักฐาน", e: "Legal-risk items with evidence chains" } },
+  { href: "/diligence?s=dgrid", en: "Review grid", th: "ตารางตรวจ", kind: "engine", track: "diligence", why: { t: "ตารางตรวจเอกสารทั้งห้อง", e: "Document review grid for the room" } },
+  { href: "/diligence?s=drep", en: "Report", th: "รายงาน", kind: "engine", track: "diligence", why: { t: "รายงานความเสี่ยงที่คณะกรรมการอ่าน", e: "The legal-risk report the committee reads" } },
+  { href: "/diligence?s=autopilot", en: "Autopilot", th: "ออโต", kind: "engine", track: "diligence", why: { t: "วิ่งทั้งห้องแล้วส่งธงให้ทนายยืนยัน", e: "Runs the room, then counsel verifies" } },
+  { href: "/practice?s=clients", en: "Clients", th: "ลูกค้า", kind: "firm", why: { t: "บัญชีลูกค้า — เปิดงานทั้งสามประเภท", e: "Client book — open work on any of the three tracks" } },
+  { href: "/practice?s=assign", en: "Record", th: "บันทึกงาน", kind: "firm", why: { t: "บันทึกงานทั้งสามประเภท — ตรวจ ร่าง DD", e: "Engagement record across review, drafting and DD" } },
   { href: "/practice?s=trace", en: "Trail", th: "เส้นทาง", kind: "firm", why: { t: "ไล่จากรับเรื่องถึงจุดควบคุมปัจจุบัน", e: "Read intake through the current control point" } },
   { href: "/practice?s=room", en: "Client Room", th: "ห้องลูกค้า", kind: "firm", why: { t: "ห้องตรวจภายใต้แบรนด์สำนักงาน", e: "Branded review room for the mapped client" } },
   { href: "/assist?s=ask", en: "Assist", th: "ผู้ช่วย", kind: "firm", why: { t: "อธิบายงานแล้วให้ระบบชี้ทาง", e: "Describe the job and let the OS route it" } },
 ];
+
+export function firmControlFor(track: EngagementTrack) {
+  return FIRM_CONTROL.filter((h) => h.kind === "engine" && h.track === track);
+}
+
+export function modeTrack(mode: string): EngagementTrack | null {
+  if (mode === "review" || mode === "holistic" || mode === "intel" || mode === "negotiate" || mode === "obligations") return "review";
+  if (mode === "assemble") return "assemble";
+  if (mode === "diligence") return "diligence";
+  return null;
+}
+
+export function practiceScreenTrack(screen: string): EngagementTrack | null {
+  if (screen === "ereview") return "review";
+  if (screen === "edraft") return "assemble";
+  if (screen === "edd") return "diligence";
+  return null;
+}
 
 /** Where sign-in lands. Module home stays available from the 2×2 grid. */
 export const WORK_HREF = "/review?s=xray";

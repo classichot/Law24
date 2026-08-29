@@ -12,8 +12,9 @@ import { copyText, downloadText } from "@/lib/demo";
 import { AiLiveMark } from "@/components/AiLiveMark";
 import { CONTRACT_ACCEPT } from "@/lib/ai/files";
 import { XRAY_ENGINE_HOPS, XRAY_HOPS, XRAY_REVIEW_HOPS } from "@/lib/nav";
-import { assignmentOf, clientOf } from "@/lib/firm";
+import { assignmentOf, clientOf, engagementOf } from "@/lib/firm";
 import { withLiveMatter } from "@/lib/ai/fromMap";
+import { EngPill } from "@/components/EngagementMark";
 
 export function XRayScreen() {
   const s = useStore();
@@ -148,8 +149,9 @@ export function XRayScreen() {
       <p style={{ maxWidth: "72ch", margin: "0 0 22px" }}>{L(s.lang, X.verdictWhy)}</p>
 
       {s.xrayLive && (matterC || matterA) && (
-        <div className="xray-layer" style={{ marginBottom: 22 }}>
+        <div className="xray-layer eng-card eng-review" style={{ marginBottom: 22 }}>
           <div className="page-kicker"><T en="Firm client · assignment" th="ลูกค้า · งานในสำนักงาน" /></div>
+          <div style={{ marginTop: 8 }}><EngPill track={matterA ? engagementOf(matterA.type) : "review"} /></div>
           <div style={{ font: "800 18px/1.25 var(--font-heading)", marginTop: 8 }}>
             {matterC ? (th ? matterC.nameTh : matterC.name) : (th ? "ลูกค้าจากแผนที่" : "Mapped client")}
           </div>
