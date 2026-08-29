@@ -124,6 +124,11 @@ export const NAV: Record<Exclude<ModeKey, "home">, [ScreenKey, string, string][]
   ],
 };
 
+/** Every Review screen except the map itself — the result fans into the rest of X-Ray. */
+export const XRAY_REVIEW_HOPS = NAV.review
+  .filter(([k]) => k !== "xray")
+  .map(([k, th, en]) => ({ href: `/review?s=${k}`, k, th, en }));
+
 export function defaultScreen(mode: ModeKey): ScreenKey {
   if (mode === "home") return "home";
   return NAV[mode][0][0];
