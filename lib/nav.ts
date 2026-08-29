@@ -17,6 +17,18 @@ export const ENGINE: { k: Exclude<ModeKey, "home" | "practice" | "command" | "as
 
 export const MODES = ENGINE;
 
+/**
+ * Destinations the X-Ray result fans out to. These are the other engine
+ * modules — they sit in the top nav, but the result used to dead-end in Review.
+ */
+export const XRAY_HOPS: { href: string; en: string; th: string; why: { t: string; e: string } }[] = [
+  { href: "/holistic?s=cockpit", en: "Cockpit", th: "ห้องบังคับ", why: { t: "ห้องบังคับของสัญญานี้ — มูลค่า ความเสี่ยง และขั้นเจรจา", e: "Command center for this agreement — value, risk, and negotiation stage" } },
+  { href: "/intel?s=twin", en: "Twin", th: "ฝาแฝด", why: { t: "ถามตำแหน่งกฎหมายขององค์กรนี้ — ทุกคำตอบชี้ต้นทาง", e: "Ask this company's legal position — every answer cites a source" } },
+  { href: "/diligence?s=dwar", en: "War Room", th: "ห้องสงคราม", why: { t: "เปิดห้องสงคราม DD เมื่อเอกสารนี้เป็นส่วนของดีล", e: "Open the DD war room when this paper sits inside a deal" } },
+  { href: "/negotiate?s=nladder", en: "Copilot", th: "เจรจา", why: { t: "ถือบันไดจุดยืนที่แผนที่เพิ่งเขียน", e: "Hold the fallback ladder the map just wrote" } },
+  { href: "/obligations?s=oreg", en: "Obligations", th: "ข้อผูกพัน", why: { t: "วันที่สำคัญลงทะเบียนและปฏิทินหลังลงนาม", e: "Key dates go on the register and the post-signature calendar" } },
+];
+
 export function navModes(edition: Edition) {
   return edition === "firm"
     ? [PRACTICE_MODE, ...ENGINE, ASSIST_MODE, HELP_MODE]

@@ -191,21 +191,34 @@ function Memo() {
 function Cockpit() {
   const s = useStore();
   const c = COCKPIT;
+  const X = s.xrayLive;
+  const risk = X ? L(s.lang, X.verdictLabel) : L(s.lang, c.risk);
+  const firstDate = X?.dates?.[0];
+  const deadline = firstDate
+    ? `${typeof firstDate.v === "string" ? firstDate.v : L(s.lang, firstDate.v)} · ${L(s.lang, firstDate.k)}`
+    : L(s.lang, c.deadline);
+  const nego = X?.ladder?.length
+    ? L(s.lang, X.ladder[0].v)
+    : L(s.lang, c.nego);
   return (
     <div className="pad-page">
       <Kicker>cockpit · live agreement</Kicker>
-      <Title><T en="Contract Cockpit" th="Contract Cockpit" /></Title>
-      <p className="page-sub"><T en="A visual command center for this agreement — value, stage, risk, owner, approvals, negotiation, obligations, deadlines, related instruments." th="ห้องบังคับของสัญญานี้ — มูลค่า ขั้น ความเสี่ยง เจ้าของ อนุมัติ เจรจา ข้อผูกพัน กำหนด และเอกสารที่เกี่ยวข้อง" /></p>
+      <Title>{X ? L(s.lang, X.doc) : <T en="Contract Cockpit" th="Contract Cockpit" />}</Title>
+      <p className="page-sub">
+        {X
+          ? `${X.ref} · ${X.pages} ${s.lang === "th" ? "หน้า" : "pages"} · ${L(s.lang, X.langs)}`
+          : <T en="A visual command center for this agreement — value, stage, risk, owner, approvals, negotiation, obligations, deadlines, related instruments." th="ห้องบังคับของสัญญานี้ — มูลค่า ขั้น ความเสี่ยง เจ้าของ อนุมัติ เจรจา ข้อผูกพัน กำหนด และเอกสารที่เกี่ยวข้อง" />}
+      </p>
       <div className="grid-3" style={{ margin: "22px 0" }}>
         {[
           { k: s.lang === "th" ? "มูลค่า" : "Value", v: c.value },
           { k: s.lang === "th" ? "ขั้น" : "Stage", v: L(s.lang, c.stage) },
-          { k: s.lang === "th" ? "ความเสี่ยง" : "Risk", v: L(s.lang, c.risk) },
+          { k: s.lang === "th" ? "ความเสี่ยง" : "Risk", v: risk },
           { k: s.lang === "th" ? "เจ้าของ" : "Owner", v: L(s.lang, c.owner) },
           { k: s.lang === "th" ? "อนุมัติค้าง" : "Pending approvals", v: L(s.lang, c.approvals) },
-          { k: s.lang === "th" ? "เจรจา" : "Negotiation", v: L(s.lang, c.nego) },
+          { k: s.lang === "th" ? "เจรจา" : "Negotiation", v: nego },
           { k: s.lang === "th" ? "ข้อผูกพัน" : "Obligations", v: L(s.lang, c.obligations) },
-          { k: s.lang === "th" ? "กำหนดใกล้" : "Upcoming deadline", v: L(s.lang, c.deadline) },
+          { k: s.lang === "th" ? "กำหนดใกล้" : "Upcoming deadline", v: deadline },
         ].map((x) => (
           <div key={x.k} className="xray-layer">
             <div className="page-kicker">{x.k}</div>
@@ -218,7 +231,10 @@ function Cockpit() {
       <div className="stack-actions" style={{ marginTop: 18 }}>
         <Link href="/holistic?s=dna" className="btn btn-primary">Clause DNA</Link>
         <Link href="/review?s=xray" className="btn btn-secondary">X-Ray</Link>
+        <Link href="/intel?s=twin" className="btn btn-secondary"><T en="Twin" th="ฝาแฝด" /></Link>
+        <Link href="/diligence?s=dwar" className="btn btn-secondary"><T en="War Room" th="ห้องสงคราม" /></Link>
         <Link href="/negotiate?s=nladder" className="btn btn-secondary"><T en="Copilot" th="เจรจา" /></Link>
+        <Link href="/obligations?s=oreg" className="btn btn-secondary"><T en="Obligations" th="ข้อผูกพัน" /></Link>
       </div>
     </div>
   );

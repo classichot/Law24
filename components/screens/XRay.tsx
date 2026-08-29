@@ -11,6 +11,7 @@ import { XRAY } from "@/lib/product";
 import { copyText, downloadText } from "@/lib/demo";
 import { AiLiveMark } from "@/components/AiLiveMark";
 import { CONTRACT_ACCEPT } from "@/lib/ai/files";
+import { XRAY_HOPS } from "@/lib/nav";
 
 export function XRayScreen() {
   const s = useStore();
@@ -141,6 +142,22 @@ export function XRayScreen() {
       </div>
       <p style={{ maxWidth: "72ch", marginBottom: 22 }}>{L(s.lang, X.verdictWhy)}</p>
 
+      <h5><T en="Open the rest of the OS" th="เปิดโมดูลถัดไปของระบบ" /></h5>
+      <p className="text-muted" style={{ margin: "6px 0 12px", fontSize: 13, maxWidth: "72ch" }}>
+        <T
+          en="The map is the entry, not the end. Cockpit, Twin, War Room, Copilot and Obligations take this document into the rest of the engine."
+          th="แผนที่เป็นทางเข้า ไม่ใช่จุดจบ ห้องบังคับ ฝาแฝด ห้องสงคราม เจรจา และข้อผูกพันพาเอกสารนี้เข้าโมดูลอื่นของเครื่องยนต์"
+        />
+      </p>
+      <div className="home-cards" style={{ marginBottom: 22 }}>
+        {XRAY_HOPS.map((h) => (
+          <Link key={h.href} href={h.href} className="home-card" style={{ textDecoration: "none", color: "inherit" }}>
+            <div style={{ fontWeight: 800 }}>{th ? h.th : h.en}</div>
+            <div className="text-muted" style={{ fontSize: 12, marginTop: 6 }}>{th ? h.why.t : h.why.e}</div>
+          </Link>
+        ))}
+      </div>
+
       <Dropzone
         bucket="xray"
         compact
@@ -197,7 +214,11 @@ export function XRayScreen() {
           ))}
         </div>
         <div>
-          <h5><T en="Key dates → obligation calendar" th="วันที่สำคัญ → ปฏิทินข้อผูกพัน" /></h5>
+          <h5>
+            <Link href="/obligations?s=ocal" style={{ color: "inherit" }}>
+              <T en="Key dates → obligation calendar" th="วันที่สำคัญ → ปฏิทินข้อผูกพัน" />
+            </Link>
+          </h5>
           {X.dates.map((m) => (
             <div key={m.k.e} className="xray-kv">
               <span>{L(s.lang, m.k)}</span>
@@ -266,7 +287,9 @@ export function XRayScreen() {
       <div className="stack-actions" style={{ marginTop: 10 }}>
         <Link href="/review?s=find" className="btn btn-primary"><T en="Issue cards" th="บัตรประเด็น" /></Link>
         <Link href="/review?s=board" className="btn btn-secondary"><T en="AI Legal Review Board" th="คณะทบทวน AI" /></Link>
-        <Link href="/negotiate?s=nladder" className="btn btn-secondary"><T en="Negotiation copilot" th="ผู้ช่วยเจรจา" /></Link>
+        {XRAY_HOPS.map((h) => (
+          <Link key={h.href} href={h.href} className="btn btn-secondary">{th ? h.th : h.en}</Link>
+        ))}
       </div>
 
       <div className="xray-lawyer">
