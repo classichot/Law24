@@ -11,7 +11,7 @@ import { XRAY } from "@/lib/product";
 import { copyText, downloadText } from "@/lib/demo";
 import { AiLiveMark } from "@/components/AiLiveMark";
 import { CONTRACT_ACCEPT } from "@/lib/ai/files";
-import { XRAY_HOPS } from "@/lib/nav";
+import { XRAY_ENGINE_HOPS, XRAY_HOPS, XRAY_REVIEW_HOPS } from "@/lib/nav";
 
 export function XRayScreen() {
   const s = useStore();
@@ -129,7 +129,7 @@ export function XRayScreen() {
   return (
     <div className="pad-page">
       <Kicker>review · contract x-ray · {X.mappedIn.e} <AiLiveMark compact /></Kicker>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "flex-start", marginBottom: 24 }}>
         <div>
           <Title>{L(s.lang, X.doc)}</Title>
           <p className="page-sub">{X.ref} · {X.pages} {th ? "หน้า" : "pages"} · {L(s.lang, X.langs)}</p>
@@ -140,7 +140,7 @@ export function XRayScreen() {
           <span className="text-muted" style={{ fontSize: 12 }}><T en="Accept / Negotiate / Do Not Sign" th="ยอมรับ / เจรจา / ห้ามลงนาม" /></span>
         </div>
       </div>
-      <p style={{ maxWidth: "72ch", marginBottom: 22 }}>{L(s.lang, X.verdictWhy)}</p>
+      <p style={{ maxWidth: "72ch", margin: "0 0 22px" }}>{L(s.lang, X.verdictWhy)}</p>
 
       <h5><T en="Open the rest of the OS" th="เปิดโมดูลถัดไปของระบบ" /></h5>
       <p className="text-muted" style={{ margin: "6px 0 12px", fontSize: 13, maxWidth: "72ch" }}>
@@ -276,8 +276,8 @@ export function XRayScreen() {
       <p className="text-muted" style={{ margin: "6px 0 0", fontSize: 13, maxWidth: "72ch" }}>
         {reviewReady
           ? <T
-              en="Issue cards and the seven-seat board are ready for this document."
-              th="บัตรประเด็นและคณะทบทวนเจ็ดที่นั่งพร้อมแล้วสำหรับเอกสารนี้"
+              en="Every X-Ray screen below is this document — setup, key terms, findings, playbook, redline, board and what changed."
+              th="ทุกหน้าใน X-Ray ด้านล่างคือเอกสารนี้ — ตั้งค่า ข้อกำหนด ข้อค้นพบ เพลย์บุ๊ก redline คณะทบทวน และสิ่งที่เปลี่ยน"
             />
           : <T
               en="Issue cards and the board are still being written for this document. The map above stands on its own."
@@ -285,10 +285,27 @@ export function XRayScreen() {
             />}
       </p>
       <div className="stack-actions" style={{ marginTop: 10 }}>
-        <Link href="/review?s=find" className="btn btn-primary"><T en="Issue cards" th="บัตรประเด็น" /></Link>
-        <Link href="/review?s=board" className="btn btn-secondary"><T en="AI Legal Review Board" th="คณะทบทวน AI" /></Link>
+        {XRAY_REVIEW_HOPS.map((h, i) => (
+          <Link key={h.href} href={h.href} className={i === 2 ? "btn btn-primary" : "btn btn-secondary"}>
+            {th ? h.th : h.en}
+          </Link>
+        ))}
+      </div>
+      <div className="stack-actions" style={{ marginTop: 10 }}>
         {XRAY_HOPS.map((h) => (
           <Link key={h.href} href={h.href} className="btn btn-secondary">{th ? h.th : h.en}</Link>
+        ))}
+      </div>
+      <h5 style={{ marginTop: 22 }}><T en="Every submenu on those modules" th="ทุกเมนูย่อยในโมดูลเหล่านั้น" /></h5>
+      <p className="text-muted" style={{ margin: "6px 0 0", fontSize: 13, maxWidth: "72ch" }}>
+        <T
+          en="Firm, Cockpit, Twin, War Room, Copilot and Obligations now read this map — not the Nimbus sample."
+          th="สำนักงาน ห้องบังคับ ฝาแฝด ห้องสงคราม เจรจา และข้อผูกพันอ่านแผนที่นี้ — ไม่ใช่ตัวอย่างนิมบัส"
+        />
+      </p>
+      <div className="stack-actions" style={{ marginTop: 10 }}>
+        {XRAY_ENGINE_HOPS.map((h) => (
+          <Link key={h.href} href={h.href} className="btn btn-ghost" style={{ fontSize: 12 }}>{th ? h.th : h.en}</Link>
         ))}
       </div>
 

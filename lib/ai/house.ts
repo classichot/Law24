@@ -13,6 +13,9 @@ HOUSE RULES (never break):
 
 Playbooks: PB-ASM assembly, PB-IT v4.2 IT & Cloud, PB-DEC decision, PB-DD v3.1 buy-side, PB-NEG mandate, PB-CTL v1.4 post-signature control, PB-MEM memory, PB-PRAC practice SOP, PB-AST assist router, PB-CMD corporate command, PB-HLP help.`;
 
+/** Live uploads must not inherit the demo tenant. Nimbus/Charoen/PTT stay on the sample path only. */
+export const LIVE_ONLY = `CURRENT DOCUMENT ONLY. Extract from the attached file or CONTRACT TEXT. Do not copy names, values, clause numbers, or parties from any demo tenant (Nimbus Cloud, CT-291, Siam Digital, Charoen Logistics, PTT, THB 24.6M). If a field is not in this instrument, say it is not stated.`;
+
 export const TENANT_BRIEF = `Demo tenant context (use when the user has not uploaded a different instrument):
 
 NIMBUS CT-291 — Nimbus Cloud SaaS, Siam Digital Co., Ltd. (customer) / Nimbus Cloud Pte. Ltd. (Singapore provider). THB 24.6M / 36 months. Counterparty paper. Open must-haves: data claims carved out of 12-month cap (cl.12.4), PDPA s.28 transfer to SG/US without DPA/SCCs (cl.9), provider convenience termination 30 days vs customer for cause only (cl.11.2), annexes A–C referenced not attached. House: PB-IT v4.2.

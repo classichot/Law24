@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { useStore } from "@/lib/store";
-import { FX } from "@/lib/taxonomy";
 import { Kicker, Stats, Title } from "@/components/ui";
 import { L } from "@/lib/model";
-import { MEMORY } from "@/lib/wow";
-import { TWIN_ASKS, TWIN_LAYERS } from "@/lib/product";
 import { T } from "@/lib/i18n";
 import { AiLiveMark } from "@/components/AiLiveMark";
+import { NeedMap } from "@/components/NeedMap";
+import { intelOf, memoryOf, twinAsksOf, twinLayersOf } from "@/lib/ai/fromMap";
 
 export function IntelScreen({ screen }: { screen: string }) {
+  const s = useStore();
+  if (!s.xrayLive) return <NeedMap kicker="twin" />;
   if (screen === "twin") return <Twin />;
   if (screen === "ipf") return <Port />;
   if (screen === "ikg") return <Kg />;
@@ -18,14 +19,10 @@ export function IntelScreen({ screen }: { screen: string }) {
   return <Twin />;
 }
 
-function I() {
-  return FX.intel;
-}
-
 function Port() {
   const s = useStore();
-  const intel = I();
-  const max = Math.max(...intel.renew.map((m) => m.n));
+  const intel = intelOf(s.xrayLive!);
+  const max = Math.max(1, ...intel.renew.map((m) => m.n));
   return (
     <div className="pad-page">
       <Kicker>intelligence · portfolio</Kicker>
@@ -33,7 +30,7 @@ function Port() {
       <Stats items={intel.stats.map((x) => ({ v: typeof x.v === "string" ? x.v : L(s.lang, x.v), k: L(s.lang, x.k) }))} />
       <div className="grid-split" style={{ marginTop: 32 }}>
         <div>
-          <h5><T en="Portfolio risk concentrations" th="ความเสี่ยงสะสมในพอร์ต" /></h5>
+          <h5><T en="Risk on this paper" th="ความเสี่ยงในฉบับนี้" /></h5>
           {intel.risks.map((r) => (
             <div key={L(s.lang, r.k)} style={{ marginBottom: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ fontWeight: 700 }}>{L(s.lang, r.k)}</span><span>{r.n}</span></div>
@@ -42,7 +39,7 @@ function Port() {
           ))}
         </div>
         <div>
-          <h5><T en="Renewals" th="การต่ออายุ" /></h5>
+          <h5><T en="Key dates" th="วันที่สำคัญ" /></h5>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 10, height: 150 }}>
             {intel.renew.map((m) => (
               <div key={L(s.lang, m.m)} style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 6 }}>
@@ -64,19 +61,20 @@ function Port() {
 
 function Kg() {
   const s = useStore();
-  const intel = I();
+  const X = s.xrayLive!;
+  const intel = intelOf(X);
   const nodes = [
-    { n: "12,847", k: s.lang === "th" ? "สัญญา" : "Contracts" },
-    { n: "3,104", k: s.lang === "th" ? "คู่สัญญา" : "Parties" },
-    { n: "48,106", k: s.lang === "th" ? "ข้อผูกพัน" : "Obligations" },
-    { n: "1,204", k: s.lang === "th" ? "เบี่ยงเบน" : "Deviations" },
-    { n: "212", k: s.lang === "th" ? "ไม่จำกัดความรับผิด" : "Uncapped" },
+    { n: "1", k: s.lang === "th" ? "สัญญา" : "Contracts" },
+    { n: String(X.parties?.length || 0), k: s.lang === "th" ? "คู่สัญญา" : "Parties" },
+    { n: String((X.dates?.length || 0) + (X.missing?.length || 0)), k: s.lang === "th" ? "ข้อผูกพัน" : "Obligations" },
+    { n: String(X.unusual?.length || 0), k: s.lang === "th" ? "เบี่ยงเบน" : "Deviations" },
+    { n: String(X.heatmap.filter((h) => h.sev === "high").length), k: s.lang === "th" ? "ความเสี่ยงสูง" : "High risk" },
   ];
   return (
     <div className="pad-page">
       <Kicker>intelligence · knowledge graph</Kicker>
       <Title><T en="Legal knowledge graph" th="กราฟความรู้ทางกฎหมาย" /></Title>
-      <p className="page-sub"><T en="Everything that passes through Assemble, Review and Diligence lands in one graph." th="ทุกสิ่งที่ผ่าน Assemble Review และ Diligence อยู่ในกราฟเดียว" /></p>
+      <p className="page-sub"><T en="This graph is the mapped instrument — not a demo portfolio." th="กราฟนี้คือฉบับที่วางแผนที่ — ไม่ใช่พอร์ตตัวอย่าง" /></p>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "24px 0 32px", alignItems: "center" }}>
         {nodes.map((k, i) => (
           <span key={k.k} style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -106,15 +104,16 @@ function Kg() {
 
 function Mem() {
   const s = useStore();
+  const rows = memoryOf(s.xrayLive!);
   return (
     <div className="pad-page">
       <Kicker>wow · organizational legal memory</Kicker>
       <Title><T en="Tenant-specific learning" th="ความจำเฉพาะองค์กร" /></Title>
-      <p className="page-sub"><T en="Accepted redlines, exceptions and outcomes stay inside this tenant. Customer data is never used to train the foundation model by default." th="redline ที่ยอม ข้อยกเว้น และผลเจรจาอยู่เฉพาะในองค์กรนี้ ค่าเริ่มต้นคือไม่ฝึกโมเดลจากข้อมูลลูกค้า" /></p>
+      <p className="page-sub"><T en="Accepted redlines and rejected counterparty wording from this map stay in this session." th="redline ที่ยอมและถ้อยคำคู่สัญญาที่ปฏิเสธจากแผนที่นี้อยู่ในเซสชันนี้" /></p>
       <table className="table" style={{ marginTop: 20 }}>
         <thead><tr><th><T en="Clause" th="ข้อ" /></th><th><T en="Usually accepted" th="ที่ยอมรับ" /></th><th><T en="Usually rejected" th="ที่ปฏิเสธ" /></th><th>n</th></tr></thead>
         <tbody>
-          {MEMORY.map((m, i) => (
+          {rows.map((m, i) => (
             <tr key={i}>
               <td style={{ fontWeight: 700 }}>{L(s.lang, m.clause)}</td>
               <td>{L(s.lang, m.accepted)}</td>
@@ -125,7 +124,7 @@ function Mem() {
         </tbody>
       </table>
       <div className="stack-actions" style={{ marginTop: 16 }}>
-        <button type="button" className="btn btn-primary" onClick={() => s.ask(s.lang === "th" ? "องค์กรนี้เคยยอมเพดานข้อมูลแบบใด" : "What data-cap exceptions has this tenant accepted?", "twin")}>
+        <button type="button" className="btn btn-primary" onClick={() => s.ask(s.lang === "th" ? "ฉบับนี้ยอมเพดานแบบใด" : "What cap does this paper accept?", "twin")}>
           <T en="Ask legal memory" th="ถามความจำทางกฎหมาย" />
         </button>
         <Link href="/intel?s=twin" className="btn btn-secondary"><T en="Open Twin" th="เปิดฝาแฝด" /></Link>
@@ -136,30 +135,33 @@ function Mem() {
 
 function Twin() {
   const s = useStore();
+  const X = s.xrayLive!;
+  const layers = twinLayersOf(X);
+  const asks = twinAsksOf(X);
   return (
     <div className="pad-page">
       <Kicker>twin · living legal position · <AiLiveMark compact /></Kicker>
-      <Title><T en="Living Legal Twin" th="ฝาแฝดกฎหมายที่มีชีวิต" /></Title>
+      <Title>{L(s.lang, X.doc)}</Title>
       <p className="page-sub">
         <T
-          en="The Contract X-Ray attracts users. The Legal Twin makes LAW24 difficult to replace — a continually updated representation of this company's legal position."
-          th="X-Ray ดึงผู้ใช้เข้ามา ฝาแฝดกฎหมายทำให้ LAW24 แทนที่ได้ยาก — ภาพตำแหน่งกฎหมายของบริษัทที่อัปเดตต่อเนื่อง"
+          en="The Twin answers from this mapped instrument. Every answer should cite a clause on this paper."
+          th="ฝาแฝดตอบจากฉบับที่วางแผนที่ ทุกคำตอบควรชี้ข้อในเอกสารนี้"
         />
       </p>
       <div className="twin-tags">
-        {TWIN_LAYERS.map((x) => <span key={x.e} className="tag tag-outline">{L(s.lang, x)}</span>)}
+        {layers.map((x) => <span key={x.e} className="tag tag-outline">{L(s.lang, x)}</span>)}
       </div>
-      <h5 style={{ marginTop: 28 }}><T en="Ask management questions" th="ถามคำถามฝ่ายบริหาร" /></h5>
+      <h5 style={{ marginTop: 28 }}><T en="Ask about this paper" th="ถามเกี่ยวกับฉบับนี้" /></h5>
       <div className="stack-actions" style={{ margin: "0 0 14px" }}>
         <button
           type="button"
           className="btn btn-primary"
-          onClick={() => s.ask(s.lang === "th" ? "สัญญาใดมีความรับผิดไม่จำกัดและยังใช้บังคับอยู่" : "Which contracts in force carry uncapped liability?", "twin")}
+          onClick={() => s.ask(s.lang === "th" ? `สรุปความเสี่ยงของ ${L(s.lang, X.doc)}` : `Summarise the risk on ${L(s.lang, X.doc)}`, "twin")}
         >
           <T en="Ask the Twin" th="ถามฝาแฝด" />
         </button>
       </div>
-      {TWIN_ASKS.map((q) => (
+      {asks.map((q) => (
         <button
           key={q.q.e}
           type="button"

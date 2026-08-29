@@ -4,7 +4,7 @@ import { generateStructured } from "@/lib/ai/server";
 import { extractFromRequest, hasContractText } from "@/lib/ai/extract";
 import { reviewFindings, reviewBoard } from "@/lib/ai/schema";
 import { normalizeReview } from "@/lib/ai/normalize";
-import { TENANT_BRIEF } from "@/lib/ai/house";
+import { LIVE_ONLY } from "@/lib/ai/house";
 import { jsonError, requireLive } from "@/lib/ai/http";
 
 export const runtime = "nodejs";
@@ -27,20 +27,13 @@ export async function POST(req: Request) {
   const blocked = requireLive();
   if (blocked) return blocked;
   try {
-    let text = "";
-    let filename = "Nimbus CT-291";
-    let files: { data: Uint8Array; mediaType: string; filename?: string }[] | undefined;
-    try {
-      const doc = await extractFromRequest(req);
-      text = doc.text;
-      filename = doc.filename;
-      if (doc.pdf && !hasContractText(doc.text)) {
-        files = [{ data: doc.pdf, mediaType: "application/pdf", filename: doc.filename }];
-      }
-    } catch {
-      /* tenant brief */
-    }
-    const source = `${TENANT_BRIEF}
+    const doc = await extractFromRequest(req);
+    const text = doc.text;
+    const filename = doc.filename;
+    const files = doc.pdf && !hasContractText(doc.text)
+      ? [{ data: doc.pdf, mediaType: "application/pdf", filename: doc.filename }]
+      : undefined;
+    const source = `${LIVE_ONLY}
 
 Matter: ${filename}. PB-IT v4.2. Facts / interpretation / action stay distinct. Do not sign.
 
@@ -48,7 +41,7 @@ ${files
     ? "The attached PDF is a scan with no text layer. Read the pages. Do not invent clauses that are not visible."
     : text
       ? `CONTRACT TEXT:\n${text}`
-      : "No new upload — reason over the Nimbus CT-291 demo matter in the tenant brief."}
+      : "No contract text arrived. Return empty findings rather than inventing a demo matter."}
 
 Keep every field to one tight sentence. Answer only the fields in the schema — the rest of the review is minted by a parallel call.`;
 

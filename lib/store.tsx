@@ -16,6 +16,7 @@ import {
   type UploadFile,
 } from "./demo";
 import type { ClauseEdit } from "./clauses";
+import { isDemoFixturePractice } from "./ai/fromMap";
 import {
   HREF_FOR_TYPE,
   nextIds,
@@ -175,7 +176,7 @@ function readLive(): LiveState {
     merged.lawyerSent = Boolean(merged.lawyerSent);
     merged.roomVotes = merged.roomVotes || {};
     merged.quotePkg = merged.quotePkg || "nda";
-    if (!merged.practice?.clients?.length) {
+    if (!merged.practice || isDemoFixturePractice(merged.practice)) {
       merged.practice = seedPractice();
     }
     return merged;
@@ -314,7 +315,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       next.ddLive = null;
       next.negotiateLive = null;
       next.uploads = [{ name: "Nimbus_Cloud_SaaS_CT-291.pdf", size: 842_110, bucket: "xray" }];
-      next.practice = prev.practice?.clients?.length ? prev.practice : seedPractice();
+      next.practice = seedPractice();
       return next;
     });
     setQ("SaaS");
@@ -576,7 +577,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         xrayLive: pack.xray,
         reviewLive: null,
         sel: p.sel || DEMO_TYPE_ID,
-        matter: p.matter || "nimbus",
+        matter: p.xrayLive ? p.matter : (p.matter || "nimbus"),
         uploads: p.uploads.some((u) => u.bucket === "xray")
           ? p.uploads
           : [{ name: file.name, size: file.size, bucket: "xray" }, ...p.uploads].slice(0, 40),

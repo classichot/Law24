@@ -1,18 +1,19 @@
 "use client";
 
 import { useStore } from "@/lib/store";
-import { FX } from "@/lib/taxonomy";
 import { Kicker, Sev, Stats, Title } from "@/components/ui";
 import { L } from "@/lib/model";
-import { AUTOPILOT } from "@/lib/wow";
 import { T } from "@/lib/i18n";
-import { statusLabel, CHAROEN_FILES, ddReportText, downloadText } from "@/lib/demo";
+import { statusLabel, downloadText } from "@/lib/demo";
 import { Dropzone } from "@/components/Dropzone";
-import { WAR_ROOM } from "@/lib/product";
 import Link from "next/link";
 import { AiLiveMark } from "@/components/AiLiveMark";
+import { NeedMap } from "@/components/NeedMap";
+import { autopilotOf, dilOf, dilReportText, warOf } from "@/lib/ai/fromMap";
 
 export function DiligenceScreen({ screen }: { screen: string }) {
+  const s = useStore();
+  if (!s.xrayLive) return <NeedMap kicker="diligence · war room" />;
   if (screen === "dwar") return <War />;
   if (screen === "dmatter") return <Matter />;
   if (screen === "droom") return <Room />;
@@ -26,27 +27,17 @@ export function DiligenceScreen({ screen }: { screen: string }) {
   return <War />;
 }
 
-function D() {
-  return FX.dil;
-}
-
-function loadCharoen(s: ReturnType<typeof useStore>) {
-  const have = s.uploads.some((u) => u.bucket === "diligence");
-  if (!have) s.addUploads("diligence", CHAROEN_FILES.map(({ name, size }) => ({ name, size })));
-  s.flash(s.lang === "th" ? "รับห้องข้อมูลเจริญแล้ว — เปิดธงแดง DK-01" : "Charoen data room ingested — open flag DK-01");
-}
-
 function Matter() {
   const s = useStore();
-  const d = D();
+  const d = dilOf(s.xrayLive!, s.reviewLive);
   return (
     <div className="pad-page">
       <Kicker>diligence · matter</Kicker>
       <Title>{L(s.lang, d.matter.name)}</Title>
       <Dropzone
         bucket="diligence"
-        title={<T en="Drop the data room" th="ลากห้องข้อมูลมาวาง" />}
-        hint={<T en="ZIP, PDF, DOCX, XLSX. First-pass Autopilot runs after ingest." th="ZIP PDF DOCX XLSX Autopilot รอบแรกทำงานหลังรับเข้า" />}
+        title={<T en="Drop related papers" th="ลากเอกสารที่เกี่ยวข้องมาวาง" />}
+        hint={<T en="Annexes, data-room files, side letters. Indexed against this map." th="ภาคผนวก ห้องข้อมูล หนังสือข้างเคียง จัดดัชนีเทียบแผนที่นี้" />}
       />
       <div className="grid-2" style={{ marginTop: 8 }}>
         {d.matter.rows.map((r, i) => (
@@ -57,8 +48,8 @@ function Matter() {
         ))}
       </div>
       <div className="stack-actions" style={{ marginTop: 16 }}>
-        <button type="button" className="btn btn-primary" onClick={() => loadCharoen(s)}><T en="Load Charoen data room" th="รับห้องข้อมูลเจริญ" /></button>
-        <Link href="/diligence?s=dwar" className="btn btn-secondary"><T en="War Room" th="ห้องสงคราม" /></Link>
+        <Link href="/diligence?s=dwar" className="btn btn-primary"><T en="War Room" th="ห้องสงคราม" /></Link>
+        <Link href="/review?s=xray" className="btn btn-secondary">X-Ray</Link>
       </div>
     </div>
   );
@@ -66,7 +57,7 @@ function Matter() {
 
 function Room() {
   const s = useStore();
-  const d = D();
+  const d = dilOf(s.xrayLive!, s.reviewLive);
   const th = s.lang === "th";
   const extra = s.uploads.filter((u) => u.bucket === "diligence").length;
   return (
@@ -75,8 +66,8 @@ function Room() {
       <Title><T en="Ingest, OCR, versions" th="รับเอกสาร OCR และเวอร์ชัน" /></Title>
       <Dropzone
         bucket="diligence"
-        title={<T en="Drop the data room here" th="ลากห้องข้อมูลมาวางที่นี่" />}
-        hint={<T en="PDF, DOCX, XLSX and ZIP. LAW24 indexes, OCRs and versions on ingest — nothing is signed." th="PDF DOCX XLSX และ ZIP ระบบจัดดัชนี OCR และเวอร์ชันตอนรับเข้า — ไม่มีการลงนามแทน" />}
+        title={<T en="Drop related files here" th="ลากไฟล์ที่เกี่ยวข้องมาวางที่นี่" />}
+        hint={<T en="PDF, DOCX, XLSX and ZIP. Indexed against the mapped instrument." th="PDF DOCX XLSX และ ZIP จัดดัชนีเทียบฉบับที่วางแผนที่" />}
       />
       <Stats items={[
         ...d.ingest.map((x) => ({ v: typeof x.v === "string" ? x.v : L(s.lang, x.v), k: L(s.lang, x.k) })),
@@ -96,8 +87,7 @@ function Room() {
         </tbody>
       </table>
       <div className="stack-actions" style={{ marginTop: 16 }}>
-        <button type="button" className="btn btn-primary" onClick={() => loadCharoen(s)}><T en="Load Charoen data room" th="รับห้องข้อมูลเจริญ" /></button>
-        <Link href="/diligence?s=dflags" className="btn btn-secondary"><T en="Red flags" th="ธงแดง" /></Link>
+        <Link href="/diligence?s=dflags" className="btn btn-primary"><T en="Red flags" th="ธงแดง" /></Link>
       </div>
     </div>
   );
@@ -105,7 +95,7 @@ function Room() {
 
 function Grid() {
   const s = useStore();
-  const d = D();
+  const d = dilOf(s.xrayLive!, s.reviewLive);
   return (
     <div className="pad-page">
       <Kicker>diligence · extraction matrix</Kicker>
@@ -135,7 +125,7 @@ function Grid() {
 
 function Map() {
   const s = useStore();
-  const d = D();
+  const d = dilOf(s.xrayLive!, s.reviewLive);
   return (
     <div className="pad-page">
       <Kicker>diligence · legal deal graph</Kicker>
@@ -163,7 +153,7 @@ function Map() {
 
 function Flags() {
   const s = useStore();
-  const d = D();
+  const d = dilOf(s.xrayLive!, s.reviewLive);
   const flags = s.ddLive?.flags ?? d.flags;
   return (
     <div className="pad-page">
@@ -181,7 +171,7 @@ function Flags() {
             </div>
             <h4 style={{ marginTop: 10 }}>{L(s.lang, f.t)}</h4>
             <p>{L(s.lang, f.im)}</p>
-            <div className="tag tag-accent">{L(s.lang, f.a)}</div>
+            <div className="tag tag-accent">{typeof f.a === "string" ? f.a : L(s.lang, f.a)}</div>
             <div className="issue-actions">
               <button type="button" className="btn btn-primary" onClick={() => { s.setFlagStatus(f.id, "escalated"); s.flash(s.lang === "th" ? `ส่ง ${f.id} เข้าชุดกรรมการ` : `${f.id} escalated to IC pack`); }}><T en="Escalate to IC" th="ส่งเข้าชุดกรรมการ" /></button>
               <button type="button" className="btn btn-secondary" onClick={() => { s.setFlagStatus(f.id, "progress"); s.flash(s.lang === "th" ? `มอบหมาย ${f.id}` : `${f.id} assigned`); }}><T en="Assign" th="มอบหมาย" /></button>
@@ -196,7 +186,7 @@ function Flags() {
 
 function Req() {
   const s = useStore();
-  const d = D();
+  const d = dilOf(s.xrayLive!, s.reviewLive);
   return (
     <div className="pad-page">
       <Kicker>diligence · Q&A</Kicker>
@@ -232,7 +222,7 @@ function Req() {
 
 function Qa() {
   const s = useStore();
-  const d = D();
+  const d = dilOf(s.xrayLive!, s.reviewLive);
   return (
     <div className="pad-page">
       <Kicker>diligence · coverage</Kicker>
@@ -261,7 +251,8 @@ function Qa() {
 
 function Rep() {
   const s = useStore();
-  const d = D();
+  const d = dilOf(s.xrayLive!, s.reviewLive);
+  const X = s.xrayLive!;
   return (
     <div className="pad-page">
       <Kicker>diligence · reports</Kicker>
@@ -278,8 +269,8 @@ function Rep() {
               className="btn btn-primary"
               style={{ fontSize: 12 }}
               onClick={() => {
-                downloadText(`LAW24-${r.f.replace(/\s+/g, "-")}.txt`, ddReportText(s.lang));
-                s.flash(s.lang === "th" ? `ส่งออก ${r.f} แล้ว — ชี้แหล่งในห้องข้อมูล` : `${r.f} exported — source-linked to the room`);
+                downloadText(`LAW24-${X.ref}-${r.f}.txt`, dilReportText(s.lang, X, s.reviewLive));
+                s.flash(s.lang === "th" ? `ส่งออก ${r.f} แล้ว — จากแผนที่นี้` : `${r.f} exported — from this map`);
               }}
             >
               {s.lang === "th" ? "ดาวน์โหลด" : "Download"}
@@ -293,33 +284,29 @@ function Rep() {
 
 function Auto() {
   const s = useStore();
-  const missing = s.ddLive?.missing ?? AUTOPILOT.missing;
-
-  function runLive() {
-    loadCharoen(s);
-  }
+  const X = s.xrayLive!;
+  const ap = autopilotOf(X, s.reviewLive);
+  const missing = s.ddLive?.missing ?? ap.missing;
 
   return (
     <div className="pad-page">
       <Kicker>wow · DD Autopilot · <AiLiveMark compact /></Kicker>
-      <Title><T en="First-pass after the data room lands" th="ผลรอบแรกหลังอัปโหลดห้องข้อมูล" /></Title>
+      <Title><T en="First-pass from the mapped instrument" th="ผลรอบแรกจากฉบับที่วางแผนที่" /></Title>
       <Stats items={[
-        { v: AUTOPILOT.index, k: s.lang === "th" ? "ดัชนีเอกสาร" : "Document index" },
-        { v: String(AUTOPILOT.missing.length), k: s.lang === "th" ? "เอกสารที่ขาด" : "Missing documents" },
-        { v: String(AUTOPILOT.material.length), k: s.lang === "th" ? "สัญญาสำคัญ" : "Material contracts" },
-        { v: "2", k: s.lang === "th" ? "ธงแดงรุนแรงมาก" : "Very-high flags" },
+        { v: ap.index, k: s.lang === "th" ? "ดัชนีเอกสาร" : "Document index" },
+        { v: String(missing.length), k: s.lang === "th" ? "เอกสารที่ขาด" : "Missing documents" },
+        { v: String(ap.material.length), k: s.lang === "th" ? "สัญญาสำคัญ" : "Material contracts" },
+        { v: String(X.heatmap.filter((h) => h.sev === "high").length), k: s.lang === "th" ? "ความเสี่ยงสูง" : "High-risk flags" },
       ]} />
       <div className="grid-3" style={{ marginTop: 24 }}>
         <div><h5><T en="Missing" th="ขาด" /></h5><ul>{missing.map((m, i) => <li key={i}>{L(s.lang, m)}</li>)}</ul></div>
-        <div><h5><T en="Material contracts" th="สัญญาสำคัญ" /></h5><ul>{AUTOPILOT.material.map((m, i) => <li key={i}>{L(s.lang, m)}</li>)}</ul></div>
-        <div><h5><T en="First-round Q&A" th="คำถามรอบแรก" /></h5><ul>{AUTOPILOT.qa.map((m, i) => <li key={i}>{L(s.lang, m)}</li>)}</ul></div>
+        <div><h5><T en="Material contracts" th="สัญญาสำคัญ" /></h5><ul>{ap.material.map((m, i) => <li key={i}>{L(s.lang, m)}</li>)}</ul></div>
+        <div><h5><T en="First-round Q&A" th="คำถามรอบแรก" /></h5><ul>{ap.qa.map((m, i) => <li key={i}>{L(s.lang, m)}</li>)}</ul></div>
       </div>
       <div className="stack-actions" style={{ marginTop: 18 }}>
-        <button type="button" className="btn btn-primary" onClick={runLive}>
-          <T en="Run first-pass Autopilot" th="วิ่ง Autopilot รอบแรก" />
-        </button>
-        <Link href="/diligence?s=dflags" className="btn btn-secondary"><T en="Open red flags" th="เปิดธงแดง" /></Link>
+        <Link href="/diligence?s=dflags" className="btn btn-primary"><T en="Open red flags" th="เปิดธงแดง" /></Link>
         <Link href="/diligence?s=droom" className="btn btn-secondary"><T en="Data room" th="ห้องข้อมูล" /></Link>
+        <Link href="/review?s=xray" className="btn btn-secondary">X-Ray</Link>
       </div>
     </div>
   );
@@ -327,18 +314,21 @@ function Auto() {
 
 function War() {
   const s = useStore();
+  const w = warOf(s.xrayLive!, s.reviewLive);
+  const X = s.xrayLive!;
   return (
     <div className="pad-page">
       <Kicker>diligence · war room</Kicker>
-      <Title><T en="AI Due Diligence War Room" th="ห้องสงครามตรวจสอบสถานะ" /></Title>
+      <Title>{L(s.lang, X.doc)}</Title>
       <p className="page-sub">
-        <T en="Hundreds of documents become an index, missing list, issue matrix, red-flag register, Q&A list, entity map and a source-linked report. Every conclusion stays traceable to evidence." th="เอกสารหลายร้อยฉบับกลายเป็นดัชนี รายการที่ขาด ตารางประเด็น ทะเบียนธงแดง คำถาม แผนผังนิติบุคคล และรายงานที่ชี้แหล่ง ทุกข้อสรุปย้อนหลักฐานได้" />
+        <T en="This war room is the mapped instrument — index, missing list, flags and a source-linked report. Every conclusion stays traceable to the X-Ray." th="ห้องสงครามนี้คือฉบับที่วางแผนที่ — ดัชนี รายการที่ขาด ธงแดง และรายงานที่ชี้แหล่ง ทุกข้อสรุปย้อนไปที่ X-Ray" />
       </p>
-      <Stats items={WAR_ROOM.stats.map((x) => ({ v: x.v, k: L(s.lang, x.k) }))} />
+      <Stats items={w.stats.map((x) => ({ v: x.v, k: L(s.lang, x.k) }))} />
       <h5 style={{ marginTop: 24 }}><T en="Missing-document list" th="เอกสารที่ขาด" /></h5>
-      {WAR_ROOM.missing.map((m) => <div key={m.e} className="xray-row">{L(s.lang, m)}</div>)}
+      {w.missing.length
+        ? w.missing.map((m) => <div key={m.e} className="xray-row">{L(s.lang, m)}</div>)
+        : <p className="text-muted"><T en="The map did not flag missing documents." th="แผนที่ไม่ได้ชี้เอกสารที่ขาด" /></p>}
       <div className="stack-actions" style={{ marginTop: 18 }}>
-        <button type="button" className="btn btn-secondary" onClick={() => loadCharoen(s)}><T en="Load Charoen room" th="รับห้องเจริญ" /></button>
         <Link href="/diligence?s=droom" className="btn btn-primary"><T en="Data room" th="ห้องข้อมูล" /></Link>
         <Link href="/diligence?s=dflags" className="btn btn-secondary"><T en="Red-flag register" th="ทะเบียนธงแดง" /></Link>
         <Link href="/diligence?s=dmap" className="btn btn-secondary"><T en="Entity map" th="แผนผังนิติบุคคล" /></Link>

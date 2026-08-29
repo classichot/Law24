@@ -37,15 +37,99 @@ function R() {
   return FX.review;
 }
 
+function te(v: { t: string; e: string } | string | undefined) {
+  if (!v) return { t: "—", e: "—" };
+  if (typeof v === "string") return { t: v, e: v };
+  return v;
+}
+
+/** When a live map exists, the other Review screens read it instead of the Nimbus fixture. */
+function liveQuickTerms(s: ReturnType<typeof useStore>) {
+  const X = s.xrayLive;
+  if (!X) return R().terms;
+  const heat = X.heatmap.map((h) => ({
+    k: te(h.k),
+    v: { t: `ข้อ ${h.cl} · ความเสี่ยง ${h.pct}%`, e: `cl.${h.cl} · risk ${h.pct}%` },
+    f: h.sev === "high" ? "high" : h.sev === "med" ? "flag" : "",
+  }));
+  const money = X.money.map((m) => ({
+    k: te(m.k),
+    v: typeof m.v === "string" ? { t: m.v, e: m.v } : te(m.v),
+    f: "" as const,
+  }));
+  return [...heat, ...money];
+}
+
+function livePlaybook(s: ReturnType<typeof useStore>) {
+  const X = s.xrayLive;
+  if (!X) return R().playbook;
+  const missing = X.missing.map((m) => ({
+    p: te(m.k),
+    pol: te(m.src),
+    got: { t: "ไม่มีในฉบับ", e: "Absent from this paper" },
+    v: "miss" as const,
+    a: { t: "ขอเอกสาร / แก้ไข", e: "Request documents / amend" },
+  }));
+  const unusual = X.unusual.map((m) => ({
+    p: te(m.k),
+    pol: te(m.vs),
+    got: te(m.src),
+    v: "dev" as const,
+    a: { t: "แก้ไข", e: "Amend" },
+  }));
+  return [...missing, ...unusual];
+}
+
+function liveRedline(s: ReturnType<typeof useStore>) {
+  const X = s.xrayLive;
+  if (!X) return R().redline;
+  return X.redlines.map((r) => ({
+    c: r.cl,
+    ch: te(r.text),
+    eff: te(r.text),
+    r: { t: "แก้ไข — ตาม redline ในแผนที่", e: "Amend — as mapped" },
+    k: "amend" as const,
+  }));
+}
+
+function liveDiff(s: ReturnType<typeof useStore>) {
+  const X = s.xrayLive;
+  if (!X) return DIFF;
+  const fromUnusual = X.unusual.map((m, i) => ({
+    c: String(i + 1),
+    change: te(m.k),
+    rights: te(m.vs),
+    who: { t: "คู่สัญญาได้เปรียบ", e: "Counterparty benefits" },
+    risk: te(m.src),
+    appr: { t: "ทนายยืนยัน", e: "Counsel confirms" },
+    other: { t: "ดูแผนที่ข้อและ redline", e: "See heatmap and redlines" },
+  }));
+  const fromRed = X.redlines.map((r) => ({
+    c: r.cl,
+    change: te(r.text),
+    rights: te(r.text),
+    who: { t: "เราเสนอแก้", e: "We propose the mark" },
+    risk: { t: "ต้องปิดก่อนลงนาม", e: "Must close before signature" },
+    appr: { t: "GC", e: "GC" },
+    other: { t: "กระทบบันไดเจรจา", e: "Affects the negotiation ladder" },
+  }));
+  return [...fromUnusual, ...fromRed];
+}
+
 function Setup() {
   const s = useStore();
   const router = useRouter();
   const r = R();
+  const X = s.xrayLive;
   return (
     <div className="pad-page">
       <Kicker>review · context</Kicker>
-      <Title>{L(s.lang, r.doc.title)}</Title>
-      <p className="page-sub">{L(s.lang, r.doc.client)} · {L(s.lang, r.doc.cp)} · {r.doc.ref} · {L(s.lang, r.doc.value)}</p>
+      <Title>{X ? L(s.lang, X.doc) : L(s.lang, r.doc.title)}</Title>
+      <p className="page-sub">
+        {X
+          ? `${X.ref} · ${X.pages} ${s.lang === "th" ? "หน้า" : "pages"} · ${L(s.lang, X.langs)} · ${L(s.lang, X.verdictLabel)}`
+          : `${L(s.lang, r.doc.client)} · ${L(s.lang, r.doc.cp)} · ${r.doc.ref} · ${L(s.lang, r.doc.value)}`}
+      </p>
       <Dropzone
         bucket="xray"
         accept={CONTRACT_ACCEPT}
@@ -64,7 +148,16 @@ function Setup() {
         <Link href="/review?s=find" className="btn btn-secondary"><T en="Open findings" th="เปิดข้อค้นพบ" /></Link>
       </div>
       <div className="grid-2" style={{ marginTop: 8 }}>
-        {r.setup.map((x) => (
+        {(X
+          ? [
+              { k: { t: "คำตัดสิน", e: "Verdict" }, v: X.verdictLabel },
+              { k: { t: "ทำไม", e: "Why" }, v: X.verdictWhy },
+              { k: { t: "ภาษา", e: "Languages" }, v: X.langs },
+              { k: { t: "หน้า", e: "Pages" }, v: { t: String(X.pages), e: String(X.pages) } },
+              ...(X.parties.slice(0, 4).map((p) => ({ k: p.k, v: p.v }))),
+            ]
+          : r.setup
+        ).map((x) => (
           <div key={L(s.lang, x.k)} style={{ padding: 14, border: "2px solid var(--color-divider)" }}>
             <div className="page-kicker">{L(s.lang, x.k)}</div>
             <div style={{ fontWeight: 700, marginTop: 6 }}>{L(s.lang, x.v)}</div>
@@ -78,18 +171,21 @@ function Setup() {
 function Quick() {
   const s = useStore();
   const th = s.lang === "th";
-  const r = R();
+  const X = s.xrayLive;
+  const terms = liveQuickTerms(s);
   return (
     <div className="pad-page">
       <Kicker>review · overview</Kicker>
       <Title><T en="Quick review & key terms" th="ตรวจเร็วและข้อกำหนดสำคัญ" /></Title>
       <p style={{ maxWidth: "72ch", marginBottom: 24 }}>
-        {th
+        {X
+          ? L(s.lang, X.verdictWhy)
+          : th
           ? "ฉบับนี้เป็นกระดาษของคู่สัญญาและเอียงไปทางผู้ให้บริการอย่างมีนัยสำคัญ ประเด็นที่ต้องแก้ก่อนลงนามมี 4 ข้อ ได้แก่ ความรับผิดจากข้อมูลรั่วไหลที่ไม่มีเพดาน การโอนข้อมูลข้ามแดนที่ยังไม่มีมาตรการตาม PDPA สิทธิเลิกสัญญาที่ไม่สมมาตร และภาคผนวกที่อ้างถึงแต่ไม่แนบมา 3 ฉบับ"
           : "This is counterparty paper and materially provider-favouring. Four items must be closed before signature: uncapped data-breach liability, cross-border transfer without PDPA safeguards, asymmetric termination rights, and three incorporated annexes that were never delivered."}
       </p>
       <div className="grid-2">
-        {r.terms.map((t) => (
+        {terms.map((t) => (
           <div key={L(s.lang, t.k)} style={{ padding: 14, border: `2px solid ${t.f === "high" ? "var(--color-hot)" : t.f === "flag" ? "var(--color-accent-300)" : "var(--color-divider)"}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
               <strong>{L(s.lang, t.k)}</strong>
@@ -179,7 +275,7 @@ function Findings() {
 
 function Playbook() {
   const s = useStore();
-  const r = R();
+  const rows = livePlaybook(s);
   return (
     <div className="pad-page">
       <Kicker>review · organization playbook</Kicker>
@@ -190,7 +286,7 @@ function Playbook() {
       <table className="table">
         <thead><tr><th><T en="Position" th="จุดยืน" /></th><th><T en="Policy" th="นโยบาย" /></th><th><T en="Got" th="ได้มา" /></th><th><T en="Fit" th="ผล" /></th><th><T en="Action" th="การกระทำ" /></th></tr></thead>
         <tbody>
-          {r.playbook.map((x, i) => (
+          {rows.map((x, i) => (
             <tr key={i}>
               <td style={{ fontWeight: 700 }}>{L(s.lang, x.p)}</td>
               <td>{L(s.lang, x.pol)}</td>
@@ -211,7 +307,7 @@ function Playbook() {
 
 function Redline() {
   const s = useStore();
-  const r = R();
+  const rows = liveRedline(s);
   return (
     <div className="pad-page">
       <Kicker>review · what changed and why it matters</Kicker>
@@ -219,7 +315,7 @@ function Redline() {
       <table className="table">
         <thead><tr><th>cl.</th><th><T en="Change" th="สิ่งที่เปลี่ยน" /></th><th><T en="Effect" th="ผล" /></th><th><T en="Response" th="คำตอบ" /></th></tr></thead>
         <tbody>
-          {r.redline.map((x) => (
+          {rows.map((x) => (
             <tr key={x.c}>
               <td className="mono">{x.c}</td>
               <td>{L(s.lang, x.ch)}</td>
@@ -279,6 +375,7 @@ function Board() {
 
 function Diff() {
   const s = useStore();
+  const rows = liveDiff(s);
   return (
     <div className="pad-page">
       <Kicker>wow · what changed and why it matters</Kicker>
@@ -296,7 +393,7 @@ function Diff() {
           </tr>
         </thead>
         <tbody>
-          {DIFF.map((d) => (
+          {rows.map((d) => (
             <tr key={d.c}>
               <td className="mono">{d.c}</td>
               <td>{L(s.lang, d.change)}</td>

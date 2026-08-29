@@ -2,19 +2,18 @@
 
 import Link from "next/link";
 import { useStore } from "@/lib/store";
-import modules from "@/data/modules.json";
 import { Kicker, Stats, Title } from "@/components/ui";
 import { L } from "@/lib/model";
 import { T } from "@/lib/i18n";
-import { copyText, statusLabel, downloadText, noticeLetterText } from "@/lib/demo";
+import { copyText, statusLabel, downloadText } from "@/lib/demo";
 import { Dropzone } from "@/components/Dropzone";
-import { XRAY } from "@/lib/product";
 import { AiLiveMark } from "@/components/AiLiveMark";
-
-const NG = modules.ng;
-const OB = modules.ob;
+import { NeedMap } from "@/components/NeedMap";
+import { negotiateOf, noticeText, obligationsOf } from "@/lib/ai/fromMap";
 
 export function NegotiateScreen({ screen }: { screen: string }) {
+  const s = useStore();
+  if (!s.xrayLive) return <NeedMap kicker="negotiate · copilot" />;
   if (screen === "nstrat") return <Strat />;
   if (screen === "nladder") return <Ladder />;
   if (screen === "npos") return <Pos />;
@@ -25,6 +24,7 @@ export function NegotiateScreen({ screen }: { screen: string }) {
 
 function Strat() {
   const s = useStore();
+  const NG = negotiateOf(s.xrayLive!, s.reviewLive);
   return (
     <div className="pad-page">
       <Kicker>negotiate · cockpit</Kicker>
@@ -33,7 +33,7 @@ function Strat() {
         bucket="negotiate"
         compact
         title={<T en="Drop counterparty markup" th="ลาก redline ของคู่สัญญามาวาง" />}
-        hint={<T en="DOCX with tracked changes, PDF, or a round table. LAW24 maps it to open positions." th="DOCX ที่มี tracked changes, PDF หรือตารางรอบเจรจา ระบบจะจับคู่จุดยืนที่ยังเปิด" />}
+        hint={<T en="DOCX with tracked changes, PDF, or a round table. Mapped to open positions on this paper." th="DOCX ที่มี tracked changes, PDF หรือตารางรอบเจรจา จับคู่จุดยืนที่ยังเปิดในฉบับนี้" />}
       />
       <div className="grid-3" style={{ margin: "20px 0" }}>
         {NG.tiers.map((t, i) => (
@@ -89,16 +89,17 @@ function Strat() {
 
 function Ladder() {
   const s = useStore();
-  const ladder = s.xrayLive?.ladder ?? XRAY.ladder;
-  const email = s.xrayLive?.email ?? XRAY.email;
+  const X = s.xrayLive!;
+  const ladder = X.ladder;
+  const email = X.email;
   return (
     <div className="pad-page">
       <Kicker>negotiate · copilot</Kicker>
       <Title><T en="Negotiation ladder" th="บันไดเจรจา" /></Title>
       <p className="page-sub">
         <T
-          en="Preferred → acceptable → minimum → walk-away. If the other party rejects a redline: next-best position, additional protection, alternative wording, commercial trade-off, and a counterparty email."
-          th="จุดยืนที่ต้องการ → ประนีประนอมได้ → จุดต่ำสุด → เดินออก ถ้าคู่ปฏิเสธ redline: จุดถัดไป การคุ้มครองเพิ่ม ถ้อยคำสำรอง การแลกเชิงพาณิชย์ และอีเมลคู่สัญญา"
+          en="Preferred → acceptable → minimum → walk-away. Written from this map."
+          th="จุดยืนที่ต้องการ → ประนีประนอมได้ → จุดต่ำสุด → เดินออก เขียนจากแผนที่นี้"
         />
       </p>
       <div className="grid-2" style={{ marginTop: 8 }}>
@@ -110,12 +111,7 @@ function Ladder() {
         ))}
       </div>
       <h5 style={{ marginTop: 24 }}><T en="If they reject the redline" th="ถ้าพวกเขาปฏิเสธ redline" /></h5>
-      <p style={{ maxWidth: "72ch" }}>
-        <T
-          en="Next-best: data stays inside a 12-month cap if they sign the DPA before go-live. Additional protection: parent guarantee on data claims. Trade: reference-customer rights for the cap. Email is on the X-Ray."
-          th="จุดถัดไป: ข้อมูลอยู่ในเพดาน 12 เดือนถ้าลงนาม DPA ก่อนวันเริ่ม คุ้มครองเพิ่ม: บริษัทแม่ค้ำข้อเรียกร้องข้อมูล แลก: สิทธิอ้างอิงลูกค้าเพื่อได้เพดาน อีเมลอยู่ที่ X-Ray"
-        />
-      </p>
+      <p style={{ maxWidth: "72ch" }}>{L(s.lang, X.brief)}</p>
       <div className="stack-actions" style={{ marginTop: 16 }}>
         <button
           type="button"
@@ -133,6 +129,7 @@ function Ladder() {
 
 function Pos() {
   const s = useStore();
+  const NG = negotiateOf(s.xrayLive!, s.reviewLive);
   return (
     <div className="pad-page">
       <Kicker>negotiate · tracker</Kicker>
@@ -170,6 +167,7 @@ function Pos() {
 
 function Resp() {
   const s = useStore();
+  const NG = negotiateOf(s.xrayLive!, s.reviewLive);
   const moves = s.negotiateLive?.moves ?? NG.moves;
 
   return (
@@ -215,6 +213,7 @@ function Resp() {
 function Hist() {
   const s = useStore();
   const th = s.lang === "th";
+  const NG = negotiateOf(s.xrayLive!, s.reviewLive);
   return (
     <div className="pad-page">
       <Kicker>negotiate · rounds</Kicker>
@@ -243,6 +242,8 @@ function Hist() {
 }
 
 export function ObligationsScreen({ screen }: { screen: string }) {
+  const s = useStore();
+  if (!s.xrayLive) return <NeedMap kicker="obligations" />;
   if (screen === "oreg") return <Reg />;
   if (screen === "ocal") return <Cal />;
   if (screen === "oren") return <Ren />;
@@ -252,6 +253,7 @@ export function ObligationsScreen({ screen }: { screen: string }) {
 
 function Reg() {
   const s = useStore();
+  const OB = obligationsOf(s.xrayLive!);
   return (
     <div className="pad-page">
       <Kicker>obligations · register</Kicker>
@@ -260,7 +262,7 @@ function Reg() {
         bucket="obligations"
         compact
         title={<T en="Drop executed copies or evidence" th="ลากฉบับลงนามหรือหลักฐานมาวาง" />}
-        hint={<T en="Signed PDF, e-Sign certificate, invoices, notices served. Filed against the register — not a new signature." th="PDF ที่ลงนามแล้ว ใบรับรอง e-Sign ใบแจ้งหนี้ หนังสือบอกกล่าว เก็บเข้าทะเบียน — ไม่ใช่การลงนามใหม่" />}
+        hint={<T en="Signed PDF, e-Sign certificate, invoices, notices served. Filed against this map." th="PDF ที่ลงนามแล้ว ใบรับรอง e-Sign ใบแจ้งหนี้ หนังสือบอกกล่าว เก็บเข้าทะเบียนของฉบับนี้" />}
       />
       <Stats items={OB.stats.map((x) => ({ v: typeof x.v === "string" ? x.v : L(s.lang, x.v), k: L(s.lang, x.k) }))} />
       <table className="table" style={{ marginTop: 20 }}>
@@ -288,16 +290,17 @@ function Reg() {
 
 function Cal() {
   const s = useStore();
-  const max = Math.max(...OB.cal.map((c) => c.n));
+  const OB = obligationsOf(s.xrayLive!);
+  const max = Math.max(1, ...OB.cal.map((c) => c.n));
   return (
     <div className="pad-page">
       <Kicker>obligations · calendar</Kicker>
-      <Title><T en="The next six months of deadlines" th="ปฏิทินกำหนดเวลาหกเดือนข้างหน้า" /></Title>
+      <Title><T en="Deadlines from this map" th="กำหนดเวลาจากแผนที่นี้" /></Title>
       <div className="grid-2" style={{ marginTop: 20 }}>
         {OB.cal.map((c, i) => (
           <div key={i} style={{ padding: 16, border: "2px solid var(--color-divider)" }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}><strong>{L(s.lang, c.m)}</strong><span>{c.n}</span></div>
-            <div className="bar-track" style={{ margin: "10px 0" }}><div className="bar-fill" style={{ width: `${Math.round((c.n / max) * 100)}%`, background: c.n > 150 ? "var(--color-accent)" : "var(--color-text)" }} /></div>
+            <div className="bar-track" style={{ margin: "10px 0" }}><div className="bar-fill" style={{ width: `${Math.round((c.n / max) * 100)}%`, background: "var(--color-text)" }} /></div>
             {c.items.map((it, n) => <div key={n} className="text-muted" style={{ fontSize: 13 }}>{L(s.lang, it)}</div>)}
           </div>
         ))}
@@ -312,6 +315,8 @@ function Cal() {
 
 function Ren() {
   const s = useStore();
+  const OB = obligationsOf(s.xrayLive!);
+  const X = s.xrayLive!;
   return (
     <div className="pad-page">
       <Kicker>obligations · renewals</Kicker>
@@ -336,12 +341,12 @@ function Ren() {
           type="button"
           className="btn btn-primary"
           onClick={() => {
-            downloadText("LAW24-non-renewal-notice.txt", noticeLetterText(s.lang));
+            downloadText(`LAW24-${X.ref}-notice.txt`, noticeText(s.lang, X));
             s.completeAlert("0");
-            s.flash(s.lang === "th" ? "ร่างหนังสือไม่ต่ออายุแล้ว — ทนายเป็นผู้ลงนาม" : "Non-renewal notice drafted — counsel signs");
+            s.flash(s.lang === "th" ? "ร่างหนังสือจากแผนที่แล้ว — ทนายเป็นผู้ลงนาม" : "Notice drafted from the map — counsel signs");
           }}
         >
-          <T en="Draft non-renewal notice" th="ร่างหนังสือไม่ต่ออายุ" />
+          <T en="Draft notice from this map" th="ร่างหนังสือจากแผนที่นี้" />
         </button>
         <Link href="/obligations?s=oalert" className="btn btn-secondary"><T en="Serve from alerts" th="ส่งจากรายการแจ้งเตือน" /></Link>
       </div>
@@ -351,6 +356,7 @@ function Ren() {
 
 function Alert() {
   const s = useStore();
+  const OB = obligationsOf(s.xrayLive!);
   return (
     <div className="pad-page">
       <Kicker>obligations · alerts</Kicker>

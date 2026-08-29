@@ -20,6 +20,7 @@ import { PlaybookMark } from "@/components/PlaybookMark";
 import { AiLiveMark } from "@/components/AiLiveMark";
 import { PLAYBOOKS, playbookKeyFor } from "@/lib/guides";
 import { formatExpiry, hoursLeft, isInviteAuth, readInviteSession } from "@/lib/invite";
+import { withLiveMatter } from "@/lib/ai/fromMap";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
@@ -37,9 +38,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const screen = params.get("s") || (isMode(mode) ? NAV[mode][0][0] : "home");
   const notHome = mode !== "home";
   const sub = isMode(mode) ? NAV[mode] : [];
-  const matter = MATTERS[s.matter];
   const tabs = navModes(s.edition);
-  const assignment = s.practice.assignments.find((a) => a.id === s.practice.activeAssignmentId);
+  const books = withLiveMatter(s.practice, s.xrayLive, s.reviewLive);
+  const assignment = books.assignments.find((a) => a.id === books.activeAssignmentId);
 
   useEffect(() => {
     function check() {
@@ -66,12 +67,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [mode, s.edition, router]);
 
   useEffect(() => {
+    if (s.xrayLive) return;
     if (isMode(mode)) {
       const next = matterForMode(mode);
       if (next && next !== s.matter) s.setMatter(next);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
+  }, [mode, s.xrayLive]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -189,7 +191,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <span className="os-mode-pb">{PLAYBOOKS[playbookKeyFor(m.k)].id}</span>
               </Link>
             ))}
-            {mode !== "practice" && mode !== "command" && mode !== "assist" && mode !== "help" && (
+            {mode !== "practice" && mode !== "command" && mode !== "assist" && mode !== "help" && !s.xrayLive && s.demoOn && (
             <div className="os-matters header-hide-sm">
               {(Object.keys(MATTERS) as MatterId[]).map((id) => (
                 <button key={id} type="button" className={`matter-chip${s.matter === id ? " on" : ""}`} onClick={() => jumpMatter(id)}>
@@ -218,7 +220,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                   ? (s.lang === "th" ? "อธิบายงาน แล้วระบบชี้โมดูล" : "Describe the work — the OS names the module")
                 : mode === "help"
                   ? (s.lang === "th" ? "เลโอ · เพลย์บุ๊กบ้าน วิจัย และกฎ" : "Leio · house books, research and regulation")
-                : (s.lang === "th" ? matter.th.line : matter.en.line)}
+                : s.xrayLive
+                  ? `${s.xrayLive.ref} · ${s.lang === "th" ? s.xrayLive.doc.t : s.xrayLive.doc.e}`
+                : (s.lang === "th" ? "ยังไม่มีแผนที่ — เปิด X-Ray" : "No map yet — open X-Ray")}
             </span>
             {!s.demoOn && (
               <button type="button" className="btn btn-secondary" style={{ marginLeft: 8, fontSize: 11, padding: "4px 10px" }} onClick={startLive}>
