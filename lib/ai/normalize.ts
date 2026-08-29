@@ -92,11 +92,11 @@ export function normalizeXray(
   } as XrayView;
 }
 
-export function normalizeReview(raw: z.infer<typeof reviewPack>): ReviewLive {
+export function normalizeReview(raw: Partial<z.infer<typeof reviewPack>>): ReviewLive {
   return {
     findings: (raw.findings || []).map((f) => ({ ...f, src: asTE(f.src) })),
     board: raw.board || [],
-    agreement: raw.agreement,
-    recommendation: raw.recommendation,
+    agreement: asTE(raw.agreement),
+    recommendation: asTE(raw.recommendation),
   };
 }

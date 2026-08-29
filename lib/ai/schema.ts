@@ -89,13 +89,18 @@ export const boardSeatObject = z.object({
   vote: z.string(),
 });
 
-/** Second stage. Kept out of xrayObject so neither call outgrows the function time limit. */
-export const reviewPack = z.object({
-  findings: z.array(findingObject).min(1).max(8),
+/** Second stage, split for the same reason the map is: one call runs too long. */
+export const reviewFindings = z.object({
+  findings: z.array(findingObject).min(1).max(6),
+});
+
+export const reviewBoard = z.object({
   board: z.array(boardSeatObject).min(5).max(7),
   agreement: te,
   recommendation: te,
 });
+
+export const reviewPack = z.object({ ...reviewFindings.shape, ...reviewBoard.shape });
 
 export const chatAnswer = z.object({
   text: z.string(),
