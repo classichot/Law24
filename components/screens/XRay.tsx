@@ -129,7 +129,7 @@ export function XRayScreen() {
   return (
     <div className="pad-page">
       <Kicker>review · contract x-ray · {X.mappedIn.e} <AiLiveMark compact /></Kicker>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "flex-start", marginBottom: 24 }}>
         <div>
           <Title>{L(s.lang, X.doc)}</Title>
           <p className="page-sub">{X.ref} · {X.pages} {th ? "หน้า" : "pages"} · {L(s.lang, X.langs)}</p>
@@ -140,7 +140,7 @@ export function XRayScreen() {
           <span className="text-muted" style={{ fontSize: 12 }}><T en="Accept / Negotiate / Do Not Sign" th="ยอมรับ / เจรจา / ห้ามลงนาม" /></span>
         </div>
       </div>
-      <p style={{ maxWidth: "72ch", marginBottom: 22 }}>{L(s.lang, X.verdictWhy)}</p>
+      <p style={{ maxWidth: "72ch", margin: "0 0 22px" }}>{L(s.lang, X.verdictWhy)}</p>
 
       <h5><T en="Open the rest of the OS" th="เปิดโมดูลถัดไปของระบบ" /></h5>
       <p className="text-muted" style={{ margin: "6px 0 12px", fontSize: 13, maxWidth: "72ch" }}>
