@@ -91,8 +91,8 @@ export const boardSeatObject = z.object({
 
 /** Second stage, split for the same reason the map is: one call runs too long. */
 export const reviewFindings = z.object({
-  /** Eleven bilingual fields per card, so four is what fits the time budget. */
-  findings: z.array(findingObject).min(1).max(4),
+  /** Eleven bilingual fields per card, so cards are minted two at a time. */
+  findings: z.array(findingObject).min(1).max(2),
 });
 
 export const reviewBoard = z.object({

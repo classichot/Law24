@@ -9,12 +9,16 @@ import { jsonError, requireLive } from "@/lib/ai/http";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
-/** Either half is enough to fill the board screen, so neither one can sink it. */
-async function stage<T>(run: () => Promise<T>): Promise<{ value?: T; error?: string }> {
+type Stage<T> = { label: string; ms: number; value?: T; error?: string };
+
+/** Any surviving stage is enough to fill the board screen, so none can sink it. */
+async function stage<T>(label: string, run: () => Promise<T>): Promise<Stage<T>> {
+  const t0 = Date.now();
   try {
-    return { value: await run() };
+    const value = await run();
+    return { label, ms: Date.now() - t0, value };
   } catch (err) {
-    return { error: err instanceof Error ? err.message : "failed" };
+    return { label, ms: Date.now() - t0, error: err instanceof Error ? err.message : "failed" };
   }
 }
 
@@ -47,24 +51,40 @@ ${files
 
 Keep every field to one tight sentence. Answer only the fields in the schema — the rest of the review is minted by a parallel call.`;
 
-    const [found, seated] = await Promise.all([
-      stage(() => generateStructured(
-        reviewFindings,
-        `Return the four most material issue cards, with evidence quotes in src and why, and rec = amend|docs|reject|fallback|clarify|escalate|accept.\n\n${source}`,
-        undefined,
-        files,
-      )),
-      stage(() => generateStructured(
+    const cards = (rank: string) => stage(`cards-${rank}`, () => generateStructured(
+      reviewFindings,
+      `Return the ${rank} most material issue cards, with evidence quotes in src and why, and rec = amend|docs|reject|fallback|clarify|escalate|accept.\n\n${source}`,
+      undefined,
+      files,
+    ));
+
+    const parts = await Promise.all([
+      cards("two"),
+      cards("third and fourth"),
+      stage("board", () => generateStructured(
         reviewBoard,
         `Return the seven-seat AI Legal Review Board with each seat's vote, plus the agreement line and the recommendation. recommendation is renegotiate unless the paper already meets the house book, and must not claim the engine signed.\n\n${source}`,
         undefined,
         files,
       )),
     ]);
-    if (!found.value && !seated.value) {
-      return jsonError(found.error || seated.error || "Review failed", 500);
+    const stages = parts.map((p) => ({ stage: p.label, ms: p.ms, error: p.error }));
+    console.log(`[review] ${stages.map((s) => `${s.stage}=${s.ms}ms${s.error ? ` err:${s.error}` : ""}`).join(" ")}`);
+    if (parts.every((p) => !p.value)) {
+      return jsonError(parts.find((p) => p.error)?.error || "Review failed", 500, { stages });
     }
-    return NextResponse.json(normalizeReview({ ...found.value, ...seated.value }));
+    const merged = Object.assign({}, ...parts.map((p) => p.value || {}));
+    // Both card stages rank the same paper, so drop anything the other already named.
+    const seen = new Set<string>();
+    merged.findings = parts
+      .flatMap((p) => (p.value as { findings?: { issue: { e: string } }[] } | undefined)?.findings || [])
+      .filter((f) => {
+        const key = (f.issue?.e || "").toLowerCase().replace(/\W+/g, " ").trim();
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    return NextResponse.json({ ...normalizeReview(merged), stages });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Review failed";
     return jsonError(msg, 500);
