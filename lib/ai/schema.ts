@@ -18,7 +18,12 @@ const MODES = [
   "holistic", "diligence", "negotiate", "obligations", "intel",
 ] as const;
 
-export const xrayObject = z.object({
+/**
+ * The map is minted as two halves so neither one has to write a whole bilingual
+ * X-Ray inside the function budget. They are requested in parallel and merged;
+ * splitting roughly halves wall-clock time, not just token count.
+ */
+export const xrayCore = z.object({
   doc: teLoose,
   ref: z.string().optional().default(""),
   pages: z.coerce.number().optional().default(1),
@@ -32,18 +37,23 @@ export const xrayObject = z.object({
     sev: sevLoose,
     pct: z.coerce.number(),
   })).max(8).optional().default([]),
-  missing: z.array(z.object({ k: teLoose, src: teLoose })).max(6).optional().default([]),
-  unusual: z.array(z.object({ k: teLoose, vs: teLoose, src: teLoose })).max(5).optional().default([]),
   money: z.array(z.object({ k: teLoose, v: z.union([z.string(), teLoose]) })).max(5).optional().default([]),
   dates: z.array(z.object({ k: teLoose, v: z.union([z.string(), teLoose]), src: teLoose })).max(5).optional().default([]),
   parties: z.array(z.object({ k: teLoose, v: teLoose })).max(5).optional().default([]),
   laws: z.array(z.object({ k: teLoose, src: teLoose })).max(6).optional().default([]),
+});
+
+export const xrayDeep = z.object({
+  missing: z.array(z.object({ k: teLoose, src: teLoose })).max(6).optional().default([]),
+  unusual: z.array(z.object({ k: teLoose, vs: teLoose, src: teLoose })).max(5).optional().default([]),
   layers: z.array(z.object({ k: teLoose, v: teLoose })).max(3).optional().default([]),
   redlines: z.array(z.object({ cl: z.coerce.string(), text: teLoose })).max(6).optional().default([]),
   ladder: z.array(z.object({ n: z.coerce.string(), k: teLoose, v: teLoose })).max(4).optional().default([]),
   brief: teLoose,
   email: teLoose,
 });
+
+export const xrayObject = z.object({ ...xrayCore.shape, ...xrayDeep.shape });
 
 export const findingObject = z.object({
   id: z.string(),
