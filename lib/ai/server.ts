@@ -1,4 +1,4 @@
-import { generateObject, generateText } from "ai";
+import { generateObject } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import type { z } from "zod";
@@ -72,15 +72,32 @@ function getModel() {
   return openai(named && !wantClaude ? named : "gpt-4o");
 }
 
+export type AiAttachment = {
+  data: Uint8Array;
+  mediaType: string;
+  filename?: string;
+};
+
 export async function generateStructured<S extends z.ZodType>(
   schema: S,
   prompt: string,
-  extraSystem?: string
+  extraSystem?: string,
+  files?: AiAttachment[]
 ): Promise<z.infer<S>> {
   if (!isAiLive()) {
     throw new Error("Live AI is not configured");
   }
   const system = extraSystem ? `${HOUSE_SYSTEM}\n\n${extraSystem}` : HOUSE_SYSTEM;
+  const content = files?.length
+    ? [
+        { type: "text" as const, text: prompt },
+        ...files.map((f) =>
+          f.mediaType.startsWith("image/")
+            ? { type: "image" as const, image: f.data, mediaType: f.mediaType }
+            : { type: "file" as const, data: f.data, mediaType: f.mediaType, filename: f.filename }
+        ),
+      ]
+    : undefined;
   try {
     const { object } = await generateObject({
       model: getModel(),
@@ -88,47 +105,12 @@ export async function generateStructured<S extends z.ZodType>(
       schemaName: "law24",
       schemaDescription: "LAW24 structured legal output. Cite evidence. Never sign.",
       system,
-      prompt,
+      ...(content ? { messages: [{ role: "user" as const, content }] } : { prompt }),
       mode: "json",
       maxRetries: 1,
       abortSignal: AbortSignal.timeout(TIMEOUT_MS),
     });
     return object as z.infer<S>;
-  } catch (err) {
-    throw new Error(aiErrorMessage(err));
-  }
-}
-
-/** Read Thai/English contract text off scanned page images. Used when the PDF has no text layer. */
-export async function generateTranscript(
-  pages: { data: Uint8Array; mediaType: string }[],
-  rendered: number,
-  total: number
-): Promise<string> {
-  if (!isAiLive()) throw new Error("Live AI is not configured");
-  if (!pages.length) throw new Error("No page images to read");
-  try {
-    const { text } = await generateText({
-      model: getModel(),
-      messages: [{
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: `Transcribe this scanned contract (Thai and/or English). Keep clause numbers, party names, dates, amounts, defined terms and headings. Do not summarise. Do not invent missing pages. If a page is unreadable write [page N unreadable]. These are pages 1–${rendered} of ${total}.`,
-          },
-          ...pages.map((p) => ({
-            type: "image" as const,
-            image: p.data,
-            mediaType: p.mediaType,
-          })),
-        ],
-      }],
-      abortSignal: AbortSignal.timeout(60_000),
-    });
-    const out = (text || "").trim();
-    if (out.length < 80) throw new Error("OCR produced no usable contract text");
-    return out;
   } catch (err) {
     throw new Error(aiErrorMessage(err));
   }

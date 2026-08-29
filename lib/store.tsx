@@ -40,7 +40,7 @@ const LIVE_KEY = "law24-live";
 /** Stays under the route's maxDuration so the user gets our message, not a gateway timeout. */
 const AI_STAGE_MS = 70_000;
 /** Scanned PDFs OCR then map — needs the longer X-Ray window. */
-const AI_XRAY_MS = 110_000;
+const AI_XRAY_MS = 115_000;
 
 type Store = {
   ready: boolean;
@@ -437,7 +437,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ...p,
       uploads: [
         ...files.map((f) => ({ ...f, bucket })),
-        ...p.uploads,
+        ...p.uploads.filter((u) => u.bucket !== bucket),
       ].slice(0, 40),
       ...(bucket === "xray" ? { xrayReady: false, xrayLive: null, reviewLive: null } : {}),
     }));

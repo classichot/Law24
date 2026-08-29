@@ -73,7 +73,7 @@ export function XRayScreen() {
           <div className="xray-map">
             <div className="xray-scan" />
             <strong><T en="Mapping the contract…" th="กำลังวางแผนที่สัญญา…" /></strong>
-            <p><T en="Clauses · parties · dates · Thai authorities · playbook fit" th="ข้อสัญญา · คู่สัญญา · วันที่ · ฐานกฎหมายไทย · เทียบเพลย์บุ๊ก" /></p>
+            <p><T en="Scans can take up to two minutes. Leave this tab open." th="ไฟล์สแกนอาจใช้ถึงสองนาที อย่าปิดแท็บนี้" /></p>
           </div>
         ) : (
           <>
