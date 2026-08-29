@@ -46,6 +46,7 @@ const TYPES = ENGAGEMENT_TYPES as AssignmentType[];
 const FUNNEL = Object.keys(STAGE_LABEL) as AssignmentStage[];
 
 export function PracticeScreen({ screen }: { screen: string }) {
+  if (screen === "pool") return <Pool />;
   if (screen === "ereview") return <EngagementHub track="review" />;
   if (screen === "edraft") return <EngagementHub track="assemble" />;
   if (screen === "edd") return <EngagementHub track="diligence" />;
@@ -57,6 +58,162 @@ export function PracticeScreen({ screen }: { screen: string }) {
   if (screen === "packages") return <Packages />;
   if (screen === "quote") return <Quote />;
   return <Dash />;
+}
+
+function Pool() {
+  const s = useStore();
+  const practice = withLiveMatter(s.practice, s.xrayLive, s.reviewLive);
+  const th = s.lang === "th";
+  const [open, setOpen] = useState(false);
+  const [clientName, setClientName] = useState("");
+  const [engagementName, setEngagementName] = useState("");
+  const [type, setType] = useState<EngagementTrack>("review");
+  const pool = practice.pool || [];
+  const orphanClients = practice.clients.filter((c) =>
+    !practice.assignments.some((a) => a.clientId === c.id)
+  );
+  const unallocated = practice.assignments.filter((a) => !a.lead.trim());
+
+  function onAdd(e: FormEvent) {
+    e.preventDefault();
+    if (!clientName.trim() || !engagementName.trim()) return;
+    s.addPoolIntake({ clientName, engagementName, type });
+    s.flash(th ? "เพิ่มเข้าคิวรับงานแล้ว" : "Added to the unassigned pool");
+    setClientName("");
+    setEngagementName("");
+    setOpen(false);
+  }
+
+  return (
+    <div className="pad-page">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+        <div>
+          <Kicker>practice · intake pool</Kicker>
+          <Title><T en="Unassigned pool" th="คิวรับงาน" /></Title>
+          <p className="page-sub">
+            <T
+              en="New clients and engagements wait here until a lawyer takes ownership. Assigning an item opens both records on the correct engagement track."
+              th="ลูกค้าและงานใหม่รอที่นี่จนกว่าทนายจะรับผิดชอบ เมื่อรับงาน ระบบจะเปิดทั้งลูกค้าและบันทึกงานในประเภทที่ถูกต้อง"
+            />
+          </p>
+        </div>
+        <button type="button" className="btn btn-primary" onClick={() => setOpen((v) => !v)}>
+          {open ? <T en="Cancel" th="ยกเลิก" /> : <T en="Add to pool" th="เพิ่มเข้าคิว" />}
+        </button>
+      </div>
+
+      <div className="stat-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)", marginTop: 22 }}>
+        {[
+          { v: pool.length, en: "Waiting allocation", th: "รอจัดสรร" },
+          { v: orphanClients.length, en: "Clients without engagement", th: "ลูกค้ายังไม่มีงาน" },
+          { v: unallocated.length, en: "Engagements without lead", th: "งานยังไม่มีหัวหน้า" },
+        ].map((x) => (
+          <div key={x.en} className="stat-cell-os">
+            <div style={{ font: "800 24px/1 var(--font-heading)" }}>{x.v}</div>
+            <div style={{ fontSize: 11, color: "var(--color-neutral-600)", marginTop: 7 }}>{th ? x.th : x.en}</div>
+          </div>
+        ))}
+      </div>
+
+      {open && (
+        <form className={`practice-form eng-card ${ENGAGEMENT[type].cls}`} onSubmit={onAdd}>
+          <div className="field">
+            <label><T en="Client name" th="ชื่อลูกค้า" /></label>
+            <input className="input" value={clientName} onChange={(e) => setClientName(e.target.value)} required />
+          </div>
+          <div className="field">
+            <label><T en="Engagement type" th="ประเภทงาน" /></label>
+            <select className="input" value={type} onChange={(e) => setType(e.target.value as EngagementTrack)}>
+              {ENGAGEMENT_TYPES.map((track) => (
+                <option key={track} value={track}>{th ? ENGAGEMENT[track].th : ENGAGEMENT[track].en}</option>
+              ))}
+            </select>
+          </div>
+          <div className="field" style={{ gridColumn: "1 / -1" }}>
+            <label><T en="Engagement name" th="ชื่องาน" /></label>
+            <input className="input" value={engagementName} onChange={(e) => setEngagementName(e.target.value)} required />
+          </div>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <button className="btn btn-primary" type="submit"><T en="Hold unassigned" th="พักไว้ยังไม่จัดสรร" /></button>
+          </div>
+        </form>
+      )}
+
+      <h5 style={{ marginTop: 28 }}><T en="Waiting for a lawyer" th="รอทนายรับผิดชอบ" /></h5>
+      {pool.length ? (
+        <div className="grid-2" style={{ marginTop: 12 }}>
+          {pool.map((row) => {
+            const engagement = ENGAGEMENT[row.type];
+            return (
+              <div key={row.id} className={`xray-layer eng-card ${engagement.cls}`}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+                  <div>
+                    <div className="page-kicker">{row.id} · <T en="Unassigned" th="ยังไม่จัดสรร" /></div>
+                    <div style={{ marginTop: 8 }}><EngPill track={row.type} /></div>
+                    <strong style={{ display: "block", marginTop: 10 }}>{row.clientName}</strong>
+                    <p style={{ margin: "5px 0 0" }}>{row.engagementName}</p>
+                    <p className="text-muted" style={{ margin: "6px 0 0", fontSize: 11 }}>{row.received}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => {
+                      s.assignPoolIntake(row.id);
+                      s.flash(th ? "รับงานแล้ว — เปิดลูกค้าและบันทึกงาน" : "Assigned — client and engagement records opened");
+                    }}
+                  >
+                    <T en="Assign to me" th="รับงาน" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="callout" style={{ marginTop: 12 }}>
+          <T en="No intake is waiting for allocation." th="ไม่มีงานรับเข้าอยู่ระหว่างรอจัดสรร" />
+        </div>
+      )}
+
+      {(orphanClients.length > 0 || unallocated.length > 0) && (
+        <>
+          <h5 style={{ marginTop: 28 }}><T en="Records needing allocation" th="บันทึกที่ยังต้องจัดสรร" /></h5>
+          <table className="table" style={{ marginTop: 10 }}>
+            <thead>
+              <tr>
+                <th><T en="Record" th="บันทึก" /></th>
+                <th><T en="Client / engagement" th="ลูกค้า / งาน" /></th>
+                <th><T en="Missing" th="ยังขาด" /></th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {orphanClients.map((c) => (
+                <tr key={c.id}>
+                  <td style={{ fontWeight: 800 }}>{c.id}</td>
+                  <td>{th ? c.nameTh : c.name}</td>
+                  <td><T en="Engagement" th="งาน" /></td>
+                  <td className="num">
+                    <Link href={`/practice?s=assign&c=${c.id}`} className="btn btn-secondary" onClick={() => s.setActiveClient(c.id)}>
+                      <T en="Open engagement" th="เปิดงาน" />
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+              {unallocated.map((a) => (
+                <tr key={a.id}>
+                  <td style={{ fontWeight: 800 }}>{a.id}</td>
+                  <td>{th ? a.titleTh : a.title}</td>
+                  <td><T en="Lead lawyer" th="หัวหน้างาน" /></td>
+                  <td />
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+    </div>
+  );
 }
 
 function FirmBooks() {

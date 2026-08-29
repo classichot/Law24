@@ -262,6 +262,11 @@ export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
     do: P("เลือกประเภท แล้วเปิดควบคุมหรือบันทึกของประเภทนั้น", "Pick the engagement, then open that track’s control or record"),
     rule: P("งานทุกชิ้นต้องอยู่ใต้หนึ่งในสามประเภท — ห้ามมีงานนอกระบบ", "Every live assignment sits on one of the three tracks — no work off-system"),
   },
+  "practice/pool": {
+    why: P("คิวรับงานพักลูกค้าและงานใหม่ที่ยังไม่มีผู้รับผิดชอบ", "The intake pool holds new clients and engagements without an owner"),
+    do: P("ตรวจชื่อลูกค้า ประเภท และชื่องาน แล้วกดรับงานเพื่อเปิดบันทึก", "Check the client, track and engagement name, then assign it to open the records"),
+    rule: P("รายการในคิวยังไม่ใช่งานเปิด — ต้องมีทนายรับผิดชอบก่อนเข้าเครื่องยนต์", "A pool item is not open work — a lawyer must take ownership before it enters an engine"),
+  },
   "practice/ereview": {
     why: P("งานตรวจสัญญา — X-Ray ห้องบังคับ ฝาแฝด ห้องสงคราม เจรจา ข้อผูกพัน", "Contract review — X-Ray, Cockpit, Twin, War Room, Copilot, Obligations"),
     do: P("วางแผนที่ที่ X-Ray แล้วเปิดโมดูลตรวจ หรือเปิดบันทึกงานตรวจ", "Map on X-Ray, then open a review module or the review record"),

@@ -828,6 +828,7 @@ export function practiceFromMap(X: XrayView, R?: ReviewLive | null): PracticeSta
     clients: [],
     assignments: [],
     movements: [],
+    pool: [],
   }, X, R);
 }
 

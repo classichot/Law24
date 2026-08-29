@@ -43,10 +43,19 @@ export type Movement = {
   href?: string;
 };
 
+export type PoolRecord = {
+  id: string;
+  clientName: string;
+  engagementName: string;
+  type: EngagementTrack;
+  received: string;
+};
+
 export type PracticeState = {
   clients: ClientRecord[];
   assignments: AssignmentRecord[];
   movements: Movement[];
+  pool: PoolRecord[];
   activeClientId: string;
   activeAssignmentId: string;
 };
@@ -138,6 +147,7 @@ export function seedPractice(): PracticeState {
     clients: [],
     assignments: [],
     movements: [],
+    pool: [],
   };
 }
 
@@ -190,6 +200,11 @@ export function nextIds(p: PracticeState) {
   const cMax = Math.max(0, ...p.clients.map((c) => parseInt(c.id.replace(/\D/g, ""), 10) || 0));
   const aMax = Math.max(0, ...p.assignments.map((a) => parseInt(a.id.replace(/\D/g, ""), 10) || 0));
   return { clientId: `CL-${String(cMax + 1).padStart(2, "0")}`, assignmentId: `A-${aMax + 1}` };
+}
+
+export function nextPoolId(p: PracticeState) {
+  const max = Math.max(0, ...(p.pool || []).map((row) => parseInt(row.id.replace(/\D/g, ""), 10) || 0));
+  return `P-${max + 1}`;
 }
 
 export function stampNow() {

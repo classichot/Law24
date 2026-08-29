@@ -40,6 +40,7 @@ export function navModes(edition: Edition) {
 export const NAV: Record<Exclude<ModeKey, "home">, [ScreenKey, string, string][]> = {
   practice: [
     ["dash", "ศูนย์ควบคุม", "Firm control"],
+    ["pool", "คิวรับงาน", "Unassigned pool"],
     ["ereview", "ตรวจสัญญา", "Contract review"],
     ["edraft", "ร่างสัญญา", "Contract drafting"],
     ["edd", "ความเสี่ยงกฎหมาย", "Legal risk"],
@@ -185,6 +186,7 @@ export const FIRM_CONTROL: FirmControlHop[] = [
   { href: "/diligence?s=drep", en: "Report", th: "รายงาน", kind: "engine", track: "diligence", why: { t: "รายงานความเสี่ยงที่คณะกรรมการอ่าน", e: "The legal-risk report the committee reads" } },
   { href: "/diligence?s=autopilot", en: "Autopilot", th: "ออโต", kind: "engine", track: "diligence", why: { t: "วิ่งทั้งห้องแล้วส่งธงให้ทนายยืนยัน", e: "Runs the room, then counsel verifies" } },
   { href: "/practice?s=clients", en: "Clients", th: "ลูกค้า", kind: "firm", why: { t: "บัญชีลูกค้า — เปิดงานทั้งสามประเภท", e: "Client book — open work on any of the three tracks" } },
+  { href: "/practice?s=pool", en: "Unassigned pool", th: "คิวรับงาน", kind: "firm", why: { t: "ลูกค้าและงานใหม่ที่ยังไม่มีผู้รับผิดชอบ", e: "New clients and engagements waiting for allocation" } },
   { href: "/practice?s=assign", en: "Record", th: "บันทึกงาน", kind: "firm", why: { t: "บันทึกงานทั้งสามประเภท — ตรวจ ร่าง DD", e: "Engagement record across review, drafting and DD" } },
   { href: "/practice?s=trace", en: "Trail", th: "เส้นทาง", kind: "firm", why: { t: "ไล่จากรับเรื่องถึงจุดควบคุมปัจจุบัน", e: "Read intake through the current control point" } },
   { href: "/practice?s=room", en: "Client Room", th: "ห้องลูกค้า", kind: "firm", why: { t: "ห้องตรวจภายใต้แบรนด์สำนักงาน", e: "Branded review room for the mapped client" } },

@@ -22,6 +22,7 @@ import {
   HREF_FOR_TYPE,
   engagementOf,
   nextIds,
+  nextPoolId,
   seedPractice,
   stampDay,
   stampNow,
@@ -134,6 +135,8 @@ type Store = {
   practice: PracticeState;
   addClient: (input: { name: string; nameTh?: string; sector: string; owner: string }) => void;
   addAssignment: (input: { clientId: string; title: string; titleTh?: string; type: AssignmentType; due: string; lead: string; fee?: string }) => void;
+  addPoolIntake: (input: { clientName: string; engagementName: string; type: AssignmentType }) => void;
+  assignPoolIntake: (id: string) => void;
   openXrayEngagement: (input: { clientName: string; engagementName: string }) => void;
   setActiveClient: (id: string) => void;
   setActiveAssignment: (id: string) => void;
@@ -185,6 +188,7 @@ function readLive(): LiveState {
     } else {
       merged.practice = {
         ...merged.practice,
+        pool: merged.practice.pool || [],
         assignments: (merged.practice.assignments || []).map((a) => {
           const track = engagementOf(a.type);
           return { ...a, type: track, href: a.href || ENGAGEMENT[track].href };
@@ -521,6 +525,84 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       );
     });
   }, [patchLive]);
+  const addPoolIntake = useCallback((input: { clientName: string; engagementName: string; type: AssignmentType }) => {
+    patchLive((p) => ({
+      ...p,
+      practice: {
+        ...p.practice,
+        pool: [
+          ...(p.practice.pool || []),
+          {
+            id: nextPoolId(p.practice),
+            clientName: input.clientName.trim(),
+            engagementName: input.engagementName.trim(),
+            type: engagementOf(input.type),
+            received: stampNow(),
+          },
+        ],
+      },
+    }));
+  }, [patchLive]);
+  const assignPoolIntake = useCallback((id: string) => {
+    patchLive((p) => {
+      const item = (p.practice.pool || []).find((row) => row.id === id);
+      if (!item) return p;
+      const existingClient = p.practice.clients.find((c) =>
+        c.name.trim().toLowerCase() === item.clientName.toLowerCase()
+        || c.nameTh.trim().toLowerCase() === item.clientName.toLowerCase()
+      );
+      const ids = nextIds(p.practice);
+      const clientId = existingClient?.id || ids.clientId;
+      const assignmentId = ids.assignmentId;
+      const href = ENGAGEMENT[item.type].href;
+      const next = {
+        ...p,
+        practice: {
+          ...p.practice,
+          activeClientId: clientId,
+          activeAssignmentId: assignmentId,
+          pool: (p.practice.pool || []).filter((row) => row.id !== id),
+          clients: existingClient
+            ? p.practice.clients
+            : [
+                ...p.practice.clients,
+                {
+                  id: clientId,
+                  name: item.clientName,
+                  nameTh: item.clientName,
+                  sector: ENGAGEMENT[item.type].en,
+                  owner: FIRM_USER.name,
+                  opened: stampDay(),
+                  status: "active" as const,
+                },
+              ],
+          assignments: [
+            ...p.practice.assignments,
+            {
+              id: assignmentId,
+              clientId,
+              title: item.engagementName,
+              titleTh: item.engagementName,
+              type: item.type,
+              stage: "intake" as const,
+              lead: FIRM_USER.name,
+              due: stampDay("2026-09-30"),
+              fee: "THB 0",
+              href,
+            },
+          ],
+        },
+      };
+      return appendMv(
+        next,
+        `Assigned from Firm pool (${item.id}). Intake logged.`,
+        `รับจากคิวสำนักงาน (${item.id}) และบันทึกรับเรื่อง`,
+        href,
+        "intake",
+        { assignmentId }
+      );
+    });
+  }, [patchLive]);
   const openXrayEngagement = useCallback((input: { clientName: string; engagementName: string }) => {
     patchLive((p) => {
       const clientName = input.clientName.trim();
@@ -718,7 +800,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     alertDone: live.alertDone, completeAlert,
     uploads: live.uploads, addUploads,
     clauseEdits: live.clauseEdits ?? {}, applyClauseEdit, revertClauseEdit,
-    practice: live.practice ?? seedPractice(), addClient, addAssignment, openXrayEngagement, setActiveClient, setActiveAssignment,
+    practice: live.practice ?? seedPractice(), addClient, addAssignment, addPoolIntake, assignPoolIntake, openXrayEngagement, setActiveClient, setActiveAssignment,
     xrayReady: live.xrayReady,
     xrayLive: live.xrayLive ?? null,
     xrayError,
