@@ -154,13 +154,25 @@ function Dash() {
       </p>
       <ActiveMatter practice={practice} />
       {!s.xrayLive && (
-        <div className="callout" style={{ marginTop: 16 }}>
-          <T en="Map a contract on X-Ray to open a live client and assignment here. The books no longer seed Nimbus, Charoen or PTT." th="วางแผนที่สัญญาที่ X-Ray เพื่อเปิดลูกค้าและงานที่นี่ บัญชีไม่เติมนิมบัส เจริญ หรือ PTT แล้ว" />
-          <div className="stack-actions" style={{ marginTop: 10 }}>
-            <Link href="/review?s=xray" className="btn btn-primary">X-Ray</Link>
-            <Link href="/practice?s=clients" className="btn btn-secondary"><T en="Add a client first" th="เพิ่มลูกค้าก่อน" /></Link>
+        practice.assignments.length ? (
+          <div className="callout" style={{ marginTop: 16 }}>
+            <T
+              en="The assignment is open. Map the contract on X-Ray so Cockpit, Twin and the rest of the OS read this matter — not a Nimbus sample."
+              th="เปิดงานแล้ว วางแผนที่สัญญาที่ X-Ray เพื่อให้ห้องบังคับ ฝาแฝด และโมดูลอื่นอ่านงานนี้ — ไม่ใช่ตัวอย่างนิมบัส"
+            />
+            <div className="stack-actions" style={{ marginTop: 10 }}>
+              <Link href="/review?s=xray" className="btn btn-primary">X-Ray</Link>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="callout" style={{ marginTop: 16 }}>
+            <T en="Map a contract on X-Ray to open a live client and assignment here. The books no longer seed Nimbus, Charoen or PTT." th="วางแผนที่สัญญาที่ X-Ray เพื่อเปิดลูกค้าและงานที่นี่ บัญชีไม่เติมนิมบัส เจริญ หรือ PTT แล้ว" />
+            <div className="stack-actions" style={{ marginTop: 10 }}>
+              <Link href="/review?s=xray" className="btn btn-primary">X-Ray</Link>
+              <Link href="/practice?s=clients" className="btn btn-secondary"><T en="Add a client first" th="เพิ่มลูกค้าก่อน" /></Link>
+            </div>
+          </div>
+        )
       )}
       <div style={{ marginTop: 28 }}>
         <FirmControl />
