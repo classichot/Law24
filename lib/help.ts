@@ -104,7 +104,7 @@ export const REVIEWER_PATH: Record<Edition, { href: string; k: TE; do: TE }[]> =
     { href: "/diligence?s=dwar", k: P("ห้องสงคราม DD", "DD War Room"), do: P("เจริญโลจิสติกส์ — ส่งต่อ DK-01", "Charoen — escalate DK-01") },
     { href: "/negotiate?s=nladder", k: P("บันไดเจรจา", "Negotiation ladder"), do: P("จุดยืนที่ต้องการถึงเดินออก", "Preferred through walk-away") },
     { href: "/obligations?s=ocal", k: P("ปฏิทินข้อผูกพัน", "Obligations calendar"), do: P("หยุดต่ออายุอัตโนมัติอาคาร", "Stop the facilities auto-renew") },
-    { href: "/assemble?s=lib", k: P("คลัง → ร่าง", "Library → draft"), do: P("เปิด CT-284 แล้วประกอบชุด", "Open CT-284 then assemble the pack") },
+    { href: "/assemble?s=intake", k: P("รับข้อมูล → ร่าง → ตรวจ", "Intake → draft → review"), do: P("เลือกเอกสารนำเข้าหรือแบบสอบถาม AI แล้วส่งร่างกลับ X-Ray", "Choose papers or the AI questionnaire, then send the draft back to X-Ray") },
     { href: "/help?s=books", k: P("เพลย์บุ๊ก", "Playbooks"), do: P("เปิดเล่มที่ใช้บังคับ", "Open the book in force") },
   ],
   firm: [

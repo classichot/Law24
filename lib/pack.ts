@@ -20,13 +20,15 @@ import type { Lang, TE } from "./model";
 import { L } from "./model";
 import { FX, TAX_LIST, trParties } from "./taxonomy";
 import { BILINGUAL } from "./wow";
-
-export const PACK_STEM = "CT-284-Nimbus-SaaS-pack";
+import type { AssemblyInput } from "./assembly";
 
 export type PackInput = {
   lang: Lang;
   conflictChoice: "thai" | "waiver" | null;
   clauseEdits: Record<string, ClauseEdit>;
+  typeId?: string;
+  sourceRef?: string;
+  reviewInputs?: AssemblyInput[];
 };
 
 type DraftRow = { n: string; h: TE; b: TE };
@@ -62,8 +64,13 @@ function clauseBody(id: string, original: TE, edits: Record<string, ClauseEdit>)
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const PDF_MIME = "application/pdf";
 
-export function packFilename(ext: "docx" | "pdf") {
-  return `${PACK_STEM}.${ext}`;
+function packStem(input: PackInput) {
+  const raw = `${input.typeId || "contract"}-${input.sourceRef || "assembled"}-review-pack`;
+  return raw.replace(/[^a-z0-9._-]+/gi, "-").replace(/-+/g, "-");
+}
+
+export function packFilename(input: PackInput, ext: "docx" | "pdf") {
+  return `${packStem(input)}.${ext}`;
 }
 
 function asBinaryBlob(data: ArrayBuffer | Uint8Array, mime: string) {
@@ -80,7 +87,10 @@ function sleep(ms: number) {
 export function buildPackBlocks(input: PackInput): PackBlock[] {
   const { lang, conflictChoice, clauseEdits } = input;
   const th = lang === "th";
-  const type = TAX_LIST.find((r) => r.id === "CT-284") || TAX_LIST[0];
+  const type = TAX_LIST.find((r) => r.id === input.typeId) || TAX_LIST[0];
+  const reviewInputs = input.reviewInputs || [];
+  const partyInput = reviewInputs.find((x) => x.kind === "fact" && /part|คู่สัญญา|customer|ลูกค้า/i.test(`${x.title.e} ${x.title.t}`));
+  const partyText = partyInput ? L(lang, partyInput.value) : trParties(lang, type.parties);
   const iv = FX.interview;
   const draft = iv.draft as DraftRow[];
   const law = conflictChoice === "waiver"
@@ -104,12 +114,11 @@ export function buildPackBlocks(input: PackInput): PackBlock[] {
         : "The engine never signs — this pack is the deliverable. Counsel applies the clauses. GC, CIO and DPO have signed off.",
     },
     { kind: "h", text: th ? "หน้าปกเรื่อง" : "Matter cover" },
-    { kind: "meta", k: th ? "เรื่อง" : "Matter", v: th ? "Nimbus Cloud · สัญญาบริการ SaaS" : "Nimbus Cloud · SaaS agreement" },
-    { kind: "meta", k: th ? "ลูกค้า" : "Customer", v: th ? "บริษัท สยาม ดิจิทัล จำกัด" : "Siam Digital Co., Ltd." },
-    { kind: "meta", k: th ? "ผู้ให้บริการ" : "Provider", v: "Nimbus Cloud Pte. Ltd. (Singapore)" },
-    { kind: "meta", k: th ? "มูลค่า / อายุ" : "Value / term", v: th ? "฿24.6 ล้าน · 36 เดือน" : "THB 24.6M · 36 months" },
-    { kind: "meta", k: th ? "ประเภทในคลัง" : "Library type", v: `${type.id} · C15` },
-    { kind: "meta", k: th ? "คู่สัญญาหลัก" : "Principal parties", v: trParties(lang, type.parties) },
+    { kind: "meta", k: th ? "เรื่อง" : "Matter", v: `${type.id} · ${th ? type.nameTh : type.nameEn}` },
+    { kind: "meta", k: th ? "แหล่ง Review" : "Review source", v: input.sourceRef || (th ? "ยังไม่เชื่อม" : "Not connected") },
+    { kind: "meta", k: th ? "ประเภทในคลัง" : "Library type", v: `${type.id} · ${type.cat}` },
+    { kind: "meta", k: th ? "คู่สัญญาหลัก" : "Principal parties", v: partyText },
+    { kind: "meta", k: th ? "ข้อมูล Review ที่ใช้บังคับ" : "Review inputs in force", v: String(reviewInputs.length) },
     {
       kind: "meta",
       k: th ? "เพลย์บุ๊ก" : "Playbooks",
@@ -130,6 +139,17 @@ export function buildPackBlocks(input: PackInput): PackBlock[] {
       k: L(lang, q.q),
       v: `${L(lang, q.a)} · ${L(lang, q.rule)}`,
     });
+  }
+
+  if (reviewInputs.length) {
+    blocks.push({ kind: "h", text: th ? "ข้อมูลจาก Review ที่ใช้ควบคุมร่าง" : "Review inputs controlling this draft" });
+    for (const item of reviewInputs) {
+      blocks.push({
+        kind: "meta",
+        k: `${item.id} · ${L(lang, item.title)}`,
+        v: `${L(lang, item.value)} · ${th ? "แหล่ง" : "Source"}: ${L(lang, item.source)}`,
+      });
+    }
   }
 
   blocks.push({ kind: "h", text: th ? "เพลย์บุ๊กที่บังคับใช้กับชุดนี้" : "Playbook overlay on this pack" });
@@ -154,8 +174,8 @@ export function buildPackBlocks(input: PackInput): PackBlock[] {
       n: "2.",
       h: te("คู่สัญญา", "Parties"),
       b: te(
-        "สัญญานี้ทำขึ้นระหว่างบริษัท สยาม ดิจิทัล จำกัด (“ลูกค้า”) กับ Nimbus Cloud Pte. Ltd. (“ผู้ให้บริการ”) เพื่อให้บริการซอฟต์แวร์ในรูปแบบบริการตามประเภท CT-284",
-        "This Agreement is between Siam Digital Co., Ltd. (“Customer”) and Nimbus Cloud Pte. Ltd. (“Provider”) for software-as-a-service of type CT-284.",
+        `สัญญานี้ทำขึ้นระหว่าง ${partyText} ตามประเภท ${type.id} รายละเอียดคู่สัญญาต้องยืนยันจากข้อมูล Review ก่อนลงนาม`,
+        `This Agreement is between ${partyText} under type ${type.id}. Counsel must confirm party details against the Review source before signature.`,
       ),
     },
     {
@@ -274,7 +294,7 @@ function run(text: string, opts: Omit<IRunOptions, "text"> = {}) {
   });
 }
 
-async function buildDocx(blocks: PackBlock[]): Promise<Blob> {
+async function buildDocx(blocks: PackBlock[], stem: string): Promise<Blob> {
   const children: Paragraph[] = [];
 
   for (const b of blocks) {
@@ -345,7 +365,7 @@ async function buildDocx(blocks: PackBlock[]): Promise<Blob> {
 
   const doc = new Document({
     creator: "LAW24",
-    title: "CT-284 Nimbus SaaS pack",
+    title: stem,
     description: "Assembled contract pack — the engine never signs.",
     styles: {
       default: { document: { run: { font: "Calibri", size: 22 } } },
@@ -359,7 +379,7 @@ async function buildDocx(blocks: PackBlock[]): Promise<Blob> {
           children: [para({
             alignment: AlignmentType.CENTER,
             children: [
-              run("LAW24 · CT-284-Nimbus-SaaS-pack · engine never signs · ", { size: 16, color: MUTED }),
+              run(`LAW24 · ${stem} · engine never signs · `, { size: 16, color: MUTED }),
               new TextRun({ font: "Calibri", size: 16, color: MUTED, children: [PageNumber.CURRENT] }),
             ],
           })],
@@ -399,7 +419,7 @@ function wrapCanvas(ctx: CanvasRenderingContext2D, text: string, maxW: number): 
   return out;
 }
 
-function renderPdfPages(blocks: PackBlock[]): HTMLCanvasElement[] {
+function renderPdfPages(blocks: PackBlock[], stem: string): HTMLCanvasElement[] {
   const scale = 2;
   const w = PageSizes.A4[0];
   const h = PageSizes.A4[1];
@@ -560,16 +580,16 @@ function renderPdfPages(blocks: PackBlock[]): HTMLCanvasElement[] {
     c.scale(scale, scale);
     c.fillStyle = "#9b9797";
     c.font = "9px Calibri, sans-serif";
-    c.fillText("LAW24 · CT-284-Nimbus-SaaS-pack · engine never signs", margin, h - 22);
+    c.fillText(`LAW24 · ${stem} · engine never signs`, margin, h - 22);
   }
 
   return pages;
 }
 
-async function buildPdf(blocks: PackBlock[]): Promise<Blob> {
-  const canvases = renderPdfPages(blocks);
+async function buildPdf(blocks: PackBlock[], stem: string): Promise<Blob> {
+  const canvases = renderPdfPages(blocks, stem);
   const pdf = await PDFDocument.create();
-  pdf.setTitle("CT-284 Nimbus SaaS pack");
+  pdf.setTitle(stem);
   pdf.setAuthor("LAW24");
   pdf.setSubject("Assembled contract pack — the engine never signs.");
   pdf.setCreator("LAW24");
@@ -594,16 +614,17 @@ async function buildPdf(blocks: PackBlock[]): Promise<Blob> {
 
 export async function downloadAssemblePack(input: PackInput, which: "both" | "docx" | "pdf" = "both") {
   const blocks = buildPackBlocks(input);
+  const stem = packStem(input);
   if (which === "docx") {
-    downloadBlob(packFilename("docx"), await buildDocx(blocks));
+    downloadBlob(packFilename(input, "docx"), await buildDocx(blocks, stem));
     return;
   }
   if (which === "pdf") {
-    downloadBlob(packFilename("pdf"), await buildPdf(blocks));
+    downloadBlob(packFilename(input, "pdf"), await buildPdf(blocks, stem));
     return;
   }
-  const [docx, pdf] = await Promise.all([buildDocx(blocks), buildPdf(blocks)]);
-  downloadBlob(packFilename("docx"), docx);
+  const [docx, pdf] = await Promise.all([buildDocx(blocks, stem), buildPdf(blocks, stem)]);
+  downloadBlob(packFilename(input, "docx"), docx);
   await sleep(450);
-  downloadBlob(packFilename("pdf"), pdf);
+  downloadBlob(packFilename(input, "pdf"), pdf);
 }

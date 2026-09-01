@@ -430,7 +430,7 @@ function aHint(title: string, th: boolean) {
 
 function startCopy(track: EngagementTrack, th: boolean) {
   if (track === "review") return th ? "วางแผนที่ที่ X-Ray" : "Map on X-Ray";
-  if (track === "assemble") return th ? "เปิดคลังประกอบ" : "Open the library";
+  if (track === "assemble") return th ? "เลือกทางรับข้อมูล" : "Choose intake route";
   return "Deal X-Ray";
 }
 

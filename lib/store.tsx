@@ -34,6 +34,7 @@ import {
   type PracticeState,
 } from "./firm";
 import { hydrateDeal, inferDealTx, seedDeal, type DealScenario, type DealState, type DealTx } from "./deal";
+import { hydrateAssembly, seedAssembly, type AssemblyInput, type AssemblyState, type IntakeQuestionnaire } from "./assembly";
 import { clearInviteSession } from "./invite";
 import { fetchAiStatus, postAi } from "./ai/client";
 import { peekFile } from "./ai/files";
@@ -136,6 +137,13 @@ type Store = {
   revertClauseEdit: (id: string) => void;
   practice: PracticeState;
   deal: DealState;
+  assembly: AssemblyState;
+  ingestReviewToAssembly: (inputs: AssemblyInput[], sourceRef: string) => void;
+  ingestQuestionnaireToAssembly: (inputs: AssemblyInput[], typeId: string) => void;
+  setAssemblyQuestionnaire: (next: Pick<IntakeQuestionnaire, "questions" | "summary" | "missing" | "ready" | "round"> & { typeId: string }) => void;
+  answerAssemblyQuestion: (id: string, answer: string) => void;
+  resetAssemblyQuestionnaire: (typeId?: string) => void;
+  sendAssemblyToReview: (title: string) => void;
   addClient: (input: { name: string; nameTh?: string; sector: string; owner: string }) => void;
   addAssignment: (input: { clientId: string; title: string; titleTh?: string; type: AssignmentType; due: string; lead: string; fee?: string }) => void;
   addPoolIntake: (input: { clientName: string; engagementName: string; type: AssignmentType }) => void;
@@ -195,6 +203,7 @@ function readLive(): LiveState {
     merged.roomVotes = merged.roomVotes || {};
     merged.quotePkg = merged.quotePkg || "nda";
     merged.deal = hydrateDeal(merged.deal);
+    merged.assembly = hydrateAssembly(merged.assembly);
     if (!merged.practice || isDemoFixturePractice(merged.practice)) {
       merged.practice = seedPractice();
     } else {
@@ -388,6 +397,171 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return edition === "firm"
         ? appendMv(next, "Client interview confirmed. Commercial positions locked for this round.", "ยืนยันสัมภาษณ์ลูกค้า ล็อกท่าทีเชิงพาณิชย์รอบนี้", "/assemble?s=iv", "work")
         : next;
+    });
+  }, [patchLive, edition]);
+  const ingestReviewToAssembly = useCallback((inputs: AssemblyInput[], sourceRef: string) => {
+    patchLive((p) => {
+      const next = {
+        ...p,
+        assembly: {
+          ...hydrateAssembly(p.assembly),
+          sourceRef,
+          acceptedInputs: inputs,
+          ingestedAt: stampNow(),
+          reviewHandoff: null,
+        },
+        interviewDone: false,
+        packGenerated: false,
+        signingIssued: false,
+      };
+      return edition === "firm"
+        ? appendMv(
+            next,
+            `${inputs.length} source-backed Review inputs ingested into Assembly from ${sourceRef}.`,
+            `รับข้อมูลจาก Review ที่ชี้แหล่ง ${inputs.length} รายการเข้า Assembly จาก ${sourceRef}`,
+            "/assemble?s=intake",
+            "work"
+          )
+        : next;
+    });
+  }, [patchLive, edition]);
+  const ingestQuestionnaireToAssembly = useCallback((inputs: AssemblyInput[], typeId: string) => {
+    patchLive((p) => {
+      const law = inputs.find((x) => x.id === "AQ-LAW");
+      const asksException = law && /exception|ยกเว้น|foreign|ต่างประเทศ/i.test(`${law.value.e} ${law.value.t}`);
+      const next = {
+        ...p,
+        assembly: {
+          ...hydrateAssembly(p.assembly),
+          sourceRef: `AI questionnaire · ${typeId}`,
+          acceptedInputs: inputs,
+          ingestedAt: stampNow(),
+          reviewHandoff: null,
+        },
+        interviewDone: true,
+        conflictChoice: asksException ? "waiver" as const : "thai" as const,
+        packGenerated: false,
+        signingIssued: false,
+      };
+      return edition === "firm"
+        ? appendMv(
+            next,
+            `${inputs.length} counsel-confirmed AI questionnaire answers ingested into Assembly for ${typeId}.`,
+            `รับคำตอบแบบสอบถาม AI ที่ทนายยืนยัน ${inputs.length} รายการเข้า Assembly สำหรับ ${typeId}`,
+            "/assemble?s=aiq",
+            "work"
+          )
+        : next;
+    });
+  }, [patchLive, edition]);
+  const setAssemblyQuestionnaire = useCallback((
+    value: Pick<IntakeQuestionnaire, "questions" | "summary" | "missing" | "ready" | "round"> & { typeId: string },
+  ) => {
+    patchLive((p) => {
+      const assembly = hydrateAssembly(p.assembly);
+      const current = assembly.questionnaire.typeId === value.typeId ? assembly.questionnaire : seedAssembly().questionnaire;
+      const byId = new Map(current.questions.map((q) => [q.id, q]));
+      value.questions.forEach((q) => byId.set(q.id, q));
+      return {
+        ...p,
+        assembly: {
+          ...assembly,
+          questionnaire: {
+            ...current,
+            ...value,
+            answers: current.answers,
+            questions: [...byId.values()],
+          },
+        },
+      };
+    });
+  }, [patchLive]);
+  const answerAssemblyQuestion = useCallback((id: string, answer: string) => {
+    patchLive((p) => {
+      const assembly = hydrateAssembly(p.assembly);
+      return {
+        ...p,
+        assembly: {
+          ...assembly,
+          questionnaire: {
+            ...assembly.questionnaire,
+            answers: { ...assembly.questionnaire.answers, [id]: answer },
+            ready: false,
+          },
+        },
+      };
+    });
+  }, [patchLive]);
+  const resetAssemblyQuestionnaire = useCallback((typeId = "") => {
+    patchLive((p) => {
+      const assembly = hydrateAssembly(p.assembly);
+      return {
+        ...p,
+        assembly: {
+          ...assembly,
+          questionnaire: { ...seedAssembly().questionnaire, typeId },
+        },
+      };
+    });
+  }, [patchLive]);
+  const sendAssemblyToReview = useCallback((title: string) => {
+    patchLive((p) => {
+      const current = p.practice.assignments.find((a) => a.id === p.practice.activeAssignmentId);
+      const assembly = hydrateAssembly(p.assembly);
+      const at = stampNow();
+      const handoff = {
+        title: title.trim() || "Assembled draft",
+        sourceRef: assembly.sourceRef,
+        inputCount: assembly.acceptedInputs.length,
+        at,
+      };
+      if (edition !== "firm" || !current) {
+        return { ...p, assembly: { ...assembly, reviewHandoff: handoff } };
+      }
+      const existing = p.practice.assignments.find((a) =>
+        a.clientId === current.clientId
+        && engagementOf(a.type) === "review"
+        && a.stage !== "closed"
+        && a.title === handoff.title
+      );
+      const assignmentId = existing?.id || nextIds(p.practice).assignmentId;
+      const next: LiveState = {
+        ...p,
+        xrayReady: false,
+        xrayLive: null,
+        reviewLive: null,
+        assembly: { ...assembly, reviewHandoff: handoff },
+        practice: {
+          ...p.practice,
+          activeClientId: current.clientId,
+          activeAssignmentId: assignmentId,
+          assignments: existing
+            ? p.practice.assignments
+            : [
+                ...p.practice.assignments,
+                {
+                  id: assignmentId,
+                  clientId: current.clientId,
+                  title: handoff.title,
+                  titleTh: handoff.title,
+                  type: "review",
+                  stage: "intake",
+                  lead: current.lead,
+                  due: current.due,
+                  fee: "THB 0",
+                  href: "/review?s=xray",
+                },
+              ],
+        },
+      };
+      return appendMv(
+        next,
+        `Assembled draft received for Contract Review with ${handoff.inputCount} source-backed inputs.`,
+        `รับร่างจาก Assembly เข้างานตรวจ พร้อมข้อมูลชี้แหล่ง ${handoff.inputCount} รายการ`,
+        "/review?s=xray",
+        "intake",
+        { assignmentId }
+      );
     });
   }, [patchLive, edition]);
   const approveDpo = useCallback(() => {
@@ -942,6 +1116,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     clauseEdits: live.clauseEdits ?? {}, applyClauseEdit, revertClauseEdit,
     practice: live.practice ?? seedPractice(), addClient, addAssignment, addPoolIntake, assignPoolIntake, openXrayEngagement, openDealEngagement, ensureDeal, setDealTransaction, setDealScenario, setDealMateriality, answerDealQuestion, setDealCpStatus, verifyDeal, setActiveClient, setActiveAssignment,
     deal: live.deal ?? seedDeal(),
+    assembly: live.assembly ?? seedAssembly(), ingestReviewToAssembly, ingestQuestionnaireToAssembly, setAssemblyQuestionnaire, answerAssemblyQuestion, resetAssemblyQuestionnaire, sendAssemblyToReview,
     xrayReady: live.xrayReady,
     xrayLive: live.xrayLive ?? null,
     xrayError,

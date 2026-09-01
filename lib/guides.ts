@@ -297,6 +297,21 @@ export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
     do: P("เลือกงาน ไล่ขั้น และกดเปิดในเครื่องยนต์เมื่อจะทำต่อ", "Pick an assignment, walk the steps, and open the engine to continue"),
     rule: P("เส้นทางต้องครบ — ขาดขั้นรับเรื่องถือว่ายังไม่เปิดงาน", "The trail must be complete — missing intake means the assignment is not open"),
   },
+  "assemble/intake": {
+    why: P("Assembly มีสองทางรับข้อมูล — เอกสารนำเข้าหรือแบบสอบถาม AI", "Assembly has two intake routes — source papers or an AI questionnaire"),
+    do: P("เลือกทางตามว่าข้อมูลอยู่ในเอกสารหรืออยู่กับลูกค้า/ทนาย", "Choose based on whether the information is documented or still held by the client/counsel"),
+    rule: P("ทั้งสองทางต้องให้ทนายยืนยันก่อนข้อมูลควบคุมร่าง", "Counsel confirms either route before its information controls the draft"),
+  },
+  "assemble/papers": {
+    why: P("เอกสารนำเข้าให้ข้อเท็จจริงและคำสั่งพร้อมแหล่ง", "Intake papers provide facts and instructions with a source"),
+    do: P("วาง term sheet คำสั่ง หรือร่างเดิม และรับข้อมูล Review ที่เกี่ยวข้อง", "Drop the term sheet, instructions or existing draft and ingest connected Review inputs"),
+    rule: P("ห้ามคัดข้อค้นพบเป็นถ้อยคำโดยไม่รักษาแหล่งและท่าที", "Do not copy a finding into drafting words without its source and posture"),
+  },
+  "assemble/aiq": {
+    why: P("AI ปรับคำถามตามประเภทสัญญาและคำตอบก่อนหน้า", "AI adapts questions to the contract type and prior answers"),
+    do: P("เลือกประเภท ตอบข้อบังคับ ให้ AI ถามต่อ แล้วให้ทนายยืนยันรับเข้า", "Select the type, answer required questions, let AI follow up, then have counsel confirm ingestion"),
+    rule: P("คำตอบคือคำยืนยันของลูกค้า/ทนาย ไม่ใช่ข้อเท็จจริงที่ AI พิสูจน์แล้ว", "An answer is a client/counsel assertion, not an AI-verified fact"),
+  },
   "assemble/lib": {
     why: P("คลัง 500 ประเภทเป็นประตูเข้าเครื่องยนต์ประกอบสัญญา", "The 500-type library is the door into assembly"),
     do: P("กรองหมวด เปิดประเภทที่ถูกเรื่อง — เดโมคือ CT-284 SaaS", "Filter the category and open the right type — the demo is CT-284 SaaS"),
@@ -318,9 +333,14 @@ export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
     rule: P("กฎหมายไทยเป็นค่าเริ่มต้น ต้องมีเหตุจึงจะสละได้", "Thai law is the default; waiver needs a recorded reason"),
   },
   "assemble/draft": {
-    why: P("ร่างพร้อมอนุมัติภายใน เส้นทาง e-Sign และชุด DOCX/PDF", "The draft waits on internal approval, e-Sign route and the DOCX/PDF pack"),
-    do: P("ปรับข้อมาตรฐานถ้าต้องขยับ อนุมัติ DPO แล้วสร้างชุด — ห้ามส่งคู่สัญญาถ้า pack ยังไม่ถูกสร้าง", "Adjust a standard clause if it must move, approve as DPO, then generate the pack — do not send counterparty paper without it"),
-    rule: P("GC + CIO + DPO ครบก่อนออกชุด", "GC, CIO and DPO before the pack issues"),
+    why: P("ร่างแสดงข้อมูล Review ที่ใช้บังคับ ก่อนอนุมัติและสร้างชุด", "The draft shows the Review inputs in force before approval and pack generation"),
+    do: P("ตรวจแหล่ง อนุมัติ DPO สร้างชุด แล้วเปิดด่านพร้อมส่งตรวจ", "Check sources, approve as DPO, generate the pack, then open review preflight"),
+    rule: P("ห้ามส่งลงนามก่อนร่างที่ประกอบแล้วผ่าน Contract Review ใหม่", "Do not send for signature before the assembled draft receives a fresh Contract Review"),
+  },
+  "assemble/areview": {
+    why: P("ด่านพร้อมส่งตรวจรักษาแหล่งจาก Review แล้วเปิดงานตรวจฉบับที่ประกอบ", "Review preflight preserves Review sources and opens a review matter for the assembled draft"),
+    do: P("ปิดทุกแถว OPEN แล้วส่งร่างเข้า Contract Review", "Close every OPEN row, then send the draft to Contract Review"),
+    rule: P("metadata ไม่ใช่เอกสาร — ต้องอัปโหลด DOCX/PDF ที่สร้างเพื่อทำ X-Ray ใหม่", "Metadata is not the document — upload the generated DOCX/PDF for a fresh X-Ray"),
   },
   "assemble/bilingual": {
     why: P("ร่างคู่ภาษาชี้จุดที่คำแปลสร้างความหมายทางกฎหมายคนละอย่าง", "The bilingual mirror flags where translation changes legal meaning"),

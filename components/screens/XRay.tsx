@@ -157,6 +157,22 @@ export function XRayScreen() {
                 </Link>
               </div>
             </div>
+            {s.assembly.reviewHandoff && (
+              <div className="callout eng-card eng-draft" style={{ marginBottom: 18 }}>
+                <div className="page-kicker"><T en="Received from Assembly" th="รับจาก Assembly" /></div>
+                <strong style={{ display: "block", marginTop: 8 }}>{s.assembly.reviewHandoff.title}</strong>
+                <p style={{ margin: "6px 0 0" }}>
+                  {s.assembly.reviewHandoff.inputCount} <T en="source-backed drafting inputs" th="ข้อมูลร่างที่ชี้แหล่ง" />
+                  {s.assembly.reviewHandoff.sourceRef ? ` · ${s.assembly.reviewHandoff.sourceRef}` : ""}
+                </p>
+                <p className="text-muted" style={{ margin: "6px 0 0", fontSize: 12 }}>
+                  <T
+                    en="Upload the generated DOCX or PDF below. X-Ray will review the assembled words; it will not treat this handoff manifest as the contract."
+                    th="อัปโหลด DOCX หรือ PDF ที่สร้างแล้วด้านล่าง X-Ray จะตรวจถ้อยคำในร่าง ไม่ถือรายการส่งต่อนี้เป็นตัวสัญญา"
+                  />
+                </p>
+              </div>
+            )}
             {s.xrayError && (
               <div className="xray-fail">
                 <strong><T en="The live X-Ray did not complete" th="X-Ray สดไม่สำเร็จ" /></strong>

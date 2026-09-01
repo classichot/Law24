@@ -115,6 +115,21 @@ export const clauseProposal = z.object({
   cites: z.array(cite).max(6),
 });
 
+export const assemblyQuestionnaire = z.object({
+  summary: te,
+  ready: z.boolean(),
+  missing: z.array(te).max(8),
+  questions: z.array(z.object({
+    id: z.string(),
+    prompt: te,
+    why: te,
+    category: z.enum(["parties", "commercial", "scope", "risk", "approval", "formality"]),
+    answerType: z.enum(["text", "number", "date", "boolean", "select"]),
+    required: z.boolean(),
+    options: z.array(te).max(8),
+  })).max(8),
+});
+
 const assistHit = z.object({
   mode: z.enum(MODES),
   screen: z.string(),

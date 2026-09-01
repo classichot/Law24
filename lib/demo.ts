@@ -2,6 +2,7 @@ import type { Lang, ModeKey } from "./model";
 import { NAV } from "./nav";
 import { seedPractice, type PracticeState } from "./firm";
 import { seedDeal, type DealState } from "./deal";
+import { seedAssembly, type AssemblyState } from "./assembly";
 import { PLAYBOOKS, copyTE, helpBookHref, type PlaybookKey } from "./guides";
 import type { ClauseEdit } from "./clauses";
 import type { DdLive, NegotiateLive, ReviewLive, XrayView } from "./ai/types";
@@ -226,6 +227,7 @@ export type LiveState = {
   roomVotes: Record<string, "approve" | "reject">;
   quotePkg: string;
   deal: DealState;
+  assembly: AssemblyState;
 };
 
 export function defaultLive(): LiveState {
@@ -260,6 +262,7 @@ export function defaultLive(): LiveState {
     roomVotes: {},
     quotePkg: "nda",
     deal: seedDeal(),
+    assembly: seedAssembly(),
   };
 }
 
