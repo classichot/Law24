@@ -34,6 +34,7 @@ export function CommandPalette() {
       const starter: SearchHit[] = [
         { id: "xray", href: "/review?s=xray", kind: th ? "ตรวจสัญญา" : "Contract Review", title: th ? "Contract X-Ray" : "Contract X-Ray" },
         { id: "assemble", href: "/assemble?s=intake", kind: th ? "ร่างสัญญา" : "Contract Assembly", title: th ? "ทางรับข้อมูลร่าง" : "Assembly intake" },
+        { id: "mou", href: "/assemble?s=mou", kind: th ? "ร่างสัญญา" : "Contract Assembly", title: th ? "ใบนำเข้า MOU หนึ่งหน้า" : "One-page MOU intake" },
         { id: "deal", href: "/diligence?s=deal", kind: th ? "ตรวจสอบสถานะ" : "Legal Due Diligence", title: "Deal X-Ray" },
         { id: "assist-ask", href: "/assist?s=ask", kind: th ? "ผู้ช่วย" : "Assist", title: th ? "อธิบายงานและคำสั่ง" : "Describe job & assignment" },
         { id: "help-trust", href: "/help?s=trust", kind: th ? "คู่มือ" : "Help", title: th ? "ความเชื่อถือที่มองเห็น" : "Visible trust" },

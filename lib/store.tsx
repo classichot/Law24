@@ -35,6 +35,7 @@ import {
 } from "./firm";
 import { hydrateDeal, inferDealTx, seedDeal, type DealScenario, type DealState, type DealTx } from "./deal";
 import { hydrateAssembly, seedAssembly, type AssemblyInput, type AssemblyState, type IntakeQuestionnaire } from "./assembly";
+import { MOU_TYPE_ID, mouInputsOf } from "./mouIntake";
 import { clearInviteSession } from "./invite";
 import { fetchAiStatus, postAi } from "./ai/client";
 import { peekFile } from "./ai/files";
@@ -140,6 +141,8 @@ type Store = {
   assembly: AssemblyState;
   ingestReviewToAssembly: (inputs: AssemblyInput[], sourceRef: string) => void;
   ingestQuestionnaireToAssembly: (inputs: AssemblyInput[], typeId: string) => void;
+  answerMouField: (id: string, value: string) => void;
+  ingestMouToAssembly: () => void;
   setAssemblyQuestionnaire: (next: Pick<IntakeQuestionnaire, "questions" | "summary" | "missing" | "ready" | "round"> & { typeId: string }) => void;
   answerAssemblyQuestion: (id: string, answer: string) => void;
   resetAssemblyQuestionnaire: (typeId?: string) => void;
@@ -450,6 +453,44 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             `รับคำตอบแบบสอบถาม AI ที่ทนายยืนยัน ${inputs.length} รายการเข้า Assembly สำหรับ ${typeId}`,
             "/assemble?s=aiq",
             "work"
+          )
+        : next;
+    });
+  }, [patchLive, edition]);
+  const answerMouField = useCallback((id: string, value: string) => {
+    patchLive((p) => {
+      const assembly = hydrateAssembly(p.assembly);
+      return { ...p, assembly: { ...assembly, mou: { ...assembly.mou, [id]: value } } };
+    });
+  }, [patchLive]);
+  const ingestMouToAssembly = useCallback(() => {
+    patchLive((p) => {
+      const assembly = hydrateAssembly(p.assembly);
+      const inputs = mouInputsOf(assembly.mou);
+      const law = inputs.find((x) => x.id === "MOU-LAW");
+      const asksException = law && /exception|ยกเว้น|foreign|ต่างประเทศ/i.test(`${law.value.e} ${law.value.t}`);
+      const next = {
+        ...p,
+        sel: MOU_TYPE_ID,
+        assembly: {
+          ...assembly,
+          sourceRef: "CT-001 MOU intake paper",
+          acceptedInputs: inputs,
+          ingestedAt: stampNow(),
+          reviewHandoff: null,
+        },
+        interviewDone: true,
+        conflictChoice: asksException ? "waiver" as const : "thai" as const,
+        packGenerated: false,
+        signingIssued: false,
+      };
+      return edition === "firm"
+        ? appendMv(
+            next,
+            `${inputs.length} counsel-confirmed MOU intake fields ingested into Assembly.`,
+            `รับข้อมูลใบนำเข้า MOU ที่ทนายยืนยัน ${inputs.length} ช่องเข้า Assembly`,
+            "/assemble?s=mou",
+            "work",
           )
         : next;
     });
@@ -1116,7 +1157,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     clauseEdits: live.clauseEdits ?? {}, applyClauseEdit, revertClauseEdit,
     practice: live.practice ?? seedPractice(), addClient, addAssignment, addPoolIntake, assignPoolIntake, openXrayEngagement, openDealEngagement, ensureDeal, setDealTransaction, setDealScenario, setDealMateriality, answerDealQuestion, setDealCpStatus, verifyDeal, setActiveClient, setActiveAssignment,
     deal: live.deal ?? seedDeal(),
-    assembly: live.assembly ?? seedAssembly(), ingestReviewToAssembly, ingestQuestionnaireToAssembly, setAssemblyQuestionnaire, answerAssemblyQuestion, resetAssemblyQuestionnaire, sendAssemblyToReview,
+    assembly: live.assembly ?? seedAssembly(), ingestReviewToAssembly, ingestQuestionnaireToAssembly, answerMouField, ingestMouToAssembly, setAssemblyQuestionnaire, answerAssemblyQuestion, resetAssemblyQuestionnaire, sendAssemblyToReview,
     xrayReady: live.xrayReady,
     xrayLive: live.xrayLive ?? null,
     xrayError,

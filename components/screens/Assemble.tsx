@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
@@ -21,6 +21,14 @@ import {
   questionnaireInputsOf,
   type IntakeQuestionnaire,
 } from "@/lib/assembly";
+import {
+  MOU_FIELDS,
+  MOU_TYPE_ID,
+  downloadMouIntakePdf,
+  hydrateMou,
+  mouInputsOf,
+  mouMissing,
+} from "@/lib/mouIntake";
 import { fetchAiStatus, postAi } from "@/lib/ai/client";
 import { AiLiveMark } from "@/components/AiLiveMark";
 
@@ -33,6 +41,7 @@ function pinDemo(rows: typeof TAX_LIST, sel: string) {
 export function AssembleScreen({ screen }: { screen: string }) {
   if (screen === "intake") return <IntakeChoice />;
   if (screen === "papers") return <PaperIntake />;
+  if (screen === "mou") return <MouIntake />;
   if (screen === "aiq") return <AiQuestionnaire />;
   if (screen === "lib") return <Library />;
   if (screen === "type") return <TypeDetail />;
@@ -54,11 +63,11 @@ function IntakeChoice() {
       <Title><T en="How do you want to give drafting information?" th="ต้องการให้ข้อมูลสำหรับร่างอย่างไร" /></Title>
       <p className="page-sub">
         <T
-          en="Both routes produce the same controlled drafting intake. Use source papers when the deal is already documented; use the AI questionnaire when the information is still with the client or lawyer."
-          th="ทั้งสองทางสร้างข้อมูลร่างที่ควบคุมแบบเดียวกัน ใช้เอกสารต้นทางเมื่อดีลมีเอกสารแล้ว หรือใช้แบบสอบถาม AI เมื่อข้อมูลยังอยู่กับลูกค้าหรือทนาย"
+          en="Use a source paper, the house MOU one-pager, or an AI questionnaire. All three produce the same controlled drafting intake. Counsel confirms before clauses assemble."
+          th="ใช้เอกสารต้นทาง ใบ MOU หนึ่งหน้าของบ้าน หรือแบบสอบถาม AI ทั้งสามทางสร้างข้อมูลร่างที่ควบคุมแบบเดียวกัน ทนายยืนยันก่อนประกอบข้อ"
         />
       </p>
-      <div className="grid-2" style={{ marginTop: 20 }}>
+      <div className="grid-3" style={{ marginTop: 20 }}>
         <Link href="/assemble?s=papers" className="home-card eng-card eng-draft" style={{ color: "inherit", textDecoration: "none" }}>
           <div className="page-kicker">ROUTE 01</div>
           <h3 style={{ margin: 0 }}><T en="Upload intake papers" th="อัปโหลดเอกสารนำเข้า" /></h3>
@@ -68,8 +77,17 @@ function IntakeChoice() {
           <div className="tag tag-outline">{papers} <T en="files attached" th="ไฟล์แนบ" /></div>
           <span className="btn btn-primary"><T en="Open paper intake" th="เปิดรับเอกสาร" /></span>
         </Link>
+        <Link href="/assemble?s=mou" className="home-card eng-card eng-draft" style={{ color: "inherit", textDecoration: "none" }}>
+          <div className="page-kicker">ROUTE 02</div>
+          <h3 style={{ margin: 0 }}><T en="MOU intake paper" th="ใบนำเข้าบันทึกความเข้าใจ" /></h3>
+          <p className="text-muted" style={{ margin: 0 }}>
+            <T en="Fill one page: parties, purpose, what binds, confidentiality, term and Thai law. Print or ingest into Assembly." th="กรอกหนึ่งหน้า: คู่เจรจา วัตถุประสงค์ ข้อที่ผูกพัน ความลับ ระยะเวลา และกฎหมายไทย พิมพ์หรือรับเข้า Assembly" />
+          </p>
+          <div className="tag tag-outline">CT-001</div>
+          <span className="btn btn-primary"><T en="Open MOU paper" th="เปิดใบ MOU" /></span>
+        </Link>
         <Link href="/assemble?s=aiq" className="home-card eng-card eng-draft" style={{ color: "inherit", textDecoration: "none" }}>
-          <div className="page-kicker">ROUTE 02 · <AiLiveMark compact /></div>
+          <div className="page-kicker">ROUTE 03 · <AiLiveMark compact /></div>
           <h3 style={{ margin: 0 }}><T en="AI intake questionnaire" th="แบบสอบถามนำเข้า AI" /></h3>
           <p className="text-muted" style={{ margin: 0 }}>
             <T en="Select a contract type. AI asks only the facts, risks and formalities that affect that contract." th="เลือกประเภทสัญญา AI จะถามเฉพาะข้อเท็จจริง ความเสี่ยง และพิธีการที่กระทบสัญญาประเภทนั้น" />
@@ -80,8 +98,8 @@ function IntakeChoice() {
       </div>
       <div className="callout" style={{ marginTop: 20 }}>
         <T
-          en="Neither route signs or treats an answer as verified law. Counsel confirms the intake before clauses are assembled."
-          th="ทั้งสองทางไม่ลงนามและไม่ถือคำตอบเป็นข้อกฎหมายที่ยืนยันแล้ว ทนายต้องยืนยันข้อมูลก่อนประกอบข้อ"
+          en="None of these routes signs or treats an answer as verified law. Counsel confirms the intake before clauses are assembled."
+          th="ทั้งสามทางไม่ลงนามและไม่ถือคำตอบเป็นข้อกฎหมายที่ยืนยันแล้ว ทนายต้องยืนยันข้อมูลก่อนประกอบข้อ"
         />
       </div>
     </div>
@@ -113,6 +131,14 @@ function PaperIntake() {
         title={<T en="Drop intake papers" th="ลากเอกสารนำเข้ามาวาง" />}
         hint={<T en="PDF, DOCX, XLSX, email or ZIP. Counsel confirms extracted information before assembly." th="PDF DOCX XLSX อีเมล หรือ ZIP ทนายยืนยันข้อมูลที่สกัดก่อนประกอบสัญญา" />}
       />
+      <Link href="/assemble?s=mou" className="callout eng-card eng-draft" style={{ marginTop: 18, display: "block", textDecoration: "none", color: "inherit" }}>
+        <div className="page-kicker">CT-001</div>
+        <strong><T en="LAW24 one-page MOU intake" th="ใบนำเข้า MOU หนึ่งหน้าของ LAW24" /></strong>
+        <p className="text-muted" style={{ margin: "6px 0 10px" }}>
+          <T en="If the matter is a memorandum of understanding, use the house paper instead of a freehand term sheet." th="ถ้าเรื่องนี้เป็นบันทึกความเข้าใจ ใช้ใบมาตรฐานบ้านแทน term sheet ที่เขียนเอง" />
+        </p>
+        <span className="btn btn-secondary"><T en="Open MOU intake paper" th="เปิดใบนำเข้า MOU" /></span>
+      </Link>
 
       {s.xrayLive ? (
         <>
@@ -172,6 +198,123 @@ function PaperIntake() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function MouIntake() {
+  const s = useStore();
+  const router = useRouter();
+  const th = s.lang === "th";
+  const answers = hydrateMou(s.assembly.mou);
+  const missing = mouMissing(answers);
+  const filled = mouInputsOf(answers).length;
+  const ready = missing.length === 0;
+  const ingested = s.assembly.sourceRef === "CT-001 MOU intake paper" && s.assembly.acceptedInputs.some((x) => x.id.startsWith("MOU-"));
+
+  useEffect(() => {
+    if (s.sel !== MOU_TYPE_ID) s.setSel(MOU_TYPE_ID);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function onIngest() {
+    if (!ready) {
+      s.flash(th ? "กรอกช่องบังคับให้ครบก่อนรับเข้า" : "Fill required fields before ingesting");
+      return;
+    }
+    s.ingestMouToAssembly();
+    s.flash(th ? `รับเข้า ${filled} ช่องจากใบ MOU แล้ว` : `${filled} MOU fields ingested`);
+    router.push("/assemble?s=iv");
+  }
+
+  return (
+    <div className="pad-page">
+      <div className="no-print">
+        <Kicker>assemble · CT-001 · one-page intake</Kicker>
+        <Title><T en="MOU intake paper" th="ใบนำเข้าบันทึกความเข้าใจ" /></Title>
+        <p className="page-sub">
+          <T
+            en="One page for CT-001. Capture parties, purpose, what binds, confidentiality, term and governing law. Counsel confirms before Assembly uses it. This paper is not the signed MOU."
+            th="หนึ่งหน้าสำหรับ CT-001 เก็บคู่เจรจา วัตถุประสงค์ ข้อที่ผูกพัน ความลับ ระยะเวลา และกฎหมายที่ใช้ ทนายยืนยันก่อน Assembly ใช้ ใบนี้ไม่ใช่บันทึกที่ลงนามแล้ว"
+          />
+        </p>
+        <div className="stack-actions" style={{ margin: "16px 0 20px" }}>
+          <button type="button" className="btn btn-primary" disabled={!ready} onClick={onIngest}>
+            <T en="Confirm and ingest into Assembly" th="ยืนยันและรับเข้า Assembly" />
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => {
+              void downloadMouIntakePdf(s.lang, answers).then(() => {
+                s.flash(th ? "ดาวน์โหลดใบหนึ่งหน้าแล้ว" : "One-page paper downloaded");
+              }).catch(() => s.flash(th ? "สร้าง PDF ไม่สำเร็จ" : "Could not build the PDF"));
+            }}
+          >
+            <T en="Download PDF" th="ดาวน์โหลด PDF" />
+          </button>
+          <button type="button" className="btn btn-ghost" onClick={() => window.print()}>
+            <T en="Print one page" th="พิมพ์หนึ่งหน้า" />
+          </button>
+          {ready && <Link href="/assemble?s=iv" className="btn btn-ghost"><T en="Continue to interview" th="ไปสัมภาษณ์" /></Link>}
+        </div>
+        {ingested && (
+          <p className="text-muted" style={{ marginTop: -8, fontSize: 12 }}>
+            <T en="This paper is locked into Assembly as CT-001 intake. Counsel can still print or download the page." th="ใบนี้ถูกล็อกเข้า Assembly เป็นข้อมูล CT-001 แล้ว ทนายยังพิมพ์หรือดาวน์โหลดหน้านี้ได้" />
+          </p>
+        )}
+        {!ready && (
+          <p className="text-muted" style={{ marginTop: -8, fontSize: 12 }}>
+            {missing.length} <T en="required fields still open" th="ช่องบังคับยังว่าง" />
+            {missing[0] ? ` · ${th ? missing[0].label.t : missing[0].label.e}` : ""}
+          </p>
+        )}
+      </div>
+
+      <div className="mou-sheet">
+        <header className="mou-sheet-head">
+          <div>
+            <div className="mou-mark">LAW<span>24</span></div>
+            <div className="page-kicker">CT-001 · {th ? "บันทึกความเข้าใจ" : "Memorandum of Understanding"}</div>
+          </div>
+          <div className="mou-sheet-meta">
+            <div>{th ? "ใบนำเข้าหนึ่งหน้า" : "One-page intake"}</div>
+            <div className="text-muted">{th ? "ไม่ใช่สัญญาที่ลงนามแล้ว" : "Not a signed contract"}</div>
+          </div>
+        </header>
+        <p className="mou-sheet-lede">
+          <T
+            en="Preliminary cooperation frame. Separate binding duties from non-binding intention. Thai law is the house default."
+            th="กรอบความร่วมมือเบื้องต้น แยกหน้าที่ที่ผูกพันออกจากเจตนาที่ไม่ผูกพัน กฎหมายไทยเป็นท่าทีบ้าน"
+          />
+        </p>
+        <div className="mou-grid">
+          {MOU_FIELDS.map((f) => (
+            <label key={f.id} className={`mou-field${f.type === "textarea" || ["purpose", "scope", "bindClauses", "term", "next", "costs"].includes(f.id) ? " wide" : ""}`}>
+              <span>
+                {th ? f.label.t : f.label.e}
+                {f.required ? " *" : ""}
+              </span>
+              {f.type === "select" ? (
+                <select className="input" value={answers[f.id]} onChange={(e) => s.answerMouField(f.id, e.target.value)}>
+                  <option value="">{th ? "เลือก" : "Select"}</option>
+                  {(f.options || []).map((opt) => (
+                    <option key={opt.e} value={opt.e}>{th ? opt.t : opt.e}</option>
+                  ))}
+                </select>
+              ) : f.type === "textarea" ? (
+                <textarea className="input" rows={2} value={answers[f.id]} onChange={(e) => s.answerMouField(f.id, e.target.value)} placeholder={th ? f.hint.t : f.hint.e} />
+              ) : (
+                <input className="input" value={answers[f.id]} onChange={(e) => s.answerMouField(f.id, e.target.value)} placeholder={th ? f.hint.t : f.hint.e} />
+              )}
+            </label>
+          ))}
+        </div>
+        <footer className="mou-sheet-foot">
+          <span><T en="Counsel confirms before assembly. The engine never signs." th="ทนายยืนยันก่อนประกอบข้อ เครื่องยนต์ไม่ลงนามแทน" /></span>
+          <span>CCC Books I–II · Electronic Transactions Act · {filled} {th ? "ช่องที่กรอก" : "fields filled"}</span>
+        </footer>
+      </div>
     </div>
   );
 }
@@ -511,8 +654,15 @@ function TypeDetail() {
         <h5><T en="Legal basis" th="ฐานกฎหมาย" /></h5>
         <p>{c.legalBasis}</p>
         <p className="text-muted">{trNote(s.lang, c.templateNote)}</p>
-        <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
-          <Link href="/assemble?s=iv" className="btn btn-primary"><T en="Start guided interview" th="เริ่มสัมภาษณ์นำทาง" /></Link>
+        <div style={{ display: "flex", gap: 8, marginTop: 20, flexWrap: "wrap" }}>
+          {c.id === MOU_TYPE_ID ? (
+            <>
+              <Link href="/assemble?s=mou" className="btn btn-primary"><T en="Fill MOU intake paper" th="กรอกใบนำเข้า MOU" /></Link>
+              <Link href="/assemble?s=iv" className="btn btn-secondary"><T en="Start guided interview" th="เริ่มสัมภาษณ์นำทาง" /></Link>
+            </>
+          ) : (
+            <Link href="/assemble?s=iv" className="btn btn-primary"><T en="Start guided interview" th="เริ่มสัมภาษณ์นำทาง" /></Link>
+          )}
           <Link href="/review?s=rsetup" className="btn btn-secondary"><T en="Review an existing contract" th="ส่งไปตรวจสัญญาที่มีอยู่" /></Link>
         </div>
         {c.id === DEMO_TYPE_ID && (
@@ -562,12 +712,12 @@ function Interview() {
   const s = useStore();
   const th = s.lang === "th";
   const IV = FX.interview;
-  const aiInputs = acceptedAssemblyInputs(s.assembly).filter((x) => x.id.startsWith("AQ-"));
-  const questions = aiInputs.length
-    ? aiInputs.map((x) => ({ q: x.title, a: x.value, rule: x.source }))
+  const paperInputs = acceptedAssemblyInputs(s.assembly).filter((x) => x.id.startsWith("AQ-") || x.id.startsWith("MOU-"));
+  const questions = paperInputs.length
+    ? paperInputs.map((x) => ({ q: x.title, a: x.value, rule: x.source }))
     : IV.qs;
-  const modules = aiInputs.length
-    ? aiInputs.map((x) => ({ k: x.title, w: x.value, s: "in" as const }))
+  const modules = paperInputs.length
+    ? paperInputs.map((x) => ({ k: x.title, w: x.value, s: "in" as const }))
     : IV.modules;
   return (
     <div className="pad-page">

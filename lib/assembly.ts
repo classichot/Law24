@@ -48,6 +48,7 @@ export type AssemblyState = {
     at: string;
   };
   questionnaire: IntakeQuestionnaire;
+  mou: Record<string, string>;
 };
 
 export function seedAssembly(): AssemblyState {
@@ -65,6 +66,7 @@ export function seedAssembly(): AssemblyState {
       missing: [],
       ready: false,
     },
+    mou: {},
   };
 }
 
@@ -95,6 +97,9 @@ export function hydrateAssembly(raw: unknown): AssemblyState {
           missing: Array.isArray(v.questionnaire.missing) ? v.questionnaire.missing : [],
         }
       : base.questionnaire,
+    mou: v.mou && typeof v.mou === "object"
+      ? Object.fromEntries(Object.entries(v.mou).filter(([, x]) => typeof x === "string")) as Record<string, string>
+      : {},
   };
 }
 
@@ -142,6 +147,12 @@ export function fallbackQuestionnaire(input: {
       q("AQ-ROLE", "ตำแหน่ง หน้าที่ สถานที่ทำงาน และวันเริ่มงานคืออะไร", "What are the role, duties, workplace and start date?", "เป็นแกนของข้อจ้างงาน", "These are core employment terms", "scope"),
       q("AQ-COMP", "เงินเดือน โบนัส สวัสดิการ และสิทธิหุ้นคืออะไร", "What are salary, bonus, benefits and equity rights?", "ค่าตอบแทนต้องครบและไม่ขัดนโยบาย", "Compensation must be complete and policy-aligned", "commercial"),
       q("AQ-IP", "ผลงานและทรัพย์สินทางปัญญาที่สร้างระหว่างจ้างจะเป็นของใคร", "Who owns work product and IP created during employment?", "กรรมสิทธิ์ IP ต้องเขียนชัด", "IP ownership must be explicit", "risk"),
+    );
+  } else if (/mou|memorandum of understanding|บันทึกความเข้าใจ/.test(hay)) {
+    specific.push(
+      q("AQ-BINDING", "บันทึกนี้ผูกพันทั้งฉบับ หรือเฉพาะข้อที่ระบุ", "Does this MOU bind as a whole, or only listed clauses?", "แยกส่วนเจรจาออกจากหน้าที่ที่บังคับได้", "Separate negotiation from enforceable duties", "risk", "select", true, [P("ไม่ผูกพัน ยกเว้นข้อที่ระบุ", "Non-binding except listed clauses"), P("ผูกพันบางส่วนตามที่ระบุ", "Partly binding as listed"), P("ตั้งใจให้ผูกพันทั้งฉบับ", "Intended to bind as a whole")]),
+      q("AQ-CONF", "มีหน้าที่รักษาความลับในบันทึกนี้ หรือใช้ NDA แยก", "Does confidentiality sit in this MOU, or in a separate NDA?", "ความลับมักเป็นข้อที่ผูกพันแม้ส่วนอื่นไม่ผูกพัน", "Confidentiality is often binding even when the rest is not", "risk"),
+      q("AQ-NEXT", "สัญญาฉบับสมบูรณ์ขั้นถัดไปคืออะไร และเป้าเมื่อใด", "What is the next definitive agreement, and by when?", "MOU ต้องชี้ไปที่เอกสารที่จะล็อกท่าทีจริง", "An MOU must point to the paper that will lock the real posture", "scope"),
     );
   } else if (/nda|confidential|non-disclosure|ความลับ/.test(hay)) {
     specific.push(

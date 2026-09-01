@@ -1756,7 +1756,47 @@ button.xray-layer { font: inherit; text-align: left; cursor: pointer; width: 100
 }
 .wow-hops { display: flex; flex-wrap: wrap; gap: 8px; }
 .deal-page .issue-card h4 { font-size: 16px; margin-bottom: 6px; }
-.assemble-intake-list { display: grid; gap: 8px; }
+.mou-sheet {
+  border: 2px solid var(--color-divider);
+  background: var(--color-bg);
+  padding: 22px 24px 18px;
+  max-width: 900px;
+}
+.mou-sheet-head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;
+  padding-bottom: 12px; border-bottom: 2px solid var(--color-divider); margin-bottom: 10px;
+}
+.mou-mark { font: 800 22px/1 var(--font-heading); letter-spacing: -0.02em; }
+.mou-mark span { color: var(--eng-draft); }
+.mou-sheet-meta { text-align: right; font: 800 10px/1.4 var(--font-heading); letter-spacing: 0.08em; text-transform: uppercase; color: var(--eng-draft); }
+.mou-sheet-lede { font-size: 12px; color: var(--color-neutral-700); margin: 0 0 14px; }
+.mou-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+.mou-field { display: flex; flex-direction: column; gap: 4px; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 700; color: var(--color-neutral-600); }
+.mou-field.wide { grid-column: 1 / -1; }
+.mou-field .input { text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 13px; min-height: 34px; padding: 5px 8px; }
+.mou-field textarea.input { min-height: 52px; }
+.mou-sheet-foot {
+  display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin-top: 14px; padding-top: 10px; border-top: 2px solid var(--color-divider);
+  font-size: 11px; color: var(--color-neutral-600);
+}
+@media (max-width: 720px) {
+  .mou-grid { grid-template-columns: 1fr; }
+  .mou-sheet-head, .mou-sheet-foot { flex-direction: column; }
+  .mou-sheet-meta { text-align: left; }
+}
+@media print {
+  @page { size: A4; margin: 10mm; }
+  .pad-page { padding: 0 !important; max-width: none !important; }
+  .mou-sheet {
+    border: 0; padding: 0; max-width: none;
+  }
+  .mou-grid { gap: 6px 14px; }
+  .mou-field .input, .mou-field textarea.input, .mou-field select.input {
+    border: 0; border-bottom: 1px solid #201e1d66; background: transparent; min-height: 18px; padding: 1px 0;
+  }
+  .mou-field textarea.input { min-height: 28px; }
+}
 .assemble-intake-row {
   display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 14px; align-items: start;
   padding: 16px; border: 2px solid var(--color-divider); background: var(--color-bg); cursor: pointer;
