@@ -67,6 +67,18 @@ export function houseStandard(name: string): TE {
       "The Provider shall give not less than six months' exit assistance, and source-code escrow when the system is stated as critical.",
     );
   }
+  if (n.includes("approv") || n.includes("authority") || n.includes("อำนาจ") || n.includes("อนุมัติ") || n.includes("ลงนาม")) {
+    return P(
+      "ผู้ลงนามต้องมีอำนาจตามหนังสือรับรองหรือมติที่ประชุมที่ยังไม่หมดอายุ เครื่องยนต์ไม่ลงนามแทน และไม่เดาอำนาจจากชื่อตำแหน่ง",
+      "Signatories must have authority under a current affidavit or board resolution. The engine never signs, and it does not infer authority from a job title.",
+    );
+  }
+  if (n.includes("fee") || n.includes("price") || n.includes("ค่าตอบแทน") || n.includes("ค่าบริการ") || n.includes("ค่าจ้าง") || n.includes("rent")) {
+    return P(
+      "ค่าตอบแทนและกำหนดชำระต้องตรงข้อมูลที่ทนายยืนยัน การปรับราคาต้องมีเพดานและบอกกล่าวล่วงหน้า ห้ามร่างตัวเลขลอย",
+      "Fees and payment timing must match counsel-confirmed facts. Any uplift needs a cap and prior notice. No freehand figures.",
+    );
+  }
   return P(
     `ข้อมาตรฐานบ้านเรื่อง ${name} — ใช้กฎหมายไทยเป็นค่าเริ่ม ต้องมีเหตุจึงจะสละได้ และห้ามร่างลอย`,
     `House standard on ${name} — Thai law is the default, waiver needs a recorded reason, and no freehand draft.`,

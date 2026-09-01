@@ -18,9 +18,9 @@ import { downloadBlob } from "./demo";
 import { PLAYBOOKS, copyTE } from "./guides";
 import type { Lang, TE } from "./model";
 import { L } from "./model";
-import { FX, TAX_LIST, trParties } from "./taxonomy";
-import { BILINGUAL } from "./wow";
+import { TAX_LIST, trParties } from "./taxonomy";
 import type { AssemblyInput } from "./assembly";
+import { buildLiveDraft } from "./liveDraft";
 
 export type PackInput = {
   lang: Lang;
@@ -30,8 +30,6 @@ export type PackInput = {
   sourceRef?: string;
   reviewInputs?: AssemblyInput[];
 };
-
-type DraftRow = { n: string; h: TE; b: TE };
 
 type PackBlock =
   | { kind: "kicker"; text: string }
@@ -89,10 +87,15 @@ export function buildPackBlocks(input: PackInput): PackBlock[] {
   const th = lang === "th";
   const type = TAX_LIST.find((r) => r.id === input.typeId) || TAX_LIST[0];
   const reviewInputs = input.reviewInputs || [];
-  const partyInput = reviewInputs.find((x) => x.kind === "fact" && /part|คู่สัญญา|customer|ลูกค้า/i.test(`${x.title.e} ${x.title.t}`));
+  const typeHay = `${type.nameEn} ${type.nameTh} ${type.keyTerms} ${type.tags}`.toLowerCase();
+  const itCloud = /saas|sla|dpa|pdpa|cloud|software|ข้อมูลส่วนบุคคล/.test(typeHay);
+  const live = buildLiveDraft({
+    typeId: type.id,
+    facts: reviewInputs,
+    conflictChoice,
+  });
+  const partyInput = reviewInputs.find((x) => x.kind === "fact" && /part|คู่สัญญา|customer|ลูกค้า|aq-part/i.test(`${x.id} ${x.title.e} ${x.title.t}`));
   const partyText = partyInput ? L(lang, partyInput.value) : trParties(lang, type.parties);
-  const iv = FX.interview;
-  const draft = iv.draft as DraftRow[];
   const law = conflictChoice === "waiver"
     ? te(
       "ขอยกเว้นนโยบาย — ที่นั่งอนุญาโตตุลาการต้องบันทึกเหตุในสัมภาษณ์ กฎหมายบังคับไทย (รวม PDPA) ยังใช้",
@@ -122,7 +125,9 @@ export function buildPackBlocks(input: PackInput): PackBlock[] {
     {
       kind: "meta",
       k: th ? "เพลย์บุ๊ก" : "Playbooks",
-      v: `${PLAYBOOKS.assembly.id} ${PLAYBOOKS.assembly.ver} · ${PLAYBOOKS.itcloud.id} ${PLAYBOOKS.itcloud.ver}`,
+      v: itCloud
+        ? `${PLAYBOOKS.assembly.id} ${PLAYBOOKS.assembly.ver} · ${PLAYBOOKS.itcloud.id} ${PLAYBOOKS.itcloud.ver}`
+        : `${PLAYBOOKS.assembly.id} ${PLAYBOOKS.assembly.ver}`,
     },
     {
       kind: "meta",
@@ -130,19 +135,10 @@ export function buildPackBlocks(input: PackInput): PackBlock[] {
       v: th ? "GC อนุมัติ · CIO อนุมัติ · DPO อนุมัติ" : "GC approved · CIO approved · DPO approved",
     },
     { kind: "p", text: type.purpose },
-    { kind: "h", text: th ? "ล็อกจากแบบสัมภาษณ์" : "Interview lock" },
+    { kind: "h", text: th ? "ล็อกจากข้อมูลที่ทนายยืนยัน" : "Counsel-confirmed intake lock" },
   ];
 
-  for (const q of iv.qs) {
-    blocks.push({
-      kind: "meta",
-      k: L(lang, q.q),
-      v: `${L(lang, q.a)} · ${L(lang, q.rule)}`,
-    });
-  }
-
   if (reviewInputs.length) {
-    blocks.push({ kind: "h", text: th ? "ข้อมูลจาก Review ที่ใช้ควบคุมร่าง" : "Review inputs controlling this draft" });
     for (const item of reviewInputs) {
       blocks.push({
         kind: "meta",
@@ -150,10 +146,18 @@ export function buildPackBlocks(input: PackInput): PackBlock[] {
         v: `${L(lang, item.value)} · ${th ? "แหล่ง" : "Source"}: ${L(lang, item.source)}`,
       });
     }
+  } else {
+    blocks.push({
+      kind: "p",
+      text: th
+        ? "ยังไม่มีข้อเท็จจริงที่ทนายยืนยัน — ข้อด้านล่างเป็นข้อมาตรฐานบ้านของประเภทนี้ ไม่ใช่แบบ Nimbus"
+        : "No counsel-confirmed facts yet — clauses below are the house standard for this type, not the Nimbus fixture.",
+    });
   }
 
   blocks.push({ kind: "h", text: th ? "เพลย์บุ๊กที่บังคับใช้กับชุดนี้" : "Playbook overlay on this pack" });
-  for (const rule of [...PLAYBOOKS.assembly.rules, ...PLAYBOOKS.itcloud.rules]) {
+  const playbookRules = itCloud ? [...PLAYBOOKS.assembly.rules, ...PLAYBOOKS.itcloud.rules] : PLAYBOOKS.assembly.rules;
+  for (const rule of playbookRules) {
     blocks.push({ kind: "rule", text: copyTE(lang, rule) });
   }
 
@@ -164,35 +168,10 @@ export function buildPackBlocks(input: PackInput): PackBlock[] {
 
   blocks.push({
     kind: "h",
-    text: th ? "ข้อสัญญาที่ใช้บังคับ (ไทย + อังกฤษ)" : "Operative clauses (Thai + English)",
+    text: th ? "ข้อสัญญาที่ใช้บังคับ (ไทย + อังกฤษ) — ตรงร่างสดบนจอ" : "Operative clauses (Thai + English) — same as the on-screen live draft",
   });
 
-  const extra: { id: string; n: string; h: TE; b: TE }[] = [
-    ...draft.map((row) => ({ id: `draft:${row.n}`, n: row.n, h: row.h, b: row.b })),
-    {
-      id: "draft:2.",
-      n: "2.",
-      h: te("คู่สัญญา", "Parties"),
-      b: te(
-        `สัญญานี้ทำขึ้นระหว่าง ${partyText} ตามประเภท ${type.id} รายละเอียดคู่สัญญาต้องยืนยันจากข้อมูล Review ก่อนลงนาม`,
-        `This Agreement is between ${partyText} under type ${type.id}. Counsel must confirm party details against the Review source before signature.`,
-      ),
-    },
-    {
-      id: "draft:11.",
-      n: "11.",
-      h: te("การเลิกสัญญาและการเปลี่ยนผ่าน", "Termination and exit"),
-      b: houseStandard("exit"),
-    },
-    {
-      id: "draft:16.",
-      n: "16.",
-      h: te("กฎหมายที่ใช้บังคับ", "Governing law"),
-      b: law,
-    },
-  ].sort((a, b) => parseFloat(a.n) - parseFloat(b.n));
-
-  for (const row of extra) {
+  for (const row of live.clauses) {
     const { body, note } = clauseBody(row.id, row.b, clauseEdits);
     blocks.push({
       kind: "clause",
@@ -204,57 +183,40 @@ export function buildPackBlocks(input: PackInput): PackBlock[] {
     });
   }
 
-  const annexes: { n: string; h: TE; body: TE }[] = [
-    {
-      n: "A",
-      h: te("ภาคผนวก ก. — ระดับการให้บริการ (SLA)", "Annex A — Service levels (SLA)"),
-      body: houseStandard("SLA"),
-    },
-    {
-      n: "B",
-      h: te("ภาคผนวก ข. — ข้อตกลงประมวลผลข้อมูล (DPA)", "Annex B — Data processing agreement"),
-      body: houseStandard("DPA"),
-    },
-    {
-      n: "C",
-      h: te("ภาคผนวก ค. — ตารางโอนข้อมูล", "Annex C — Transfer schedule"),
-      body: houseStandard("transfer"),
-    },
-  ];
+  const annexes: { n: string; h: TE; body: TE }[] = itCloud
+    ? [
+      {
+        n: "A",
+        h: te("ภาคผนวก ก. — ระดับการให้บริการ (SLA)", "Annex A — Service levels (SLA)"),
+        body: houseStandard("SLA"),
+      },
+      {
+        n: "B",
+        h: te("ภาคผนวก ข. — ข้อตกลงประมวลผลข้อมูล (DPA)", "Annex B — Data processing agreement"),
+        body: houseStandard("DPA"),
+      },
+      {
+        n: "C",
+        h: te("ภาคผนวก ค. — ตารางโอนข้อมูล", "Annex C — Transfer schedule"),
+        body: houseStandard("transfer"),
+      },
+    ]
+    : [];
 
-  blocks.push({ kind: "h", text: th ? "ภาคผนวกที่รวมเป็นส่วนหนึ่งของสัญญา" : "Annexes incorporated into this pack" });
-  for (const a of annexes) {
-    const { body, note } = clauseBody(`annex:${a.n}`, a.body, clauseEdits);
-    blocks.push({
-      kind: "clause",
-      n: a.n,
-      heading: L(lang, a.h),
-      th: body.t,
-      en: body.e,
-      note,
-    });
+  if (annexes.length) {
+    blocks.push({ kind: "h", text: th ? "ภาคผนวกที่รวมเป็นส่วนหนึ่งของสัญญา" : "Annexes incorporated into this pack" });
+    for (const a of annexes) {
+      const { body, note } = clauseBody(`annex:${a.n}`, a.body, clauseEdits);
+      blocks.push({
+        kind: "clause",
+        n: a.n,
+        heading: L(lang, a.h),
+        th: body.t,
+        en: body.e,
+        note,
+      });
+    }
   }
-
-  blocks.push({
-    kind: "h",
-    text: th ? "ตรวจคำแปลคู่ขนาน" : "Bilingual translation check",
-  });
-  blocks.push({
-    kind: "p",
-    text: th
-      ? "เมื่อภาษาหนึ่งเปลี่ยน LAW24 ชี้ว่าคำแปลสร้างความหมายทางกฎหมายต่างกันหรือไม่ — ไม่ใช่ฉบับลงนาม"
-      : "When one language changes, LAW24 flags whether the translation creates a different legal meaning — this is not a signed instrument.",
-  });
-  BILINGUAL.forEach((b, i) => {
-    blocks.push({
-      kind: "clause",
-      n: String(i + 1),
-      heading: b.risk === "high" ? (th ? "ความเสี่ยงสูง — ความหมายไม่ตรงกัน" : "High drift — legal meaning diverges") : b.risk === "ok" ? (th ? "ตรงกัน" : "Aligned") : (th ? "ต้องตรวจ" : "Check"),
-      th: b.th,
-      en: b.en,
-      note: L(lang, b.drift),
-    });
-  });
 
   blocks.push(
     { kind: "h", text: th ? "ช่องลงนาม — ว่างไว้" : "Signature blocks — left unsigned" },
