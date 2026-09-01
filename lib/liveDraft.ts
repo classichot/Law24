@@ -131,7 +131,10 @@ export function buildLiveDraft(input: {
     "purpose",
     P("วัตถุประสงค์และขอบเขต", "Purpose and scope"),
     weave(
-      P(type.purpose, type.purpose),
+      P(
+        type.purpose,
+        `This ${type.nameEn} (${type.id}) sets the commercial purpose and scope. Deal-specific purpose is counsel-confirmed below. The engine never signs.`,
+      ),
       purpose?.value,
     ),
     purpose ? purpose.title : P("วัตถุประสงค์ของประเภท", "Type purpose"),
