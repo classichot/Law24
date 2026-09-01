@@ -258,7 +258,7 @@ export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
     rule: P("ห้ามข้ามกฎในเล่มเพื่อปิดงานเร็ว", "Do not skip a rule in the book to close the work faster"),
   },
   "practice/dash": {
-    why: P("ศูนย์ควบคุมสำนักงานแยกงานเป็นสามประเภท — ตรวจ ร่าง และ Deal X-Ray", "Firm control splits work into three engagements — review, drafting and Deal X-Ray"),
+    why: P("ศูนย์ควบคุมสำนักงานแยกงานเป็นสามโมดูล — ตรวจสัญญา ร่างสัญญา และตรวจสอบสถานะ", "Firm control splits work into three modules — Contract Review, Contract Assembly and Legal Due Diligence"),
     do: P("เลือกประเภท แล้วเปิดควบคุมหรือบันทึกของประเภทนั้น", "Pick the engagement, then open that track’s control or record"),
     rule: P("งานทุกชิ้นต้องอยู่ใต้หนึ่งในสามประเภท — ห้ามมีงานนอกระบบ", "Every live assignment sits on one of the three tracks — no work off-system"),
   },
@@ -273,7 +273,7 @@ export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
     rule: P("งานตรวจต้องมีแผนที่ก่อนลงนาม — เครื่องยนต์ไม่ลงนามแทน", "A review assignment needs a map before signing — the engine never signs"),
   },
   "practice/edraft": {
-    why: P("งานร่างสัญญา — คลังประเภท สัมภาษณ์ ประกอบข้อ และร่างคู่ภาษา", "Contract drafting — type library, interview, assembly and bilingual draft"),
+    why: P("งานร่างสัญญา — ทางรับข้อมูล คลังประเภท ประกอบข้อ และร่างคู่ภาษา", "Contract Assembly — intake, type library, clause assembly and bilingual draft"),
     do: P("เลือกประเภทจากคลัง แล้วเปิดบันทึกงานร่างใต้ลูกค้า", "Pick the type from the library, then open the drafting record under the client"),
     rule: P("ห้ามร่างลอยโดยไม่มีรหัสประเภท", "No freehand draft without a type id"),
   },

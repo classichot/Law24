@@ -15,7 +15,7 @@ import {
   playbookEntries,
   type PlaybookKey,
 } from "@/lib/guides";
-import { HELP_KEYS, HELP_PRINCIPLES, HELP_START, visibleModules, visiblePlaybooks } from "@/lib/help";
+import { HELP_KEYS, HELP_PRINCIPLES, HELP_START, MODULE_GROUPS, visibleModules, visiblePlaybooks } from "@/lib/help";
 import { LEIO, REG_UPDATES, RESEARCH_BRIEFS } from "@/lib/leio";
 import { TRUST_CONTROLS } from "@/lib/product";
 
@@ -82,21 +82,30 @@ function HowTo() {
       <ReviewerPath />
 
       <h5><T en="Which module, when" th="โมดูลไหน เมื่อใด" /></h5>
-      <div className="help-mods">
-        {mods.map((m) => (
-          <div key={m.mode} className="help-card">
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline" }}>
-              <strong style={{ textTransform: "capitalize" }}>{m.mode}</strong>
-              <Link href={helpBookHref(m.playbook)} style={{ fontSize: 12 }}>{PLAYBOOKS[m.playbook].id}</Link>
+      {MODULE_GROUPS.map((g) => {
+        const items = mods.filter((m) => m.group === g.id);
+        if (!items.length) return null;
+        return (
+          <div key={g.id} className={`help-mod-group ${g.cls || ""}`}>
+            <h6>{g.n ? `${g.n} · ` : ""}{th ? g.th : g.en}</h6>
+            <div className="help-mods">
+              {items.map((m) => (
+                <div key={m.mode} className="help-card">
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline" }}>
+                    <strong style={{ textTransform: "capitalize" }}>{m.mode}</strong>
+                    <Link href={helpBookHref(m.playbook)} style={{ fontSize: 12 }}>{PLAYBOOKS[m.playbook].id}</Link>
+                  </div>
+                  <p>{copyTE(s.lang, m.when)}</p>
+                  <p className="text-muted" style={{ fontSize: 12, margin: 0 }}>{copyTE(s.lang, m.first)}</p>
+                  <Link href={m.href} className="btn btn-secondary" style={{ marginTop: 8, alignSelf: "flex-start", fontSize: 12 }}>
+                    <T en="Open module" th="เปิดโมดูล" /> <ArrowRight size={12} />
+                  </Link>
+                </div>
+              ))}
             </div>
-            <p>{copyTE(s.lang, m.when)}</p>
-            <p className="text-muted" style={{ fontSize: 12, margin: 0 }}>{copyTE(s.lang, m.first)}</p>
-            <Link href={m.href} className="btn btn-secondary" style={{ marginTop: 8, alignSelf: "flex-start", fontSize: 12 }}>
-              <T en="Open module" th="เปิดโมดูล" /> <ArrowRight size={12} />
-            </Link>
           </div>
-        ))}
-      </div>
+        );
+      })}
 
       <h5><T en="Host desk (7L)" th="โต๊ะโฮสต์ (7L)" /></h5>
       <div className="help-card" style={{ marginBottom: 24 }}>

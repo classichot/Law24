@@ -18,9 +18,86 @@ export const ENGINE: { k: Exclude<ModeKey, "home" | "practice" | "command" | "as
 
 export const MODES = ENGINE;
 
+export type ProductModule = EngagementTrack;
+
+export type ModuleEngine = {
+  k: Exclude<ModeKey, "home" | "practice" | "command" | "assist" | "help">;
+  en: string;
+  th: string;
+  href: string;
+};
+
+export type ProductMod = {
+  id: ProductModule;
+  n: "01" | "02" | "03";
+  en: string;
+  th: string;
+  mark: string;
+  markTh: string;
+  why: { t: string; e: string };
+  cls: string;
+  href: string;
+  engines: ModuleEngine[];
+};
+
+/** The three products. Engines sit under a module — they are not peers in the rail. */
+export const MODULES: ProductMod[] = [
+  {
+    id: "review",
+    n: "01",
+    en: "Contract Review",
+    th: "ตรวจสัญญา",
+    mark: "X-Ray",
+    markTh: "X-Ray",
+    why: { t: "แผนที่สัญญา ห้องบังคับ ฝาแฝด เจรจา และข้อผูกพัน", e: "Map the paper, hold the cockpit, ask the twin, negotiate, then register obligations" },
+    cls: "eng-review",
+    href: "/review?s=xray",
+    engines: [
+      { k: "review", en: "X-Ray", th: "X-Ray", href: "/review?s=xray" },
+      { k: "holistic", en: "Cockpit", th: "ห้องบังคับ", href: "/holistic?s=cockpit" },
+      { k: "intel", en: "Twin", th: "ฝาแฝด", href: "/intel?s=twin" },
+      { k: "negotiate", en: "Copilot", th: "เจรจา", href: "/negotiate?s=nladder" },
+      { k: "obligations", en: "Obligations", th: "ข้อผูกพัน", href: "/obligations?s=oreg" },
+    ],
+  },
+  {
+    id: "assemble",
+    n: "02",
+    en: "Contract Assembly",
+    th: "ร่างสัญญา",
+    mark: "Assemble",
+    markTh: "ประกอบ",
+    why: { t: "เอกสารนำเข้าหรือแบบสอบถาม AI แล้วประกอบข้อและส่งกลับตรวจ", e: "Intake papers or the AI questionnaire, assemble clauses, then send back to Review" },
+    cls: "eng-draft",
+    href: "/assemble?s=intake",
+    engines: [
+      { k: "assemble", en: "Intake", th: "ทางรับข้อมูล", href: "/assemble?s=intake" },
+    ],
+  },
+  {
+    id: "diligence",
+    n: "03",
+    en: "Legal Due Diligence",
+    th: "ตรวจสอบสถานะทางกฎหมาย",
+    mark: "Deal X-Ray",
+    markTh: "Deal X-Ray",
+    why: { t: "เข้าใจทั้งธุรกรรม เปิดความเสี่ยง แล้วสร้างฉบับแก้ไข", e: "Understand the transaction, expose the risk, then write the fix" },
+    cls: "eng-dd",
+    href: "/diligence?s=deal",
+    engines: [
+      { k: "diligence", en: "Deal X-Ray", th: "Deal X-Ray", href: "/diligence?s=deal" },
+    ],
+  },
+];
+
+export function productModuleOf(mode: string): ProductMod | null {
+  const id = modeTrack(mode);
+  return id ? MODULES.find((m) => m.id === id) ?? null : null;
+}
+
 /**
- * Destinations the X-Ray result fans out to. These are the other engine
- * modules — they sit in the top nav, but the result used to dead-end in Review.
+ * Destinations the X-Ray result fans out to. These sit under the three
+ * product modules in the left rail — the result used to dead-end in Review.
  */
 export const XRAY_HOPS: { href: string; en: string; th: string; why: { t: string; e: string } }[] = [
   { href: "/practice?s=dash", en: "Firm", th: "สำนักงาน", why: { t: "เปิดงานจากฉบับนี้ — ลูกค้า เส้นทาง และห้องตรวจ", e: "Open the assignment from this paper — client, trail and review room" } },
@@ -42,9 +119,9 @@ export const NAV: Record<Exclude<ModeKey, "home">, [ScreenKey, string, string][]
   practice: [
     ["dash", "ศูนย์ควบคุม", "Firm control"],
     ["pool", "คิวรับงาน", "Unassigned pool"],
-    ["ereview", "ตรวจสัญญา", "Contract review"],
-    ["edraft", "ร่างสัญญา", "Contract drafting"],
-    ["edd", "Deal X-Ray", "Deal X-Ray"],
+    ["ereview", "ตรวจสัญญา", "Contract Review"],
+    ["edraft", "ร่างสัญญา", "Contract Assembly"],
+    ["edd", "ตรวจสอบสถานะ", "Legal Due Diligence"],
     ["clients", "ลูกค้า", "Clients"],
     ["assign", "บันทึกงาน", "Engagement record"],
     ["trace", "เส้นทางงาน", "Movement trail"],
@@ -191,8 +268,8 @@ export type FirmControlHop = {
 };
 
 /**
- * Firm dashboard as the OS control hub, split into the three engagements.
- * Review owns X-Ray through Obligations; drafting owns Assemble; DD owns legal risk.
+ * Firm dashboard as the OS control hub, split into the three product modules.
+ * Contract Review owns X-Ray through Obligations; Assembly owns drafting; DD owns deal risk.
  */
 export const FIRM_CONTROL: FirmControlHop[] = [
   { href: "/review?s=xray", en: "X-Ray", th: "X-Ray", kind: "engine", track: "review", why: { t: "วางแผนที่สัญญา — เปิดลูกค้าและงานตรวจ", e: "Map a contract — opens the review client and assignment" } },

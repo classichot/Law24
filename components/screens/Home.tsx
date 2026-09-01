@@ -11,6 +11,7 @@ import { TrustStrip } from "@/components/TrustStrip";
 import { PlaybookMark } from "@/components/PlaybookMark";
 import { ENTRANCES, PACKAGES, POSITION, TWIN_ASKS, WEDGE_TYPES } from "@/lib/product";
 import { assignmentOf, clientOf, ENGAGEMENT, ENGAGEMENT_TYPES, engagementOf, trackStats } from "@/lib/firm";
+import { MODULES } from "@/lib/nav";
 import { clientRoomOf, withLiveMatter } from "@/lib/ai/fromMap";
 import { EngPill, TrackCard } from "@/components/EngagementMark";
 import { OS_FLOW, PLAYBOOKS, copyTE, helpBookHref, playbookKeyFor } from "@/lib/guides";
@@ -47,6 +48,34 @@ function HomePlaybooks() {
             </Link>
           );
         })}
+      </div>
+    </>
+  );
+}
+
+function ModuleStrip() {
+  const th = useStore().lang === "th";
+  return (
+    <>
+      <h5><T en="Three modules" th="สามโมดูลหลัก" /></h5>
+      <p className="text-muted" style={{ fontSize: 13, margin: "-8px 0 14px" }}>
+        <T
+          en="LAW24 is Contract Review, Contract Assembly and Legal Due Diligence. Everything else sits under one of these."
+          th="LAW24 คือตรวจสัญญา ร่างสัญญา และตรวจสอบสถานะทางกฎหมาย นอกนั้นอยู่ภายใต้หนึ่งในสามโมดูลนี้"
+        />
+      </p>
+      <div className="module-strip">
+        {MODULES.map((mod) => (
+          <Link key={mod.id} href={mod.href} className={`home-card eng-card module-card ${mod.cls}`} style={{ textDecoration: "none", color: "inherit" }}>
+            <span className="os-rail-n">{mod.n}</span>
+            <div className={`eng-pill ${mod.cls}`}>{th ? mod.markTh : mod.mark}</div>
+            <div style={{ fontWeight: 800, fontSize: 18 }}>{th ? mod.th : mod.en}</div>
+            <p className="text-muted" style={{ margin: 0, fontSize: 13 }}>{th ? mod.why.t : mod.why.e}</p>
+            <span className="btn btn-primary" style={{ fontSize: 12 }}>
+              <T en="Open module" th="เปิดโมดูล" />
+            </span>
+          </Link>
+        ))}
       </div>
     </>
   );
@@ -108,11 +137,12 @@ function CorporateHome() {
       </div>
       <div className="stack-actions" style={{ marginBottom: 28 }}>
         <button type="button" className="btn btn-primary" onClick={() => { startXray(); router.push("/review?s=xray"); }}>
-          <T en="Open Contract X-Ray" th="เปิด Contract X-Ray" />
+          <T en="Open Contract Review" th="เปิดตรวจสัญญา" />
         </button>
-        <Link href="/intel?s=twin" className="btn btn-secondary"><T en="Ask the Legal Twin" th="ถามฝาแฝดกฎหมาย" /></Link>
-        <Link href="/command?s=desk" className="btn btn-secondary"><T en="Legal command center" th="ศูนย์บัญชาการกฎหมาย" /></Link>
+        <Link href="/assemble?s=intake" className="btn btn-secondary"><T en="Open Contract Assembly" th="เปิดร่างสัญญา" /></Link>
+        <Link href="/diligence?s=deal" className="btn btn-secondary"><T en="Open Legal DD" th="เปิดตรวจสอบสถานะ" /></Link>
       </div>
+      <ModuleStrip />
       <TrustStrip />
       <ReviewerPath />
       <h5 style={{ marginTop: 28 }}><T en="Management can ask" th="ฝ่ายบริหารถามได้" /></h5>
@@ -125,11 +155,12 @@ function CorporateHome() {
           </button>
         ))}
       </div>
+      <h5 style={{ marginTop: 8 }}><T en="Inside Contract Review" th="ภายในตรวจสัญญา" /></h5>
       <div className="home-cards">
         {[
           { href: "/holistic?s=cockpit", k: "Contract Cockpit", d: th ? "มูลค่า ขั้น ความเสี่ยง อนุมัติ" : "Value, stage, risk, approvals" },
           { href: "/holistic?s=dna", k: "Clause DNA", d: th ? "เทียบเพลย์บุ๊กและสัญญาที่ลงนามแล้ว" : "Vs playbook and signed history" },
-          { href: "/diligence?s=deal", k: "Deal X-Ray", d: th ? "เข้าใจธุรกรรม เปิดความเสี่ยง แล้วแก้ไข" : "Understand the deal, expose the risk, fix it" },
+          { href: "/intel?s=twin", k: th ? "ฝาแฝดกฎหมาย" : "Legal Twin", d: th ? "ถามตำแหน่งที่ชี้ต้นทาง" : "Ask a position that cites its source" },
           { href: "/obligations?s=oreg", k: th ? "ข้อผูกพัน" : "Obligations", d: th ? "ปฏิทินหลังลงนาม" : "Post-signature calendar" },
         ].map((c) => (
           <Link key={c.href} href={c.href} className="home-card" style={{ textDecoration: "none", color: "inherit" }}>
@@ -204,6 +235,7 @@ function FirmHome() {
           <Link href="/host" className="btn btn-ghost"><T en="Host desk" th="โต๊ะโฮสต์" /></Link>
         )}
       </div>
+      <ModuleStrip />
       <h5><T en="Three engagements from the firm" th="สามประเภทงานจากสำนักงาน" /></h5>
       <div className="track-grid" style={{ marginBottom: 28 }}>
         {ENGAGEMENT_TYPES.map((track) => (

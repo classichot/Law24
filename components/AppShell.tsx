@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Check, Link2, LogOut, Menu, Search, Timer, X } from "lucide-react";
+import { Check, Link2, LogOut, Menu, Search, Timer } from "lucide-react";
 import { CORPORATE_USER, FIRM_USER } from "@/lib/model";
 import { ENGAGEMENT, engagementOf } from "@/lib/firm";
-import { NAV, isMode, modeTrack, navModes, practiceScreenTrack } from "@/lib/nav";
+import { COMMAND_MODE, MODULES, NAV, PRACTICE_MODE, isMode, modeTrack, practiceScreenTrack, productModuleOf } from "@/lib/nav";
 import { modeHref, useStore } from "@/lib/store";
+import { OsSidebar } from "@/components/OsSidebar";
 import { DEMO_STEPS, MATTERS, matterForMode, type MatterId } from "@/lib/demo";
 import { LangToggle } from "@/components/LangToggle";
 import { ModeToggle } from "@/components/ModeToggle";
-import { EditionBadge } from "@/components/EditionBadge";
 import { Copilot } from "@/components/Copilot";
 import { DemoBar } from "@/components/DemoBar";
 import { CommandPalette } from "@/components/CommandPalette";
@@ -19,7 +19,6 @@ import { GuideRail } from "@/components/GuideRail";
 import { T } from "@/lib/i18n";
 import { PlaybookMark } from "@/components/PlaybookMark";
 import { AiLiveMark } from "@/components/AiLiveMark";
-import { PLAYBOOKS, playbookKeyFor } from "@/lib/guides";
 import { formatExpiry, hoursLeft, isInviteAuth, readInviteSession } from "@/lib/invite";
 import { withLiveMatter } from "@/lib/ai/fromMap";
 import type { ReactNode } from "react";
@@ -39,7 +38,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const screen = params.get("s") || (isMode(mode) ? NAV[mode][0][0] : "home");
   const notHome = mode !== "home";
   const sub = isMode(mode) ? NAV[mode] : [];
-  const tabs = navModes(s.edition);
+  const office = s.edition === "firm" ? PRACTICE_MODE : COMMAND_MODE;
+  const officeOn = mode === office.k;
+  const product = productModuleOf(mode);
   const books = withLiveMatter(s.practice, s.xrayLive, s.reviewLive);
   const assignment = books.assignments.find((a) => a.id === books.activeAssignmentId);
 
@@ -124,16 +125,20 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="os-shell">
+      <OsSidebar
+        mode={mode}
+        open={menu}
+        officeHref={modeHref(office.k)}
+        officeLabel={s.lang === "th" ? office.th : office.en}
+        officeOn={officeOn}
+        onClose={() => setMenu(false)}
+      />
+      <div className="os-col">
       <header className="os-topbar">
         <button className="os-grid-btn menu-btn" onClick={() => setMenu(true)} aria-label="Menu"><Menu size={16} /></button>
-        <Link href="/home" className="os-grid-btn" title={s.lang === "th" ? "โมดูลทั้งหมด" : "All modules"}>
-          <span className="os-grid-dots"><span /><span /><span /><span /></span>
-        </Link>
-        <Link href="/home" className="os-brand">
+        <Link href="/home" className="os-brand os-brand-compact" title={s.lang === "th" ? "หน้าแรก" : "Home"}>
           <span className="os-brand-name">LAW<span className="os-brand-24">24</span></span>
-          <span className="os-os-badge">os</span>
         </Link>
-        <EditionBadge />
         <AiLiveMark compact />
         <button className="os-grid-btn search-toggle" onClick={() => s.setSearchOpen(true)} aria-label="Search"><Search size={16} /></button>
         <div style={{ flex: 1, display: "flex", justifyContent: "center", minWidth: 0 }}>
@@ -182,31 +187,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       {notHome && (
-        <>
-          <div className="os-modes">
-            <Link href="/home" style={{ color: "var(--color-neutral-600)", fontSize: 11, textDecoration: "none", padding: "13px 0" }}>← <T en="All modules" th="โมดูลทั้งหมด" /></Link>
-            <span style={{ width: 1, height: 16, background: "var(--color-neutral-400)", flex: "none" }} />
-            {tabs.map((m) => {
-              const track = modeTrack(m.k);
-              const cls = track ? ENGAGEMENT[track].cls : "";
-              return (
-              <Link key={m.k} href={modeHref(m.k)} className={`${mode === m.k ? "on" : ""} ${cls}`.trim()}>
-                <span className="os-mode-label">{s.lang === "th" ? m.th : m.en}</span>
-                <span className="os-mode-pb">{PLAYBOOKS[playbookKeyFor(m.k)].id}</span>
-              </Link>
-              );
-            })}
-            {mode !== "practice" && mode !== "command" && mode !== "assist" && mode !== "help" && !s.xrayLive && s.demoOn && (
-            <div className="os-matters header-hide-sm">
-              {(Object.keys(MATTERS) as MatterId[]).map((id) => (
-                <button key={id} type="button" className={`matter-chip${s.matter === id ? " on" : ""}`} onClick={() => jumpMatter(id)}>
-                  {s.lang === "th" ? MATTERS[id].th.name : MATTERS[id].en.name}
-                </button>
-              ))}
-            </div>
-            )}
-          </div>
           <div className="os-subnav">
+            {product && (
+              <span className={`eng-pill ${product.cls}`}>
+                {s.lang === "th" ? product.markTh : product.mark}
+              </span>
+            )}
             {sub.map(([k, th, en]) => {
               const track = mode === "practice" ? practiceScreenTrack(k) : modeTrack(mode);
               const cls = track ? ENGAGEMENT[track].cls : "";
@@ -233,6 +219,15 @@ export function AppShell({ children }: { children: ReactNode }) {
                   ? `${s.xrayLive.ref} · ${s.lang === "th" ? s.xrayLive.doc.t : s.xrayLive.doc.e}`
                 : (s.lang === "th" ? "ยังไม่มีแผนที่ — เปิด X-Ray" : "No map yet — open X-Ray")}
             </span>
+            {mode !== "practice" && mode !== "command" && mode !== "assist" && mode !== "help" && !s.xrayLive && s.demoOn && (
+              <div className="os-matters header-hide-sm">
+                {(Object.keys(MATTERS) as MatterId[]).map((id) => (
+                  <button key={id} type="button" className={`matter-chip${s.matter === id ? " on" : ""}`} onClick={() => jumpMatter(id)}>
+                    {s.lang === "th" ? MATTERS[id].th.name : MATTERS[id].en.name}
+                  </button>
+                ))}
+              </div>
+            )}
             {!s.demoOn && (
               <button type="button" className="btn btn-secondary" style={{ marginLeft: 8, fontSize: 11, padding: "4px 10px" }} onClick={startLive}>
                 <T en="Live demo" th="สาธิตสด" />
@@ -240,7 +235,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             )}
             </span>
           </div>
-        </>
       )}
 
       <DemoBar />
@@ -255,42 +249,20 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       <nav className="bottom-nav no-print">
-        {s.edition === "firm" && <Link href="/practice?s=dash" className={mode === "practice" ? "active" : ""}>Firm</Link>}
-        {s.edition !== "firm" && <Link href="/command?s=desk" className={mode === "command" ? "active" : ""}>Control</Link>}
-        <Link href="/home" className={mode === "home" ? "active" : ""}>Home</Link>
-        <Link href="/review?s=xray" className={mode === "review" ? "active" : ""}>X-Ray</Link>
-        <Link href="/intel?s=twin" className={mode === "intel" ? "active" : ""}>Twin</Link>
-        <Link href="/diligence?s=deal" className={mode === "diligence" ? "active" : ""}>Deal X-Ray</Link>
-        {s.edition === "firm" && <Link href="/practice?s=room" className={screen === "room" ? "active" : ""}>Room</Link>}
+        {s.edition === "firm"
+          ? <Link href="/practice?s=dash" className={mode === "practice" ? "active" : ""}>Firm</Link>
+          : <Link href="/command?s=desk" className={mode === "command" ? "active" : ""}>Control</Link>}
+        {MODULES.map((mod) => (
+          <Link
+            key={mod.id}
+            href={mod.href}
+            className={`${mod.cls}${modeTrack(mode) === mod.id ? " active" : ""}`}
+          >
+            {s.lang === "th" ? mod.markTh : mod.mark}
+          </Link>
+        ))}
       </nav>
 
-      {menu && (
-        <>
-          <div className="os-drawer-backdrop" onClick={() => setMenu(false)} />
-          <aside className="os-drawer">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <span className="os-brand-name">LAW<span className="os-brand-24">24</span></span>
-              <button className="icon-btn" onClick={() => setMenu(false)} aria-label="Close"><X size={16} /></button>
-            </div>
-            <div style={{ marginBottom: 18 }}><EditionBadge /></div>
-            <Link href="/home" className="os-drawer-link" onClick={() => setMenu(false)}><T en="All modules" th="โมดูลทั้งหมด" /></Link>
-            {!invite && (
-              <Link href="/host" className="os-drawer-link" onClick={() => setMenu(false)}>
-                <T en="Host desk" th="โต๊ะโฮสต์" />
-              </Link>
-            )}
-            {tabs.map((m) => (
-              <Link key={m.k} href={modeHref(m.k)} className={`os-drawer-link${mode === m.k ? " on" : ""}`} onClick={() => setMenu(false)}>
-                <span>{s.lang === "th" ? m.th : m.en}</span>
-                <span className="os-drawer-pb">{PLAYBOOKS[playbookKeyFor(m.k)].id}</span>
-              </Link>
-            ))}
-            <button type="button" className="os-drawer-link" onClick={() => { setMenu(false); startLive(); }}>
-              <T en="Start live demo" th="เริ่มสาธิตสด" />
-            </button>
-          </aside>
-        </>
-      )}
       <CommandPalette />
       {s.toast && (
         <div className="toast">
@@ -298,6 +270,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {s.toast}
         </div>
       )}
+      </div>
     </div>
   );
 }
