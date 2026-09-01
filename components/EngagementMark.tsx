@@ -36,7 +36,7 @@ export function TrackCard({ track, open }: { track: EngagementTrack; open: numbe
           <T en="Record" th="บันทึก" />
         </Link>
         <Link href={e.href} className="btn btn-ghost" style={{ fontSize: 12 }}>
-          {track === "review" ? "X-Ray" : track === "assemble" ? <T en="Assemble" th="ประกอบ" /> : "Deal X-Ray"}
+          {track === "review" ? "X-Ray" : track === "assemble" ? <T en="Assemble" th="ร่าง" /> : "Deal X-Ray"}
         </Link>
       </div>
     </div>

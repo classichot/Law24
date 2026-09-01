@@ -32,8 +32,9 @@ export function CommandPalette() {
     const invite = readInviteSession();
     if (!needle) {
       const starter: SearchHit[] = [
-        { id: "xray", href: "/review?s=xray", kind: "X-Ray", title: th ? "Contract X-Ray" : "Contract X-Ray" },
-        { id: "twin", href: "/intel?s=twin", kind: th ? "ฝาแฝด" : "Twin", title: th ? "Living Legal Twin" : "Living Legal Twin" },
+        { id: "xray", href: "/review?s=xray", kind: th ? "ตรวจสัญญา" : "Contract Review", title: th ? "Contract X-Ray" : "Contract X-Ray" },
+        { id: "assemble", href: "/assemble?s=intake", kind: th ? "ร่างสัญญา" : "Contract Assembly", title: th ? "ทางรับข้อมูลร่าง" : "Assembly intake" },
+        { id: "deal", href: "/diligence?s=deal", kind: th ? "ตรวจสอบสถานะ" : "Legal Due Diligence", title: "Deal X-Ray" },
         { id: "assist-ask", href: "/assist?s=ask", kind: th ? "ผู้ช่วย" : "Assist", title: th ? "อธิบายงานและคำสั่ง" : "Describe job & assignment" },
         { id: "help-trust", href: "/help?s=trust", kind: th ? "คู่มือ" : "Help", title: th ? "ความเชื่อถือที่มองเห็น" : "Visible trust" },
         ...(!invite ? [{ id: "host", href: "/host", kind: th ? "โต๊ะโฮสต์" : "Host desk", title: th ? "สร้างลิงก์สาธิต" : "Mint a demo link" }] : []),

@@ -40,8 +40,8 @@ export const HELP_START: { n: string; t: TE; d: TE }[] = [
   },
   {
     n: "04",
-    t: P("เดินเมนูจากซ้ายไปขวา", "Walk the menus left to right"),
-    d: P("แต่ละโมดูลมีลำดับ อย่าข้ามขั้นที่ล็อกท่าทีหรือหลักฐาน", "Each module has an order. Do not skip a step that locks a position or evidence."),
+    t: P("เปิดโมดูลจากแถบซ้าย แล้วเดินจอของโมดูลนั้น", "Open a module from the left bar, then walk its screens"),
+    d: P("สามโมดูลหลักคือตรวจสัญญา ร่างสัญญา และตรวจสอบสถานะ อย่าข้ามขั้นที่ล็อกท่าทีหรือหลักฐาน", "The three modules are Contract Review, Contract Assembly and Legal Due Diligence. Do not skip a step that locks a position or evidence."),
   },
   {
     n: "05",
@@ -60,22 +60,30 @@ export const MODULE_WHEN: {
   mode: string;
   href: string;
   playbook: PlaybookKey;
+  group: "review" | "assemble" | "diligence" | "office";
   firmOnly?: boolean;
   corpOnly?: boolean;
   when: TE;
   first: TE;
 }[] = [
-  { mode: "assist", href: "/assist?s=ask", playbook: "router", when: P("ยังไม่รู้ว่าจะเปิดโมดูลใด", "It is not yet obvious which module to open"), first: P("อธิบายงานและคำสั่ง", "Describe the job and the assignment") },
-  { mode: "command", href: "/command?s=desk", playbook: "command", corpOnly: true, when: P("คำขอกฎหมาย อนุมัติ ที่ปรึกษาภายนอก และรายงานคณะกรรมการ", "Legal requests, approvals, outside counsel and board reports"), first: P("เปิดศูนย์บัญชาการ แล้วไล่คำขอที่ยังเปิด", "Open the command center, then work open requests") },
-  { mode: "practice", href: "/practice?s=dash", playbook: "practice", firmOnly: true, when: P("งานที่ปรึกษา — ต้องมีลูกค้า งาน และเส้นทาง", "Advisory work — a client, an assignment and a trail"), first: P("เปิดหรือเลือกงาน แล้วทำในเครื่องยนต์", "Open or pick the assignment, then work in the engine") },
-  { mode: "assemble", href: "/assemble?s=lib", playbook: "assembly", when: P("ต้องสร้างร่างจากเจตนาทางธุรกิจ", "A draft must be built from a business intention"), first: P("เลือกประเภทจากคลังไทย ห้ามร่างลอย", "Pick a Thai type — no freehand draft") },
-  { mode: "review", href: "/review?s=xray", playbook: "itcloud", when: P("มีฉบับต้องรู้ก่อนลงนาม — X-Ray ในสามนาที", "A paper must be known before signature — an X-Ray in under three minutes"), first: P("อัปโหลด แล้วอ่านคำตัดสิน Accept / Negotiate / Do Not Sign", "Upload, then read Accept / Negotiate / Do Not Sign") },
-  { mode: "holistic", href: "/holistic?s=cockpit", playbook: "decision", when: P("ต้องเห็นทั้งฉบับเป็นห้องบังคับก่อนบันทึกถึงผู้บริหาร", "The whole instrument must be seen as a cockpit before the memo"), first: P("อ่านห้องบังคับและ Clause DNA แล้วจำลองผลก่อนบันทึก", "Read the cockpit and Clause DNA, then simulate before the memo") },
-  { mode: "diligence", href: "/diligence?s=deal", playbook: "dd", when: P("ห้องข้อมูลและประเด็นที่อาจล้มดีล", "A data room and items that could kill the deal"), first: P("เปิด Deal X-Ray แล้วอ่านสิ่งที่ควรมีแต่ยังไม่มา", "Open Deal X-Ray, then read what should exist but is missing") },
-  { mode: "intel", href: "/intel?s=twin", playbook: "memory", when: P("ถามทั้งพอร์ต หรือสิ่งที่องค์กรเคยยอม", "A question across the estate, or what this tenant already accepted"), first: P("ถามฝาแฝด — ต้องมีต้นทาง", "Ask the twin — it must trace to source") },
-  { mode: "negotiate", href: "/negotiate?s=nstrat", playbook: "mandate", when: P("ต้องถือจุดยืนและตอบรอบเจรจา", "Positions must be held and a round answered"), first: P("ถือสี่ข้อต้องได้ตามอำนาจเจรจา", "Hold the four must-haves under the mandate") },
-  { mode: "obligations", href: "/obligations?s=oreg", playbook: "control", when: P("หลังลงนาม — กำหนด ต่ออายุ และการส่งต่อ", "After signature — deadlines, renewals and escalation"), first: P("เปิดทะเบียนแล้วไล่รายการที่พ้นกำหนด", "Open the register, then work anything overdue") },
-  { mode: "help", href: "/help?s=leio", playbook: "help", when: P("ต้องถามวิธีใช้ วิจัย หรือกฎที่เพิ่งออก", "How to use, a research point, or a regulation that just moved"), first: P("ถามเลโอ หรือเปิดงานวิจัยและกฎ", "Ask Leio, or open research and regulations") },
+  { mode: "review", href: "/review?s=xray", playbook: "itcloud", group: "review", when: P("มีฉบับต้องรู้ก่อนลงนาม — X-Ray ในสามนาที", "A paper must be known before signature — an X-Ray in under three minutes"), first: P("อัปโหลด แล้วอ่านคำตัดสิน Accept / Negotiate / Do Not Sign", "Upload, then read Accept / Negotiate / Do Not Sign") },
+  { mode: "holistic", href: "/holistic?s=cockpit", playbook: "decision", group: "review", when: P("ต้องเห็นทั้งฉบับเป็นห้องบังคับก่อนบันทึกถึงผู้บริหาร", "The whole instrument must be seen as a cockpit before the memo"), first: P("อ่านห้องบังคับและ Clause DNA แล้วจำลองผลก่อนบันทึก", "Read the cockpit and Clause DNA, then simulate before the memo") },
+  { mode: "intel", href: "/intel?s=twin", playbook: "memory", group: "review", when: P("ถามทั้งพอร์ต หรือสิ่งที่องค์กรเคยยอม", "A question across the estate, or what this tenant already accepted"), first: P("ถามฝาแฝด — ต้องมีต้นทาง", "Ask the twin — it must trace to source") },
+  { mode: "negotiate", href: "/negotiate?s=nstrat", playbook: "mandate", group: "review", when: P("ต้องถือจุดยืนและตอบรอบเจรจา", "Positions must be held and a round answered"), first: P("ถือสี่ข้อต้องได้ตามอำนาจเจรจา", "Hold the four must-haves under the mandate") },
+  { mode: "obligations", href: "/obligations?s=oreg", playbook: "control", group: "review", when: P("หลังลงนาม — กำหนด ต่ออายุ และการส่งต่อ", "After signature — deadlines, renewals and escalation"), first: P("เปิดทะเบียนแล้วไล่รายการที่พ้นกำหนด", "Open the register, then work anything overdue") },
+  { mode: "assemble", href: "/assemble?s=intake", playbook: "assembly", group: "assemble", when: P("ต้องสร้างร่างจากเจตนาทางธุรกิจ", "A draft must be built from a business intention"), first: P("เลือกทางรับข้อมูล แล้วเลือกประเภทจากคลังไทย", "Pick an intake route, then a Thai type — no freehand draft") },
+  { mode: "diligence", href: "/diligence?s=deal", playbook: "dd", group: "diligence", when: P("ห้องข้อมูลและประเด็นที่อาจล้มดีล", "A data room and items that could kill the deal"), first: P("เปิด Deal X-Ray แล้วอ่านสิ่งที่ควรมีแต่ยังไม่มา", "Open Deal X-Ray, then read what should exist but is missing") },
+  { mode: "assist", href: "/assist?s=ask", playbook: "router", group: "office", when: P("ยังไม่รู้ว่าจะเปิดโมดูลใด", "It is not yet obvious which module to open"), first: P("อธิบายงานและคำสั่ง", "Describe the job and the assignment") },
+  { mode: "command", href: "/command?s=desk", playbook: "command", group: "office", corpOnly: true, when: P("คำขอกฎหมาย อนุมัติ ที่ปรึกษาภายนอก และรายงานคณะกรรมการ", "Legal requests, approvals, outside counsel and board reports"), first: P("เปิดศูนย์บัญชาการ แล้วไล่คำขอที่ยังเปิด", "Open the command center, then work open requests") },
+  { mode: "practice", href: "/practice?s=dash", playbook: "practice", group: "office", firmOnly: true, when: P("งานที่ปรึกษา — ต้องมีลูกค้า งาน และเส้นทาง", "Advisory work — a client, an assignment and a trail"), first: P("เปิดหรือเลือกงาน แล้วทำในเครื่องยนต์", "Open or pick the assignment, then work in the engine") },
+  { mode: "help", href: "/help?s=leio", playbook: "help", group: "office", when: P("ต้องถามวิธีใช้ วิจัย หรือกฎที่เพิ่งออก", "How to use, a research point, or a regulation that just moved"), first: P("ถามเลโอ หรือเปิดงานวิจัยและกฎ", "Ask Leio, or open research and regulations") },
+];
+
+export const MODULE_GROUPS: { id: "review" | "assemble" | "diligence" | "office"; n: string; en: string; th: string; cls?: string }[] = [
+  { id: "review", n: "01", en: "Contract Review · X-Ray", th: "ตรวจสัญญา · X-Ray", cls: "eng-review" },
+  { id: "assemble", n: "02", en: "Contract Assembly", th: "ร่างสัญญา", cls: "eng-draft" },
+  { id: "diligence", n: "03", en: "Legal Due Diligence · Deal X-Ray", th: "ตรวจสอบสถานะทางกฎหมาย · Deal X-Ray", cls: "eng-dd" },
+  { id: "office", n: "", en: "Office", th: "สำนักงาน" },
 ];
 
 export function visiblePlaybooks(edition: Edition): PlaybookKey[] {

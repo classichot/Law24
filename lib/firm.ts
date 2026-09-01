@@ -70,11 +70,11 @@ export const STAGE_LABEL: Record<AssignmentStage, { en: string; th: string }> = 
 
 export const TYPE_LABEL: Record<AssignmentType, { en: string; th: string }> = {
   review: { en: "Contract review", th: "ตรวจสัญญา" },
-  assemble: { en: "Contract drafting", th: "ร่างสัญญา" },
+  assemble: { en: "Contract Assembly", th: "ร่างสัญญา" },
   diligence: { en: "Legal due diligence", th: "ตรวจสอบสถานะทางกฎหมาย" },
   negotiate: { en: "Contract review", th: "ตรวจสัญญา" },
   obligations: { en: "Contract review", th: "ตรวจสัญญา" },
-  advisory: { en: "Contract drafting", th: "ร่างสัญญา" },
+  advisory: { en: "Contract Assembly", th: "ร่างสัญญา" },
 };
 
 export const ENGAGEMENT_TYPES: EngagementTrack[] = ["review", "assemble", "diligence"];
@@ -114,9 +114,9 @@ export const ENGAGEMENT: Record<EngagementTrack, {
   assemble: {
     id: "assemble",
     cls: "eng-draft",
-    en: "Contract drafting",
+    en: "Contract Assembly",
     th: "ร่างสัญญา",
-    tagEn: "Draft",
+    tagEn: "Assemble",
     tagTh: "ร่าง",
     why: { t: "เอกสารนำเข้าหรือแบบสอบถาม AI · คลังประเภท · ประกอบข้อ · ส่งกลับตรวจ", e: "Intake papers or AI questionnaire · type library · clause assembly · back to Review" },
     record: { t: "บันทึกงานร่าง — ข้อมูลต้นทาง ประเภท ร่าง และเส้นทางตรวจ", e: "Drafting record — source intake, type, draft and review trail" },
