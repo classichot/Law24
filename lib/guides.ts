@@ -328,14 +328,14 @@ export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
     rule: P("ยืนยันแล้วท่าทีล็อกจนกว่าจะเปิดสัมภาษณ์ใหม่", "Once confirmed, positions stay locked until the interview is reopened"),
   },
   "assemble/asm": {
-    why: P("ข้อสัญญาถูกเลือกจากคำตอบและ playbook — จุดนี้คือที่ตัดสินข้อขัดนโยบาย", "Clauses fire from answers and playbook — this is where policy conflicts are decided"),
-    do: P("ถ้ากฎหมายไทยขัดกับอนุญาโตตุลาการต่างประเทศ ให้คงท่าทีบ้าน", "If Thai law collides with foreign arbitration, keep the house position"),
-    rule: P("กฎหมายไทยเป็นค่าเริ่มต้น ต้องมีเหตุจึงจะสละได้", "Thai law is the default; waiver needs a recorded reason"),
+    why: P("ร่างสดของประเภทที่เลือก — ไม่ใช่แบบ Nimbus SaaS ข้อมาตรฐานบ้านอยู่บนหน้าแล้ว ข้อเท็จจริงที่ยืนยันแล้วถักเข้าข้อที่ตรง", "Live draft of the selected type — not the Nimbus SaaS fixture. House-standard language is on the page. Confirmed facts weave into the matching clause"),
+    do: P("อ่านร่าง เปลี่ยนกฎหมายไทยหรือขอยกเว้นแล้วดูข้อกฎหมายขยับ ปรับข้อที่ต้องขยับ แล้วไปชุดเอกสาร", "Read the draft, flip Thai law or a waiver and watch the law clause move, adjust a clause that must move, then continue to the pack"),
+    rule: P("กฎหมายไทยเป็นค่าเริ่มต้น ต้องมีเหตุจึงจะสละได้ เครื่องยนต์ไม่ลงนาม", "Thai law is the default; waiver needs a recorded reason. The engine never signs"),
   },
   "assemble/draft": {
-    why: P("ร่างแสดงข้อมูล Review ที่ใช้บังคับ ก่อนอนุมัติและสร้างชุด", "The draft shows the Review inputs in force before approval and pack generation"),
-    do: P("ตรวจแหล่ง อนุมัติ DPO สร้างชุด แล้วเปิดด่านพร้อมส่งตรวจ", "Check sources, approve as DPO, generate the pack, then open review preflight"),
-    rule: P("ห้ามส่งลงนามก่อนร่างที่ประกอบแล้วผ่าน Contract Review ใหม่", "Do not send for signature before the assembled draft receives a fresh Contract Review"),
+    why: P("สำเนางานทีละข้อ — สิ่งที่เห็นคือสิ่งที่จะออกใน Word/PDF", "Clause-by-clause working copy — what you see is what the Word/PDF pack will contain"),
+    do: P("ปรับข้อเมื่อถ้อยคำบ้านไม่ตรงข้อเท็จจริง ให้เหตุผล อนุมัติ DPO แล้วสร้างชุด", "Adjust a clause when house wording does not fit the facts, record a reason, approve as DPO, then generate the pack"),
+    rule: P("ข้อที่ปรับแล้วเป็นการยืนยันของที่ปรึกษา ไม่ใช่ AI ที่ไม่ลงนาม ห้ามส่งลงนามก่อนร่างผ่าน Contract Review ใหม่", "An adjusted clause is counsel-confirmed, not unsigned AI. Do not send for signature before a fresh Contract Review"),
   },
   "assemble/areview": {
     why: P("ด่านพร้อมส่งตรวจรักษาแหล่งจาก Review แล้วเปิดงานตรวจฉบับที่ประกอบ", "Review preflight preserves Review sources and opens a review matter for the assembled draft"),

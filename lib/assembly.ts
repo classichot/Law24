@@ -185,17 +185,31 @@ export function fallbackQuestionnaire(input: {
 }
 
 export function questionnaireInputsOf(questionnaire: IntakeQuestionnaire): AssemblyInput[] {
-  return questionnaire.questions
-    .filter((item) => questionnaire.answers[item.id]?.trim())
-    .map((item) => ({
-      id: item.id,
-      kind: item.category === "risk" ? "instruction" as const : "fact" as const,
-      title: item.prompt,
-      value: P(questionnaire.answers[item.id], questionnaire.answers[item.id]),
-      source: P("คำตอบแบบสอบถาม AI — ทนายยืนยัน", "AI intake answer — counsel confirms"),
-      href: "/assemble?s=aiq",
-      priority: item.required ? "must" as const : "context" as const,
-    }));
+  const byId = new Map(questionnaire.questions.map((item) => [item.id, item]));
+  return Object.entries(questionnaire.answers)
+    .filter(([, value]) => value.trim())
+    .map(([id, value]) => {
+      const item = byId.get(id);
+      return {
+        id,
+        kind: item?.category === "risk" ? "instruction" as const : "fact" as const,
+        title: item?.prompt ?? P(id, id),
+        value: P(value, value),
+        source: P("คำตอบแบบสอบถาม AI — ทนายยืนยัน", "AI intake answer — counsel confirms"),
+        href: "/assemble?s=aiq",
+        priority: item?.required === false ? "context" as const : "must" as const,
+      };
+    });
+}
+
+/** Locked Review/questionnaire inputs plus in-progress questionnaire answers, so the live draft updates as counsel types. */
+export function factsForLiveDraft(assembly: AssemblyState): AssemblyInput[] {
+  const locked = acceptedAssemblyInputs(assembly);
+  const live = assembly.questionnaire.typeId ? questionnaireInputsOf(assembly.questionnaire) : [];
+  const byId = new Map<string, AssemblyInput>();
+  for (const row of locked) byId.set(row.id, row);
+  for (const row of live) byId.set(row.id, row);
+  return [...byId.values()];
 }
 
 export function assemblyInputsOf(X: XrayView | null, R?: ReviewLive | null): AssemblyInput[] {

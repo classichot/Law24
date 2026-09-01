@@ -4,10 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { CAT_MAP, FX, TAX_CATS, TAX_ENUMS, TAX_LIST, TAX_SOURCES, TAX_TOTALS, esignShort, trClauses, trFormality, trNote, trParties } from "@/lib/taxonomy";
+import { CAT_MAP, TAX_CATS, TAX_ENUMS, TAX_LIST, TAX_SOURCES, TAX_TOTALS, esignShort, trClauses, trFormality, trNote, trParties } from "@/lib/taxonomy";
 import { Chip, Kicker, Title } from "@/components/ui";
 import { L } from "@/lib/model";
-import { BILINGUAL } from "@/lib/wow";
 import { T } from "@/lib/i18n";
 import { DEMO_TYPE_ID } from "@/lib/demo";
 import { downloadAssemblePack } from "@/lib/pack";
@@ -18,10 +17,13 @@ import {
   acceptedAssemblyInputs,
   assemblyInputsOf,
   fallbackQuestionnaire,
+  factsForLiveDraft,
   questionnaireInputsOf,
   type IntakeQuestionnaire,
 } from "@/lib/assembly";
 import { fetchAiStatus, postAi } from "@/lib/ai/client";
+import { LiveDraftView } from "@/components/LiveDraft";
+import { buildLiveDraft } from "@/lib/liveDraft";
 import { AiLiveMark } from "@/components/AiLiveMark";
 
 function pinDemo(rows: typeof TAX_LIST, sel: string) {
@@ -321,6 +323,15 @@ function AiQuestionnaire() {
             </div>
           ))}
           {error && <p className="text-muted" style={{ fontSize: 12 }}><T en="Live AI was unavailable; LAW24 used the contract-type fallback." th="AI สดไม่พร้อม ระบบใช้คำถามสำรองตามประเภทสัญญา" /> ({error})</p>}
+          {answered > 0 && (
+            <div style={{ marginTop: 28 }}>
+              <h5><T en="What will come out" th="สิ่งที่จะออกมา" /></h5>
+              <p className="text-muted" style={{ fontSize: 13, margin: "0 0 12px" }}>
+                <T en="The live draft updates as you answer. Open it to correct each clause." th="ร่างสดขยับตามคำตอบ เปิดเพื่อแก้ทีละข้อ" />
+              </p>
+              <LiveDraftView compact />
+            </div>
+          )}
           <div className="stack-actions" style={{ marginTop: 18 }}>
             {!qn.ready && (
               <button type="button" className="btn btn-primary" disabled={loading || openRequired > 0} onClick={() => void askNext()}>
@@ -561,32 +572,32 @@ function TypeDetail() {
 function Interview() {
   const s = useStore();
   const th = s.lang === "th";
-  const IV = FX.interview;
-  const aiInputs = acceptedAssemblyInputs(s.assembly).filter((x) => x.id.startsWith("AQ-"));
-  const questions = aiInputs.length
-    ? aiInputs.map((x) => ({ q: x.title, a: x.value, rule: x.source }))
-    : IV.qs;
-  const modules = aiInputs.length
-    ? aiInputs.map((x) => ({ k: x.title, w: x.value, s: "in" as const }))
-    : IV.modules;
+  const facts = factsForLiveDraft(s.assembly);
+  const locked = acceptedAssemblyInputs(s.assembly);
   return (
     <div className="pad-page">
       <Kicker>assemble · guided interview</Kicker>
       <Title><T en="Guided interview & rules fired" th="สัมภาษณ์นำทางและกฎที่ทำงาน" /></Title>
-      <div style={{ display: "flex", gap: 8, margin: "18px 0 24px", flexWrap: "wrap" }}>
-        {IV.steps.map((st, i) => (
-          <span key={i} style={{ padding: "8px 12px", background: i === 1 ? "var(--color-text)" : "var(--color-surface)", color: i === 1 ? "var(--color-bg)" : "inherit", fontWeight: 700, fontSize: 12 }}>0{i + 1} · {L(s.lang, st)}</span>
-        ))}
-      </div>
+      <p className="page-sub">
+        <T
+          en="Confirm the intake facts that control the live draft. This is not the Nimbus SaaS questionnaire. The engine never signs."
+          th="ยืนยันข้อเท็จจริงนำเข้าที่ควบคุมร่างสด ไม่ใช่แบบสอบถาม Nimbus SaaS เครื่องยนต์ไม่ลงนามแทน"
+        />
+      </p>
       <div className="grid-split">
         <div>
-          {questions.map((q, i) => (
-            <div key={i} className="clause-block">
-              <div style={{ fontWeight: 700 }}>{L(s.lang, q.q)}</div>
-              <div style={{ marginTop: 6 }}>{L(s.lang, q.a)}</div>
-              <div className="tag tag-accent" style={{ marginTop: 8 }}><T en="Rule fired" th="กฎที่ทำงาน" /> · {L(s.lang, q.rule)}</div>
+          {facts.length ? facts.map((q) => (
+            <div key={q.id} className="clause-block">
+              <div className="mono" style={{ fontSize: 10 }}>{q.id}</div>
+              <div style={{ fontWeight: 700 }}>{L(s.lang, q.title)}</div>
+              <div style={{ marginTop: 6, whiteSpace: "pre-wrap" }}>{L(s.lang, q.value)}</div>
+              <div className="tag tag-accent" style={{ marginTop: 8 }}><T en="Rule fired" th="กฎที่ทำงาน" /> · {L(s.lang, q.source)}</div>
             </div>
-          ))}
+          )) : (
+            <div className="callout">
+              <T en="No counsel-confirmed facts yet. Answer the questionnaire or ingest papers, then the live draft will move." th="ยังไม่มีข้อเท็จจริงที่ทนายยืนยัน ตอบแบบสอบถามหรือรับเอกสาร แล้วร่างสดจะขยับ" />
+            </div>
+          )}
           <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
             <button
               type="button"
@@ -595,22 +606,20 @@ function Interview() {
             >
               {s.interviewDone ? <T en="Answers confirmed" th="ยืนยันคำตอบแล้ว" /> : <T en="Confirm intake answers" th="ยืนยันคำตอบนำเข้า" />}
             </button>
-            <Link href="/assemble?s=asm" className="btn btn-primary"><T en="Continue to assembly" th="ไปประกอบข้อสัญญา" /></Link>
+            <Link href="/assemble?s=asm" className="btn btn-primary"><T en="See live draft" th="ดูร่างสด" /></Link>
+            <Link href="/assemble?s=intake" className="btn btn-secondary"><T en="Change intake" th="เปลี่ยนข้อมูลนำเข้า" /></Link>
           </div>
         </div>
         <div>
-          <h5><T en="Resolved clause modules" th="โมดูลข้อสัญญาที่ถูกเลือก" /></h5>
-          {modules.map((m, i) => (
-            <div key={i} style={{ display: "flex", gap: 10, padding: "10px 0", borderBottom: "1px solid var(--color-divider)" }}>
-              <span className={m.s === "in" ? "tag tag-accent" : m.s === "conflict" ? "tag tag-outline" : "tag tag-neutral"}>
-                {m.s === "in" ? (th ? "รวม" : "Included") : m.s === "out" ? (th ? "ไม่รวม" : "Excluded") : (th ? "ขัดกัน" : "Conflict")}
-              </span>
-              <div>
-                <div style={{ fontWeight: 700 }}>{L(s.lang, m.k)}</div>
-                <div className="text-muted" style={{ fontSize: 12 }}>{L(s.lang, m.w)}</div>
-              </div>
-            </div>
-          ))}
+          <h5><T en="Locked into Assembly" th="ล็อกเข้า Assembly แล้ว" /></h5>
+          <p className="text-muted" style={{ fontSize: 12 }}>
+            {locked.length
+              ? (th ? `${locked.length} รายการที่ทนายยืนยัน` : `${locked.length} counsel-confirmed rows`)
+              : (th ? "ยังไม่ล็อก — ร่างสดใช้คำตอบที่กำลังพิมพ์" : "Nothing locked yet — the live draft uses answers as you type")}
+          </p>
+          <div style={{ marginTop: 20 }}>
+            <LiveDraftView compact />
+          </div>
         </div>
       </div>
     </div>
@@ -621,66 +630,69 @@ function Assembly() {
   const s = useStore();
   const router = useRouter();
   const th = s.lang === "th";
-  const IV = FX.interview;
-  const intake = acceptedAssemblyInputs(s.assembly);
-  const aiInputs = intake.filter((x) => x.id.startsWith("AQ-"));
-  const modules = aiInputs.length
-    ? aiInputs.map((x) => ({ k: x.title, w: x.value, s: "in" as const }))
-    : IV.modules;
-  const needsLawDecision = !aiInputs.length || s.conflictChoice === "waiver";
+  const facts = factsForLiveDraft(s.assembly);
   return (
     <div className="pad-page">
-      <Kicker>assemble · clause engine</Kicker>
-      <Title><T en="Rule-driven clause assembly" th="ประกอบข้อสัญญาจากกฎ" /></Title>
-      <p className="page-sub"><T en="Every module traces to an interview answer and the governing playbook. Adjust a standard clause only with a recorded reason." th="ทุกโมดูลผูกกับคำตอบในแบบสัมภาษณ์และ playbook ที่บังคับใช้ การปรับข้อมาตรฐานต้องมีเหตุในบันทึก" /></p>
-      {needsLawDecision ? (
-        <div className="callout" style={{ margin: "18px 0" }}>
-          <strong><T en="Governing-law posture needs a decision" th="ต้องตัดสินท่าทีกฎหมายที่ใช้" /></strong>
-          <p style={{ margin: "8px 0 12px" }}><T en="A requested exception must be recorded against the company Thai-law policy." th="คำขอยกเว้นต้องบันทึกเทียบนโยบายกฎหมายไทยของบริษัท" /></p>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button className={`btn ${s.conflictChoice === "thai" ? "btn-primary" : "btn-secondary"}`} onClick={() => { s.setConflictChoice("thai"); s.flash(th ? "ใช้กฎหมายไทย" : "Thai law selected"); }}><T en="Keep Thai law (policy)" th="ใช้กฎหมายไทย (นโยบาย)" /></button>
-            <button className={`btn ${s.conflictChoice === "waiver" ? "btn-primary" : "btn-secondary"}`} onClick={() => { s.setConflictChoice("waiver"); s.flash(th ? "ขออนุมัติยกเว้น" : "Waiver requested"); }}><T en="Request a policy waiver" th="ขออนุมัติยกเว้น" /></button>
-          </div>
+      <Kicker>assemble · live draft</Kicker>
+      <Title><T en="See the draft. Adjust clause by clause." th="ดูร่าง แล้วปรับทีละข้อ" /></Title>
+      <p className="page-sub">
+        <T
+          en="This is the operative text that will go into the Word/PDF pack. House-standard language plus counsel-confirmed facts. Change governing law or a fact and the clauses move. Adjust a clause with a recorded reason. The engine never signs."
+          th="นี่คือถ้อยคำที่ใช้ในชุด Word/PDF ข้อมาตรฐานบ้านบวกข้อมูลที่ทนายยืนยัน เปลี่ยนกฎหมายหรือข้อเท็จจริงแล้วข้อขยับ ปรับข้อได้โดยมีเหตุในบันทึก เครื่องยนต์ไม่ลงนามแทน"
+        />
+      </p>
+      <div className="callout" style={{ margin: "18px 0" }}>
+        <strong><T en="Governing-law posture" th="ท่าทีกฎหมายที่ใช้" /></strong>
+        <p style={{ margin: "8px 0 12px" }}>
+          <T en="Thai law is the house default. A foreign seat needs a recorded reason. The governing-law clause below updates when you choose." th="กฎหมายไทยเป็นค่าเริ่ม เขตต่างประเทศต้องมีเหตุ ข้อกฎหมายด้านล่างขยับตามที่เลือก" />
+        </p>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button type="button" className={`btn ${s.conflictChoice === "thai" ? "btn-primary" : "btn-secondary"}`} onClick={() => { s.setConflictChoice("thai"); s.flash(th ? "ใช้กฎหมายไทย — ข้อกฎหมายในร่างขยับแล้ว" : "Thai law — the governing-law clause moved"); }}>
+            <T en="Keep Thai law (policy)" th="ใช้กฎหมายไทย (นโยบาย)" />
+          </button>
+          <button type="button" className={`btn ${s.conflictChoice === "waiver" ? "btn-primary" : "btn-secondary"}`} onClick={() => { s.setConflictChoice("waiver"); s.flash(th ? "ขอยกเว้น — ข้อกฎหมายในร่างขยับแล้ว" : "Waiver — the governing-law clause moved"); }}>
+            <T en="Request a policy waiver" th="ขออนุมัติยกเว้น" />
+          </button>
         </div>
-      ) : (
-        <div className="callout" style={{ margin: "18px 0" }}>
-          <strong><T en="AI intake applied to module selection" th="ใช้ข้อมูล AI เลือกโมดูลแล้ว" /></strong>
-          <p style={{ margin: "8px 0 0" }}><T en="The questionnaire kept the Thai-law house posture. Counsel can still reopen the decision." th="แบบสอบถามคงท่าทีกฎหมายไทย ทนายยังเปิดตัดสินใหม่ได้" /></p>
-        </div>
-      )}
-      <table className="table">
-        <thead><tr><th>#</th><th><T en="Clause module" th="โมดูลข้อสัญญา" /></th><th><T en="Trigger" th="เงื่อนไข" /></th><th><T en="State" th="สถานะ" /></th></tr></thead>
-        <tbody>
-          {modules.map((m, i) => (
-            <tr key={i}>
-              <td>{String(i + 1).padStart(2, "0")}</td>
-              <td style={{ fontWeight: 700 }}>{L(s.lang, m.k)}</td>
-              <td>{L(s.lang, m.w)}</td>
-              <td>
-                <span className={m.s === "in" ? "tag tag-accent" : m.s === "conflict" ? "tag tag-outline" : "tag tag-neutral"}>
-                  {m.s === "conflict" && s.conflictChoice
-                    ? (s.conflictChoice === "thai" ? (th ? "ใช้กฎหมายไทย" : "Thai law") : (th ? "ขอยกเว้น" : "Waiver"))
-                    : m.s}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <button
-        type="button"
-        className="btn btn-primary"
-        style={{ marginTop: 20 }}
-        onClick={() => {
-          if (!s.conflictChoice) {
-            s.flash(th ? "ตัดสินข้อขัดกันก่อนสร้างเอกสาร" : "Resolve the conflict before generating");
-            return;
-          }
-          router.push("/assemble?s=draft");
-        }}
-      >
-        <T en="Generate DOCX + PDF" th="สร้างเอกสาร DOCX + PDF" />
-      </button>
+      </div>
+
+      <div className="live-draft-layout">
+        <LiveDraftView />
+        <aside className="live-draft-side">
+          <h5><T en="Facts controlling this draft" th="ข้อเท็จจริงที่ควบคุมร่างนี้" /></h5>
+          {facts.length ? facts.slice(0, 10).map((m) => (
+            <div key={m.id} style={{ padding: "10px 0", borderBottom: "1px solid var(--color-divider)" }}>
+              <div className="mono" style={{ fontSize: 10 }}>{m.id}</div>
+              <div style={{ fontWeight: 700 }}>{L(s.lang, m.title)}</div>
+              <div className="text-muted" style={{ fontSize: 12, whiteSpace: "pre-wrap" }}>{L(s.lang, m.value)}</div>
+            </div>
+          )) : (
+            <p className="text-muted" style={{ fontSize: 13 }}>
+              <T en="No facts yet — house-standard clauses for this type are already in the draft. Answer intake to weave them in." th="ยังไม่มีข้อเท็จจริง — ข้อมาตรฐานบ้านของประเภทนี้อยู่ในร่างแล้ว ตอบนำเข้าเพื่อถักเข้าข้อ" />
+            </p>
+          )}
+          <Link href="/assemble?s=intake" className="btn btn-secondary btn-block" style={{ marginTop: 12 }}>
+            <T en="Change intake facts" th="เปลี่ยนข้อมูลนำเข้า" />
+          </Link>
+        </aside>
+      </div>
+
+      <div className="stack-actions" style={{ marginTop: 24 }}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => {
+            if (!s.conflictChoice) {
+              s.flash(th ? "เลือกท่าทีกฎหมายก่อนส่งไปชุดเอกสาร" : "Choose a governing-law posture before the pack");
+              return;
+            }
+            router.push("/assemble?s=draft");
+          }}
+        >
+          <T en="Continue to pack and approvals" th="ไปชุดเอกสารและการอนุมัติ" />
+        </button>
+        <Link href="/assemble?s=bilingual" className="btn btn-secondary"><T en="Bilingual mirror" th="ร่างคู่ภาษา" /></Link>
+      </div>
     </div>
   );
 }
@@ -688,8 +700,10 @@ function Assembly() {
 function Draft() {
   const s = useStore();
   const th = s.lang === "th";
-  const draft = FX.interview.draft;
+  const type = TAX_LIST.find((r) => r.id === s.sel) || TAX_LIST[0];
   const inputs = acceptedAssemblyInputs(s.assembly);
+  const typeHay = `${type.nameEn} ${type.nameTh} ${type.keyTerms} ${type.tags}`.toLowerCase();
+  const itCloud = /saas|sla|dpa|pdpa|cloud|software|ข้อมูลส่วนบุคคล/.test(typeHay);
   const packInput = {
     lang: s.lang,
     conflictChoice: s.conflictChoice,
@@ -705,13 +719,11 @@ function Draft() {
         <Title><T en="Assembled draft" th="ร่างสัญญาที่ประกอบแล้ว" /></Title>
         <p className="page-sub">
           <T
-            en="Each block is a house standard clause. Adjust manually, or ask Leio — the engine never applies a rewrite by itself."
-            th="แต่ละบล็อกคือข้อมาตรฐานบ้าน ปรับด้วยมือ หรือถามเลโอ — เครื่องยนต์ไม่ใช้ข้อที่เขียนใหม่เอง"
+            en="This is the same live draft. Adjust any clause, then approve and generate the pack. The engine never applies a rewrite by itself and never signs."
+            th="นี่คือร่างสดชุดเดียวกัน ปรับข้อใดก็ได้ แล้วอนุมัติและสร้างชุด เครื่องยนต์ไม่ใช้ข้อที่เขียนใหม่เองและไม่ลงนามแทน"
           />
         </p>
-        {draft.map((x) => (
-          <StandardClause key={x.n} id={`draft:${x.n}`} kicker={`${x.n} ${L(s.lang, x.h)}`} original={x.b} />
-        ))}
+        <LiveDraftView />
       </div>
       <aside>
         <h5><T en="Review inputs in force" th="ข้อมูล Review ที่ใช้บังคับ" /></h5>
@@ -740,17 +752,24 @@ function Draft() {
           </div>
         )}
         <h5><T en="Document package" th="ชุดเอกสารที่จะสร้าง" /></h5>
-        {[{ k: th ? "สัญญาหลัก — บริการ SaaS" : "Main agreement — SaaS", v: "14 pp." }, { k: "Annex A — SLA", v: "4 pp." }, { k: "Annex B — DPA", v: "6 pp." }, { k: "Annex C — transfer", v: "3 pp." }].map((p) => (
+        {[
+          { k: th ? `สัญญาหลัก — ${type.nameTh}` : `Main agreement — ${type.nameEn}`, v: th ? "ร่างสด" : "live draft" },
+          ...(itCloud
+            ? [{ k: "Annex A — SLA", v: "house" }, { k: "Annex B — DPA", v: "house" }, { k: "Annex C — transfer", v: "house" }]
+            : []),
+        ].map((p) => (
           <div key={p.k} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--color-divider)" }}><span>{p.k}</span><span className="mono">{p.v}</span></div>
         ))}
-        <div style={{ marginTop: 16 }}>
-          <Dropzone
-            bucket="assemble"
-            compact
-            title={<T en="Drop missing annexes A–C" th="ลากภาคผนวก A–C ที่ยังขาด" />}
-            hint={<T en="SLA, DPA and transfer schedule. These are incorporated but not attached." th="SLA, DPA และตารางโอนข้อมูล อ้างถึงแล้วแต่ยังไม่แนบ" />}
-          />
-        </div>
+        {itCloud && (
+          <div style={{ marginTop: 16 }}>
+            <Dropzone
+              bucket="assemble"
+              compact
+              title={<T en="Drop missing annexes A–C" th="ลากภาคผนวก A–C ที่ยังขาด" />}
+              hint={<T en="SLA, DPA and transfer schedule. These are incorporated but not attached." th="SLA, DPA และตารางโอนข้อมูล อ้างถึงแล้วแต่ยังไม่แนบ" />}
+            />
+          </div>
+        )}
         <h5 style={{ marginTop: 24 }}><T en="Internal approvals" th="การอนุมัติภายใน" /></h5>
         {[
           { k: "General Counsel", v: th ? "อนุมัติแล้ว" : "Approved", pending: false },
@@ -929,25 +948,43 @@ function ReviewReady() {
 
 function Bilingual() {
   const s = useStore();
+  const type = TAX_LIST.find((r) => r.id === s.sel) || TAX_LIST[0];
+  const facts = factsForLiveDraft(s.assembly);
+  const draft = buildLiveDraft({
+    typeId: type.id,
+    facts,
+    conflictChoice: s.conflictChoice,
+  });
   return (
     <div className="pad-page">
       <Kicker>wow · bilingual mirror</Kicker>
       <Title><T en="Thai and English remain structurally linked" th="ข้อไทยและอังกฤษผูกโครงสร้างเดียวกัน" /></Title>
-      <p className="page-sub"><T en="When one language changes, LAW24 flags whether the translation creates a different legal meaning." th="เมื่อภาษาหนึ่งเปลี่ยน LAW24 ชี้ว่าคำแปลสร้างความหมายทางกฎหมายต่างกันหรือไม่" /></p>
-      {BILINGUAL.map((b, i) => (
-        <div key={i} style={{ marginTop: 20 }}>
-          <div className="bilingual-grid">
-            <div className="bilingual-col"><div className="page-kicker">TH</div><p>{b.th}</p></div>
-            <div className="bilingual-col"><div className="page-kicker">EN</div><p>{b.en}</p></div>
+      <p className="page-sub">
+        <T
+          en="This is the live draft in both languages — not a Nimbus sample. Adjust a clause on the live draft if the meaning diverges. The engine never signs."
+          th="นี่คือร่างสดทั้งสองภาษา — ไม่ใช่ตัวอย่าง Nimbus ถ้าความหมายไม่ตรง ให้ปรับข้อในร่างสด เครื่องยนต์ไม่ลงนามแทน"
+        />
+      </p>
+      {draft.clauses.map((c) => {
+        const body = s.clauseEdits[c.id]?.body ?? c.b;
+        return (
+          <div key={c.id} style={{ marginTop: 20 }}>
+            <div className="page-kicker">{c.n} {L(s.lang, c.h)}</div>
+            <div className="bilingual-grid">
+              <div className="bilingual-col"><div className="page-kicker">TH</div><p style={{ whiteSpace: "pre-wrap" }}>{body.t}</p></div>
+              <div className="bilingual-col"><div className="page-kicker">EN</div><p style={{ whiteSpace: "pre-wrap" }}>{body.e}</p></div>
+            </div>
+            {s.clauseEdits[c.id] && (
+              <div className="callout" style={{ marginTop: 0, borderTop: 0 }}>
+                <span className="tag tag-accent"><T en="Adjusted" th="ปรับแล้ว" /></span>
+                <span style={{ marginLeft: 10 }}>{s.clauseEdits[c.id]?.reason}</span>
+              </div>
+            )}
           </div>
-          <div className="callout" style={{ marginTop: 0, borderTop: 0 }}>
-            <span className={b.risk === "high" ? "tag tag-signal" : b.risk === "ok" ? "tag tag-neutral" : "tag tag-accent"}>{b.risk}</span>
-            <span style={{ marginLeft: 10 }}>{L(s.lang, b.drift)}</span>
-          </div>
-        </div>
-      ))}
+        );
+      })}
       <div className="stack-actions" style={{ marginTop: 18 }}>
-        <Link href="/review?s=xray" className="btn btn-primary">X-Ray</Link>
+        <Link href="/assemble?s=asm" className="btn btn-primary"><T en="Adjust clause by clause" th="ปรับทีละข้อ" /></Link>
         <Link href="/assemble?s=draft" className="btn btn-secondary"><T en="Back to draft" th="กลับร่าง" /></Link>
       </div>
     </div>
