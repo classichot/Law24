@@ -32,7 +32,7 @@ Edition: ${edition} (${edition === "firm" ? "include Practice, exclude Command" 
 Role: ${job || "(not given)"}
 Assignment: ${brief || "(not given)"}
 
-Known screens (mode?s=screen): assemble lib/iv/asm/draft/bilingual; review xray/rsetup/find/pb/red/board; holistic cockpit/dna/simulate/memo; diligence dmatter/droom/dflags/autopilot/drep; negotiate nstrat/nladder/npos/nresp; obligations oreg/ocal/oren/oalert; intel twin/ipf/ikg/memory; command desk/approvals; practice brain/room/packages/quote/assign/trace; help use/leio/watch/books; assist ask.
+Known screens (mode?s=screen): assemble intake/papers/aiq/lib/iv/asm/draft/areview/bilingual; review xray/rsetup/find/pb/red/board; holistic cockpit/dna/simulate/memo; diligence deal/droom/dmiss/dcontra/dbreak/dsim/dfix/drep; negotiate nstrat/nladder/npos/nresp; obligations oreg/ocal/oren/oalert; intel twin/ipf/ikg/memory; command desk/approvals; practice brain/room/packages/quote/assign/trace; help use/leio/watch/books; assist ask.
 
 Playbook keys: practice assembly itcloud decision dd mandate control memory router help command.`,
     );

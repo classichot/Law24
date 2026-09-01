@@ -128,7 +128,7 @@ export const GUEST_TOUR: GuestTourStep[] = [
   { href: "/home", en: "Home — every module from the grid (same chrome as a logged-in demo).", th: "หน้าแรก — ทุกโมดูลจากตาราง (โครมเดียวกับสาธิตที่ล็อกอิน)" },
   { href: "/review?s=xray", en: "X-Ray — drop a PDF/DOCX, or one-click Nimbus CT-291 if you have no file. Read the verdict. Live AI posts /api/ai/xray when a key is on the server.", th: "X-Ray — ลาก PDF/DOCX หรือกดนิมบัส CT-291 ถ้าไม่มีไฟล์ อ่านคำตัดสิน AI สดยิง /api/ai/xray เมื่อมีคีย์บนเซิร์ฟเวอร์" },
   { href: "/help?s=leio", en: "Leio — ask one question (Ctrl J). Live vs Demo badge stays honest.", th: "เลโอ — ถามหนึ่งข้อ (Ctrl J) ป้ายสด/สาธิตไม่โกหก" },
-  { href: "/assemble?s=lib", en: "Assemble — pick a Thai type, interview, generate Word + PDF. Nothing is signed.", th: "ประกอบ — เลือกประเภทไทย สัมภาษณ์ สร้าง Word + PDF ไม่มีการลงนามแทน" },
+  { href: "/assemble?s=intake", en: "Assemble — choose intake papers or a type-aware AI questionnaire, generate Word + PDF, then send to Review. Nothing is signed.", th: "ประกอบ — เลือกเอกสารนำเข้าหรือแบบสอบถาม AI ตามประเภท สร้าง Word + PDF แล้วส่ง Review ไม่มีการลงนามแทน" },
   { href: "/diligence?s=dwar", en: "Diligence — ingest data-room files, open red flags (Charoen is seeded).", th: "ตรวจสอบสถานะ — รับไฟล์ห้องข้อมูล เปิดธงแดง (เจริญมีข้อมูลจริง)" },
   { href: "/negotiate?s=nstrat", en: "Negotiate — drop markup, walk preferred → walk-away.", th: "เจรจา — ลาก redline เดินจุดยืนที่ต้องการถึงเดินออก" },
   { href: "/assist?s=ask", en: "Assist — describe a job; the OS names the module.", th: "ผู้ช่วย — อธิบายงาน ระบบชี้โมดูล" },

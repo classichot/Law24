@@ -1670,6 +1670,14 @@ button.xray-layer { font: inherit; text-align: left; cursor: pointer; width: 100
 .assemble-intake-row:hover { border-color: var(--eng-draft); background: var(--color-surface); }
 .assemble-intake-row input { margin-top: 4px; accent-color: var(--eng-draft); }
 .assemble-intake-row > a { font-size: 12px; white-space: nowrap; }
+.ai-intake-question {
+  padding: 18px 0; border-bottom: 1px solid var(--color-divider);
+}
+.ai-intake-question > label {
+  display: block; margin-top: 10px; font-weight: 800; font-size: 15px; line-height: 1.45;
+}
+.ai-intake-question > p { margin: 5px 0 10px; font-size: 12px; line-height: 1.5; }
+.ai-intake-question > .input { width: min(100%, 760px); }
 .review-preflight { border-top: 2px solid var(--color-divider); }
 .review-preflight-row {
   display: grid; grid-template-columns: 72px minmax(180px, 1fr) minmax(180px, 1fr);

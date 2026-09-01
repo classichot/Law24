@@ -118,7 +118,7 @@ export const ENGAGEMENT: Record<EngagementTrack, {
     th: "ร่างสัญญา",
     tagEn: "Draft",
     tagTh: "ร่าง",
-    why: { t: "รับข้อมูล Review · คลังประเภท · สัมภาษณ์ · ประกอบข้อ · ส่งกลับตรวจ", e: "Review intake · type library · interview · clause assembly · back to Review" },
+    why: { t: "เอกสารนำเข้าหรือแบบสอบถาม AI · คลังประเภท · ประกอบข้อ · ส่งกลับตรวจ", e: "Intake papers or AI questionnaire · type library · clause assembly · back to Review" },
     record: { t: "บันทึกงานร่าง — ข้อมูลต้นทาง ประเภท ร่าง และเส้นทางตรวจ", e: "Drafting record — source intake, type, draft and review trail" },
     href: "/assemble?s=intake",
     firmHref: "/practice?s=edraft",

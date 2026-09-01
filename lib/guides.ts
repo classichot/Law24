@@ -298,9 +298,19 @@ export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
     rule: P("เส้นทางต้องครบ — ขาดขั้นรับเรื่องถือว่ายังไม่เปิดงาน", "The trail must be complete — missing intake means the assignment is not open"),
   },
   "assemble/intake": {
-    why: P("รับข้อเท็จจริง ข้อค้นพบ และคำสั่ง redline จาก Review พร้อมแหล่ง", "Ingest facts, findings and redline instructions from Review with their sources"),
-    do: P("เลือกเฉพาะข้อมูลที่ต้องควบคุมร่าง แล้วรับเข้า Assembly", "Select the information that must control the draft, then ingest it"),
+    why: P("Assembly มีสองทางรับข้อมูล — เอกสารนำเข้าหรือแบบสอบถาม AI", "Assembly has two intake routes — source papers or an AI questionnaire"),
+    do: P("เลือกทางตามว่าข้อมูลอยู่ในเอกสารหรืออยู่กับลูกค้า/ทนาย", "Choose based on whether the information is documented or still held by the client/counsel"),
+    rule: P("ทั้งสองทางต้องให้ทนายยืนยันก่อนข้อมูลควบคุมร่าง", "Counsel confirms either route before its information controls the draft"),
+  },
+  "assemble/papers": {
+    why: P("เอกสารนำเข้าให้ข้อเท็จจริงและคำสั่งพร้อมแหล่ง", "Intake papers provide facts and instructions with a source"),
+    do: P("วาง term sheet คำสั่ง หรือร่างเดิม และรับข้อมูล Review ที่เกี่ยวข้อง", "Drop the term sheet, instructions or existing draft and ingest connected Review inputs"),
     rule: P("ห้ามคัดข้อค้นพบเป็นถ้อยคำโดยไม่รักษาแหล่งและท่าที", "Do not copy a finding into drafting words without its source and posture"),
+  },
+  "assemble/aiq": {
+    why: P("AI ปรับคำถามตามประเภทสัญญาและคำตอบก่อนหน้า", "AI adapts questions to the contract type and prior answers"),
+    do: P("เลือกประเภท ตอบข้อบังคับ ให้ AI ถามต่อ แล้วให้ทนายยืนยันรับเข้า", "Select the type, answer required questions, let AI follow up, then have counsel confirm ingestion"),
+    rule: P("คำตอบคือคำยืนยันของลูกค้า/ทนาย ไม่ใช่ข้อเท็จจริงที่ AI พิสูจน์แล้ว", "An answer is a client/counsel assertion, not an AI-verified fact"),
   },
   "assemble/lib": {
     why: P("คลัง 500 ประเภทเป็นประตูเข้าเครื่องยนต์ประกอบสัญญา", "The 500-type library is the door into assembly"),
