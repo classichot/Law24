@@ -298,14 +298,19 @@ export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
     rule: P("เส้นทางต้องครบ — ขาดขั้นรับเรื่องถือว่ายังไม่เปิดงาน", "The trail must be complete — missing intake means the assignment is not open"),
   },
   "assemble/intake": {
-    why: P("Assembly มีสองทางรับข้อมูล — เอกสารนำเข้าหรือแบบสอบถาม AI", "Assembly has two intake routes — source papers or an AI questionnaire"),
-    do: P("เลือกทางตามว่าข้อมูลอยู่ในเอกสารหรืออยู่กับลูกค้า/ทนาย", "Choose based on whether the information is documented or still held by the client/counsel"),
+    why: P("Assembly มีสามทางรับข้อมูล — เอกสารนำเข้า ใบ MOU หนึ่งหน้า หรือแบบสอบถาม AI", "Assembly has three intake routes — source papers, the MOU one-pager, or an AI questionnaire"),
+    do: P("เลือกทางตามว่าข้อมูลอยู่ในเอกสาร อยู่บนใบ CT-001 หรืออยู่กับลูกค้า/ทนาย", "Choose based on whether the information is documented, on the CT-001 paper, or still held by the client/counsel"),
     rule: P("ทั้งสองทางต้องให้ทนายยืนยันก่อนข้อมูลควบคุมร่าง", "Counsel confirms either route before its information controls the draft"),
   },
   "assemble/papers": {
     why: P("เอกสารนำเข้าให้ข้อเท็จจริงและคำสั่งพร้อมแหล่ง", "Intake papers provide facts and instructions with a source"),
     do: P("วาง term sheet คำสั่ง หรือร่างเดิม และรับข้อมูล Review ที่เกี่ยวข้อง", "Drop the term sheet, instructions or existing draft and ingest connected Review inputs"),
     rule: P("ห้ามคัดข้อค้นพบเป็นถ้อยคำโดยไม่รักษาแหล่งและท่าที", "Do not copy a finding into drafting words without its source and posture"),
+  },
+  "assemble/mou": {
+    why: P("ใบนำเข้าหนึ่งหน้าเก็บข้อเท็จจริงที่ต้องใช้ร่างบันทึกความเข้าใจ CT-001", "The one-page intake holds the facts needed to draft a CT-001 memorandum of understanding"),
+    do: P("กรอกคู่เจรจา วัตถุประสงค์ ท่าทีผูกพัน ความลับ และกฎหมาย แล้วให้ทนายยืนยันรับเข้า", "Fill parties, purpose, binding posture, confidentiality and law, then have counsel confirm ingestion"),
+    rule: P("ใบนี้ไม่ใช่สัญญา — แยกส่วนที่ผูกพันออกจากส่วนที่ไม่ผูกพันก่อนประกอบข้อ", "This paper is not the contract — separate binding from non-binding parts before clauses assemble"),
   },
   "assemble/aiq": {
     why: P("AI ปรับคำถามตามประเภทสัญญาและคำตอบก่อนหน้า", "AI adapts questions to the contract type and prior answers"),

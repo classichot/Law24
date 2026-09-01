@@ -151,6 +151,7 @@ export const NAV: Record<Exclude<ModeKey, "home">, [ScreenKey, string, string][]
   assemble: [
     ["intake", "ทางรับข้อมูล", "Intake routes"],
     ["papers", "เอกสารนำเข้า", "Intake papers"],
+    ["mou", "ใบนำเข้า MOU", "MOU intake paper"],
     ["aiq", "แบบสอบถาม AI", "AI questionnaire"],
     ["lib", "คลังสัญญา 500 ประเภท", "Contract library — 500 types"],
     ["type", "รายละเอียดประเภท", "Type detail"],
@@ -278,8 +279,9 @@ export const FIRM_CONTROL: FirmControlHop[] = [
   { href: "/diligence?s=dwar", en: "War Room", th: "ห้องสงคราม", kind: "engine", track: "review", why: { t: "ธงแดงและตารางตรวจของสัญญานี้", e: "Flags and the review grid for this contract" } },
   { href: "/negotiate?s=nladder", en: "Copilot", th: "เจรจา", kind: "engine", track: "review", why: { t: "ถือบันไดจุดยืนของงานตรวจนี้", e: "Hold the fallback ladder for this review" } },
   { href: "/obligations?s=oreg", en: "Obligations", th: "ข้อผูกพัน", kind: "engine", track: "review", why: { t: "วันที่สำคัญลงทะเบียนหลังลงนาม", e: "Key dates onto the post-signature register" } },
-  { href: "/assemble?s=intake", en: "Intake routes", th: "ทางรับข้อมูล", kind: "engine", track: "assemble", why: { t: "เลือกอัปโหลดเอกสารหรือแบบสอบถาม AI", e: "Choose intake papers or an adaptive AI questionnaire" } },
+  { href: "/assemble?s=intake", en: "Intake routes", th: "ทางรับข้อมูล", kind: "engine", track: "assemble", why: { t: "เลือกเอกสารนำเข้า ใบ MOU หรือแบบสอบถาม AI", e: "Choose intake papers, the MOU one-pager, or an adaptive AI questionnaire" } },
   { href: "/assemble?s=papers", en: "Intake papers", th: "เอกสารนำเข้า", kind: "engine", track: "assemble", why: { t: "รับ term sheet คำสั่ง และข้อมูลจาก Review", e: "Ingest term sheets, instructions and connected Review" } },
+  { href: "/assemble?s=mou", en: "MOU intake", th: "ใบนำเข้า MOU", kind: "engine", track: "assemble", why: { t: "กรอกใบหนึ่งหน้าสำหรับบันทึกความเข้าใจ CT-001", e: "Fill the one-page paper for a CT-001 memorandum of understanding" } },
   { href: "/assemble?s=aiq", en: "AI questionnaire", th: "แบบสอบถาม AI", kind: "engine", track: "assemble", why: { t: "คำถามเปลี่ยนตามประเภทสัญญาและคำตอบ", e: "Questions adapt to the contract type and prior answers" } },
   { href: "/assemble?s=lib", en: "Library", th: "คลังประเภท", kind: "engine", track: "assemble", why: { t: "เลือกประเภทจากคลัง 500 ก่อนร่าง", e: "Pick the type from the 500-type library" } },
   { href: "/assemble?s=iv", en: "Interview", th: "สัมภาษณ์", kind: "engine", track: "assemble", why: { t: "ล็อกท่าทีเชิงพาณิชย์ก่อนประกอบข้อ", e: "Lock commercial positions before clauses fire" } },
