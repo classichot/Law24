@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
@@ -16,6 +16,7 @@ import { StandardClause } from "@/components/StandardClause";
 import { houseStandard } from "@/lib/clauses";
 import {
   acceptedAssemblyInputs,
+  adaptIntakeRound,
   assemblyInputsOf,
   fallbackQuestionnaire,
   questionnaireInputsOf,
@@ -182,13 +183,21 @@ function AiQuestionnaire() {
   const qn = s.assembly.questionnaire;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const gen = useRef(0);
   const c = TAX_LIST.find((r) => r.id === s.sel) || TAX_LIST[0];
   const active = qn.typeId === c.id;
   const answered = active ? Object.values(qn.answers).filter((x) => x.trim()).length : 0;
   const openRequired = active ? qn.questions.filter((q) => q.required && !qn.answers[q.id]?.trim()).length : 0;
   const inputs = active ? questionnaireInputsOf(qn) : [];
+  const canIngest = !loading && inputs.length > 0 && openRequired === 0;
+
+  function stopAsk() {
+    gen.current += 1;
+    setLoading(false);
+  }
 
   async function askNext(reset = false) {
+    const token = ++gen.current;
     setLoading(true);
     setError("");
     const fresh = reset || !active;
@@ -211,7 +220,7 @@ function AiQuestionnaire() {
           },
           answers,
           round,
-        });
+        }, 55_000);
       } else {
         next = fallbackQuestionnaire({
           typeId: c.id,
@@ -222,24 +231,32 @@ function AiQuestionnaire() {
           round,
         });
       }
+      if (token !== gen.current) return;
+      next = adaptIntakeRound(next, fresh ? { ...qn, questions: [], answers: {} } : qn, fresh, answers);
       if (fresh) s.resetAssemblyQuestionnaire(c.id);
       s.setAssemblyQuestionnaire({ ...next, typeId: c.id, round });
-      if (!next.questions.length && next.ready) {
-        s.flash(th ? "ข้อมูลพอสำหรับร่างรอบแรก — รอทนายยืนยัน" : "Enough for a first draft — counsel confirmation required");
+      if (next.ready) {
+        s.flash(th ? "ข้อมูลพอสำหรับร่างรอบแรก — ทนายยืนยันได้ หรือถามต่อได้" : "Enough for a first draft — counsel can confirm, or ask a follow-up");
       }
     } catch (err) {
-      const fallback = fallbackQuestionnaire({
-        typeId: c.id,
-        typeName: `${c.nameEn} ${c.nameTh}`,
-        category: `${c.cat} ${CAT_MAP[c.cat]?.en || ""}`,
-        keyTerms: c.keyTerms,
+      if (token !== gen.current) return;
+      const fallback = adaptIntakeRound(
+        fallbackQuestionnaire({
+          typeId: c.id,
+          typeName: `${c.nameEn} ${c.nameTh}`,
+          category: `${c.cat} ${CAT_MAP[c.cat]?.en || ""}`,
+          keyTerms: c.keyTerms,
+          answers,
+          round,
+        }),
+        fresh ? { ...qn, questions: [], answers: {} } : qn,
+        fresh,
         answers,
-        round,
-      });
+      );
       s.setAssemblyQuestionnaire({ ...fallback, typeId: c.id, round });
       setError(err instanceof Error ? err.message : "Live AI unavailable");
     } finally {
-      setLoading(false);
+      if (token === gen.current) setLoading(false);
     }
   }
 
@@ -279,6 +296,11 @@ function AiQuestionnaire() {
           <button type="button" className="btn btn-primary" disabled={loading} onClick={() => void askNext(true)}>
             {loading ? <T en="Building questions…" th="กำลังสร้างคำถาม…" /> : <T en="Generate type-aware questions" th="สร้างคำถามตามประเภท" />}
           </button>
+          {loading && (
+            <button type="button" className="btn btn-ghost" style={{ marginLeft: 8 }} onClick={stopAsk}>
+              <T en="Stop waiting" th="หยุดรอ" />
+            </button>
+          )}
         </div>
       ) : (
         <>
@@ -297,10 +319,10 @@ function AiQuestionnaire() {
               </div>
               <label htmlFor={q.id}>{L(s.lang, q.prompt)}</label>
               <p className="text-muted">{L(s.lang, q.why)}</p>
-              {q.answerType === "select" ? (
+                  {q.answerType === "select" ? (
                 <select id={q.id} className="input" value={qn.answers[q.id] || ""} onChange={(e) => s.answerAssemblyQuestion(q.id, e.target.value)}>
                   <option value="">{th ? "เลือก…" : "Select…"}</option>
-                  {q.options.map((o) => <option key={o.e} value={L(s.lang, o)}>{L(s.lang, o)}</option>)}
+                  {(q.options || []).map((o) => <option key={o.e} value={L(s.lang, o)}>{L(s.lang, o)}</option>)}
                 </select>
               ) : q.answerType === "boolean" ? (
                 <select id={q.id} className="input" value={qn.answers[q.id] || ""} onChange={(e) => s.answerAssemblyQuestion(q.id, e.target.value)}>
@@ -321,16 +343,19 @@ function AiQuestionnaire() {
             </div>
           ))}
           {error && <p className="text-muted" style={{ fontSize: 12 }}><T en="Live AI was unavailable; LAW24 used the contract-type fallback." th="AI สดไม่พร้อม ระบบใช้คำถามสำรองตามประเภทสัญญา" /> ({error})</p>}
+          {qn.ready && (
+            <p className="text-muted" style={{ fontSize: 12, marginTop: 8 }}>
+              <T en="First-round facts are enough to ingest. Follow-up questions stay optional so the screen cannot lock." th="ข้อเท็จจริงรอบแรกพอสำหรับรับเข้า คำถามต่อเป็นทางเลือก เพื่อไม่ให้หน้าจอล็อก" />
+            </p>
+          )}
           <div className="stack-actions" style={{ marginTop: 18 }}>
-            {!qn.ready && (
-              <button type="button" className="btn btn-primary" disabled={loading || openRequired > 0} onClick={() => void askNext()}>
-                {loading ? <T en="Adapting…" th="กำลังปรับคำถาม…" /> : <T en="Ask adaptive follow-up" th="ถามต่อจากคำตอบ" />}
-              </button>
-            )}
+            <button type="button" className="btn btn-primary" disabled={loading || openRequired > 0} onClick={() => void askNext()}>
+              {loading ? <T en="Adapting…" th="กำลังปรับคำถาม…" /> : <T en="Ask adaptive follow-up" th="ถามต่อจากคำตอบ" />}
+            </button>
             <button
               type="button"
               className="btn btn-primary"
-              disabled={!qn.ready || !inputs.length || openRequired > 0}
+              disabled={!canIngest}
               onClick={() => {
                 s.ingestQuestionnaireToAssembly(inputs, c.id);
                 s.flash(th ? `${inputs.length} คำตอบถูกล็อกเป็นข้อมูลร่าง — ทนายยืนยัน` : `${inputs.length} answers locked as drafting inputs — counsel confirmed`);
@@ -338,7 +363,12 @@ function AiQuestionnaire() {
             >
               <T en="Counsel confirms and ingests answers" th="ทนายยืนยันและรับคำตอบเข้า Assembly" />
             </button>
-            <button type="button" className="btn btn-secondary" onClick={() => { s.resetAssemblyQuestionnaire(c.id); setError(""); }}>
+            {loading && (
+              <button type="button" className="btn btn-ghost" onClick={stopAsk}>
+                <T en="Stop waiting" th="หยุดรอ" />
+              </button>
+            )}
+            <button type="button" className="btn btn-secondary" onClick={() => { stopAsk(); setError(""); s.resetAssemblyQuestionnaire(c.id); }}>
               <T en="Restart questionnaire" th="เริ่มแบบสอบถามใหม่" />
             </button>
             <Link href="/assemble?s=lib" className="btn btn-secondary"><T en="Continue to library" th="ไปคลังประเภท" /></Link>
