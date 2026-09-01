@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { X } from "lucide-react";
-import { ENGAGEMENT } from "@/lib/firm";
 import { ASSIST_MODE, HELP_MODE, MODULES, productModuleOf } from "@/lib/nav";
 import { modeHref, useStore } from "@/lib/store";
 import { T } from "@/lib/i18n";
@@ -53,7 +52,6 @@ export function OsSidebar({
 
         {MODULES.map((mod) => {
           const on = active?.id === mod.id;
-          const showEngines = mod.engines.length > 1;
           return (
             <div key={mod.id} className={`os-rail-mod ${mod.cls}${on ? " on" : ""}`}>
               <Link href={mod.href} className="os-rail-mod-head" onClick={onClose}>
@@ -63,7 +61,7 @@ export function OsSidebar({
                   <em>{th ? mod.markTh : mod.mark}</em>
                 </span>
               </Link>
-              {showEngines && (
+              {on && mod.engines.length > 1 && (
                 <div className="os-rail-engines">
                   {mod.engines.map((eng) => (
                     <Link
@@ -90,14 +88,6 @@ export function OsSidebar({
         <Link href={modeHref(HELP_MODE.k)} className={`os-rail-link${mode === "help" ? " on" : ""}`} onClick={onClose}>
           {th ? HELP_MODE.th : HELP_MODE.en}
         </Link>
-
-        <div className="os-rail-legend">
-          {MODULES.map((mod) => (
-            <span key={mod.id} className={`eng-pill ${ENGAGEMENT[mod.id].cls}`}>
-              {th ? ENGAGEMENT[mod.id].tagTh : ENGAGEMENT[mod.id].tagEn}
-            </span>
-          ))}
-        </div>
       </aside>
     </>
   );
