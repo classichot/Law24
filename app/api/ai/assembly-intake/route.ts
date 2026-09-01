@@ -5,7 +5,7 @@ import { LIVE_ONLY } from "@/lib/ai/house";
 import { jsonError, requireLive } from "@/lib/ai/http";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 15;
 
 type IntakeBody = {
   type?: {
@@ -69,6 +69,9 @@ Rules:
 - Select answerType carefully and provide options only for select.
 - ready=true only when enough information exists to assemble a first draft; list unresolved essentials in missing.
 - Answers are client/counsel assertions, not verified facts. The lawyer confirms. Never sign and never invent an answer.`,
+      undefined,
+      undefined,
+      { maxOutputTokens: 2500, maxRetries: 0, timeoutMs: 12_000 },
     );
     return NextResponse.json(object);
   } catch (err) {

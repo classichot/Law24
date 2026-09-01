@@ -181,32 +181,52 @@ function AiQuestionnaire() {
   const s = useStore();
   const th = s.lang === "th";
   const qn = s.assembly.questionnaire;
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [refining, setRefining] = useState(false);
   const gen = useRef(0);
   const c = TAX_LIST.find((r) => r.id === s.sel) || TAX_LIST[0];
   const active = qn.typeId === c.id;
   const answered = active ? Object.values(qn.answers).filter((x) => x.trim()).length : 0;
   const openRequired = active ? qn.questions.filter((q) => q.required && !qn.answers[q.id]?.trim()).length : 0;
   const inputs = active ? questionnaireInputsOf(qn) : [];
-  const canIngest = !loading && inputs.length > 0 && openRequired === 0;
+  const canIngest = inputs.length > 0 && openRequired === 0;
 
   function stopAsk() {
     gen.current += 1;
-    setLoading(false);
+    setRefining(false);
   }
 
   async function askNext(reset = false) {
     const token = ++gen.current;
-    setLoading(true);
     setError("");
     const fresh = reset || !active;
     const answers = fresh ? {} : qn.answers;
     const round = fresh ? 1 : qn.round + 1;
+    const prior = fresh ? { ...qn, questions: [] as typeof qn.questions, answers: {} as Record<string, string> } : qn;
+    const house = adaptIntakeRound(
+      fallbackQuestionnaire({
+        typeId: c.id,
+        typeName: `${c.nameEn} ${c.nameTh}`,
+        category: `${c.cat} ${CAT_MAP[c.cat]?.en || ""}`,
+        keyTerms: c.keyTerms,
+        answers,
+        round,
+      }),
+      prior,
+      fresh,
+      answers,
+    );
+    if (fresh) s.resetAssemblyQuestionnaire(c.id);
+    s.setAssemblyQuestionnaire({ ...house, typeId: c.id, round });
+    if (house.ready) {
+      s.flash(th ? "ข้อมูลพอสำหรับร่างรอบแรก — ทนายยืนยันได้ หรือถามต่อได้" : "Enough for a first draft — counsel can confirm, or ask a follow-up");
+    }
+    if (!(await fetchAiStatus())) return;
+    if (token !== gen.current) return;
+    setRefining(true);
     try {
-      let next: Pick<IntakeQuestionnaire, "questions" | "summary" | "missing" | "ready">;
-      if (await fetchAiStatus()) {
-        next = await postAi<typeof next>("/api/ai/assembly-intake", {
+      const live = adaptIntakeRound(
+        await postAi<Pick<IntakeQuestionnaire, "questions" | "summary" | "missing" | "ready">>("/api/ai/assembly-intake", {
           type: {
             id: c.id,
             nameTh: c.nameTh,
@@ -220,43 +240,19 @@ function AiQuestionnaire() {
           },
           answers,
           round,
-        }, 55_000);
-      } else {
-        next = fallbackQuestionnaire({
-          typeId: c.id,
-          typeName: `${c.nameEn} ${c.nameTh}`,
-          category: `${c.cat} ${CAT_MAP[c.cat]?.en || ""}`,
-          keyTerms: c.keyTerms,
-          answers,
-          round,
-        });
-      }
-      if (token !== gen.current) return;
-      next = adaptIntakeRound(next, fresh ? { ...qn, questions: [], answers: {} } : qn, fresh, answers);
-      if (fresh) s.resetAssemblyQuestionnaire(c.id);
-      s.setAssemblyQuestionnaire({ ...next, typeId: c.id, round });
-      if (next.ready) {
-        s.flash(th ? "ข้อมูลพอสำหรับร่างรอบแรก — ทนายยืนยันได้ หรือถามต่อได้" : "Enough for a first draft — counsel can confirm, or ask a follow-up");
-      }
-    } catch (err) {
-      if (token !== gen.current) return;
-      const fallback = adaptIntakeRound(
-        fallbackQuestionnaire({
-          typeId: c.id,
-          typeName: `${c.nameEn} ${c.nameTh}`,
-          category: `${c.cat} ${CAT_MAP[c.cat]?.en || ""}`,
-          keyTerms: c.keyTerms,
-          answers,
-          round,
-        }),
-        fresh ? { ...qn, questions: [], answers: {} } : qn,
-        fresh,
+        }, 8_000),
+        prior,
+        false,
         answers,
       );
-      s.setAssemblyQuestionnaire({ ...fallback, typeId: c.id, round });
-      setError(err instanceof Error ? err.message : "Live AI unavailable");
+      if (token !== gen.current) return;
+      if (live.questions.length) {
+        s.setAssemblyQuestionnaire({ ...live, typeId: c.id, round });
+      }
+    } catch {
+      // House questions are already on screen. Live AI is optional.
     } finally {
-      if (token === gen.current) setLoading(false);
+      if (token === gen.current) setRefining(false);
     }
   }
 
@@ -293,14 +289,9 @@ function AiQuestionnaire() {
         <div className="callout eng-card eng-draft">
           <strong><T en="Ready to interview" th="พร้อมเริ่มสัมภาษณ์" /></strong>
           <p>{th ? `AI จะสร้างคำถามเฉพาะ ${c.nameTh}` : `AI will create questions specifically for ${c.nameEn}.`}</p>
-          <button type="button" className="btn btn-primary" disabled={loading} onClick={() => void askNext(true)}>
-            {loading ? <T en="Building questions…" th="กำลังสร้างคำถาม…" /> : <T en="Generate type-aware questions" th="สร้างคำถามตามประเภท" />}
+          <button type="button" className="btn btn-primary" onClick={() => void askNext(true)}>
+            <T en="Generate type-aware questions" th="สร้างคำถามตามประเภท" />
           </button>
-          {loading && (
-            <button type="button" className="btn btn-ghost" style={{ marginLeft: 8 }} onClick={stopAsk}>
-              <T en="Stop waiting" th="หยุดรอ" />
-            </button>
-          )}
         </div>
       ) : (
         <>
@@ -343,14 +334,19 @@ function AiQuestionnaire() {
             </div>
           ))}
           {error && <p className="text-muted" style={{ fontSize: 12 }}><T en="Live AI was unavailable; LAW24 used the contract-type fallback." th="AI สดไม่พร้อม ระบบใช้คำถามสำรองตามประเภทสัญญา" /> ({error})</p>}
+          {refining && (
+            <p className="text-muted" style={{ fontSize: 12, marginTop: 8 }}>
+              <T en="House questions are ready. Live AI may add a follow-up in the background." th="คำถามบ้านพร้อมแล้ว AI สดอาจเติมคำถามต่อเบื้องหลัง" />
+            </p>
+          )}
           {qn.ready && (
             <p className="text-muted" style={{ fontSize: 12, marginTop: 8 }}>
               <T en="First-round facts are enough to ingest. Follow-up questions stay optional so the screen cannot lock." th="ข้อเท็จจริงรอบแรกพอสำหรับรับเข้า คำถามต่อเป็นทางเลือก เพื่อไม่ให้หน้าจอล็อก" />
             </p>
           )}
           <div className="stack-actions" style={{ marginTop: 18 }}>
-            <button type="button" className="btn btn-primary" disabled={loading || openRequired > 0} onClick={() => void askNext()}>
-              {loading ? <T en="Adapting…" th="กำลังปรับคำถาม…" /> : <T en="Ask adaptive follow-up" th="ถามต่อจากคำตอบ" />}
+            <button type="button" className="btn btn-primary" disabled={openRequired > 0} onClick={() => void askNext()}>
+              <T en="Ask adaptive follow-up" th="ถามต่อจากคำตอบ" />
             </button>
             <button
               type="button"
@@ -363,9 +359,9 @@ function AiQuestionnaire() {
             >
               <T en="Counsel confirms and ingests answers" th="ทนายยืนยันและรับคำตอบเข้า Assembly" />
             </button>
-            {loading && (
+            {refining && (
               <button type="button" className="btn btn-ghost" onClick={stopAsk}>
-                <T en="Stop waiting" th="หยุดรอ" />
+                <T en="Skip live refine" th="ข้ามการปรับด้วย AI สด" />
               </button>
             )}
             <button type="button" className="btn btn-secondary" onClick={() => { stopAsk(); setError(""); s.resetAssemblyQuestionnaire(c.id); }}>
