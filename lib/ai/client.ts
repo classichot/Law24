@@ -15,12 +15,16 @@ export class AiRequestError extends Error {
 
 export async function fetchAiStatus(force = false): Promise<boolean> {
   if (!force && liveCache !== null && Date.now() - liveAt < 60_000) return liveCache;
+  const ctrl = new AbortController();
+  const timer = window.setTimeout(() => ctrl.abort(), 8_000);
   try {
-    const res = await fetch("/api/ai/status", { cache: "no-store" });
+    const res = await fetch("/api/ai/status", { cache: "no-store", signal: ctrl.signal });
     const json = (await res.json()) as { live?: boolean };
     liveCache = Boolean(json.live);
   } catch {
     liveCache = false;
+  } finally {
+    window.clearTimeout(timer);
   }
   liveAt = Date.now();
   return liveCache;

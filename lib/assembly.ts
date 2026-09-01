@@ -170,32 +170,61 @@ export function fallbackQuestionnaire(input: {
   }
 
   const answers = input.answers || {};
-  const questions = [...common, ...specific].filter((item) => !answers[item.id]?.trim());
+  const round = Math.max(1, input.round || 1);
+  const followUp = round > 1;
+  const unanswered = [...common, ...specific].filter((item) => !answers[item.id]?.trim());
+  const questions = unanswered.slice(0, 8).map((item) => (followUp ? { ...item, required: false } : item));
+  const answeredN = Object.values(answers).filter((v) => v.trim()).length;
   const requiredOpen = questions.filter((item) => item.required);
   return {
-    round: Math.max(1, input.round || 1),
-    questions: questions.slice(0, 8),
+    round,
+    questions,
     summary: P(
       `แบบสอบถาม ${input.typeId} ปรับตามประเภท ${input.typeName}`,
       `${input.typeId} questionnaire adapted to ${input.typeName}`,
     ),
     missing: requiredOpen.slice(0, 6).map((item) => item.prompt),
-    ready: requiredOpen.length === 0,
+    // Follow-up must not trap: leftover questions are optional, and a filled first round is enough to ingest.
+    ready: followUp ? answeredN > 0 : requiredOpen.length === 0,
+  };
+}
+
+export function adaptIntakeRound(
+  next: Pick<IntakeQuestionnaire, "questions" | "summary" | "missing" | "ready">,
+  prior: IntakeQuestionnaire,
+  fresh: boolean,
+  answers: Record<string, string>,
+): Pick<IntakeQuestionnaire, "questions" | "summary" | "missing" | "ready"> {
+  const seen = new Set(prior.questions.map((item) => item.id));
+  const questions = (next.questions || []).map((item) => ({
+    ...item,
+    required: fresh || seen.has(item.id) ? Boolean(item.required) : false,
+    options: Array.isArray(item.options) ? item.options : [],
+  }));
+  const answeredN = Object.values(answers).filter((v) => v.trim()).length;
+  return {
+    ...next,
+    questions,
+    ready: Boolean(next.ready) || (!fresh && answeredN > 0),
   };
 }
 
 export function questionnaireInputsOf(questionnaire: IntakeQuestionnaire): AssemblyInput[] {
-  return questionnaire.questions
-    .filter((item) => questionnaire.answers[item.id]?.trim())
-    .map((item) => ({
-      id: item.id,
-      kind: item.category === "risk" ? "instruction" as const : "fact" as const,
-      title: item.prompt,
-      value: P(questionnaire.answers[item.id], questionnaire.answers[item.id]),
-      source: P("คำตอบแบบสอบถาม AI — ทนายยืนยัน", "AI intake answer — counsel confirms"),
-      href: "/assemble?s=aiq",
-      priority: item.required ? "must" as const : "context" as const,
-    }));
+  const byId = new Map(questionnaire.questions.map((item) => [item.id, item]));
+  return Object.entries(questionnaire.answers)
+    .filter(([, value]) => value?.trim())
+    .map(([id, value]) => {
+      const item = byId.get(id);
+      return {
+        id,
+        kind: item?.category === "risk" ? "instruction" as const : "fact" as const,
+        title: item?.prompt || P(id, id),
+        value: P(value, value),
+        source: P("คำตอบแบบสอบถาม AI — ทนายยืนยัน", "AI intake answer — counsel confirms"),
+        href: "/assemble?s=aiq",
+        priority: item?.required ? "must" as const : "context" as const,
+      };
+    });
 }
 
 export function assemblyInputsOf(X: XrayView | null, R?: ReviewLive | null): AssemblyInput[] {

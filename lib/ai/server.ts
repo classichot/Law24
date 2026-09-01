@@ -98,11 +98,15 @@ export async function generateStructured<S extends z.ZodType>(
   schema: S,
   prompt: string,
   extraSystem?: string,
-  files?: AiAttachment[]
+  files?: AiAttachment[],
+  opts?: { maxOutputTokens?: number; maxRetries?: number; timeoutMs?: number },
 ): Promise<z.infer<S>> {
   if (!isAiLive()) {
     throw new Error("Live AI is not configured");
   }
+  const cap = opts?.maxOutputTokens ?? MAX_OUTPUT_TOKENS;
+  const retries = opts?.maxRetries ?? 2;
+  const timeoutMs = opts?.timeoutMs ?? TIMEOUT_MS;
   const system = extraSystem ? `${HOUSE_SYSTEM}\n\n${extraSystem}` : HOUSE_SYSTEM;
   const content = files?.length
     ? [
@@ -122,18 +126,18 @@ export async function generateStructured<S extends z.ZodType>(
       schemaDescription: "LAW24 structured legal output. Cite evidence. Never sign.",
       system,
       ...(content ? { messages: [{ role: "user" as const, content }] } : { prompt }),
-      maxOutputTokens: MAX_OUTPUT_TOKENS,
-      maxRetries: 2,
-      abortSignal: AbortSignal.timeout(TIMEOUT_MS),
+      maxOutputTokens: cap,
+      maxRetries: retries,
+      abortSignal: AbortSignal.timeout(timeoutMs),
     });
     console.log(
-      `[ai] ok finish=${finishReason} in=${usage?.inputTokens ?? "?"} out=${usage?.outputTokens ?? "?"} cap=${MAX_OUTPUT_TOKENS}`
+      `[ai] ok finish=${finishReason} in=${usage?.inputTokens ?? "?"} out=${usage?.outputTokens ?? "?"} cap=${cap}`
     );
     return object as z.infer<S>;
   } catch (err) {
     if (NoObjectGeneratedError.isInstance(err)) {
       console.error(
-        `[ai] no-object finish=${err.finishReason} out=${err.usage?.outputTokens ?? "?"} cap=${MAX_OUTPUT_TOKENS} textLen=${err.text?.length ?? 0}`
+        `[ai] no-object finish=${err.finishReason} out=${err.usage?.outputTokens ?? "?"} cap=${cap} textLen=${err.text?.length ?? 0}`
       );
       console.error(`[ai] tail: ${(err.text || "").slice(-400)}`);
       console.error(`[ai] cause: ${String((err.cause as Error)?.message || "").slice(0, 1200)}`);

@@ -486,7 +486,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           questionnaire: {
             ...assembly.questionnaire,
             answers: { ...assembly.questionnaire.answers, [id]: answer },
-            ready: false,
+            ready: assembly.questionnaire.questions.every((q) => !q.required || Boolean((id === q.id ? answer : assembly.questionnaire.answers[q.id])?.trim())),
           },
         },
       };
