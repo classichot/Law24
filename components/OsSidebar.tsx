@@ -6,6 +6,7 @@ import { ASSIST_MODE, HELP_MODE, MODULES, productModuleOf } from "@/lib/nav";
 import { modeHref, useStore } from "@/lib/store";
 import { T } from "@/lib/i18n";
 import { EditionBadge } from "@/components/EditionBadge";
+import { ModuleDemoButton } from "@/components/ModuleDemoButton";
 
 export function OsSidebar({
   mode,
@@ -61,6 +62,9 @@ export function OsSidebar({
                   <em>{th ? mod.markTh : mod.mark}</em>
                 </span>
               </Link>
+              <div className="os-rail-demo-row">
+                <ModuleDemoButton id={mod.id} compact className="os-rail-demo" />
+              </div>
               {on && mod.engines.length > 1 && (
                 <div className="os-rail-engines">
                   {mod.engines.map((eng) => (

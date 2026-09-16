@@ -19,6 +19,7 @@ import { ReviewerPath } from "@/components/ui";
 import { CONTRACT_ACCEPT } from "@/lib/ai/files";
 import { formatExpiry, readInviteSession } from "@/lib/invite";
 import { GuestBriefing } from "@/components/GuestBriefing";
+import { ModuleDemoButton } from "@/components/ModuleDemoButton";
 
 export function HomeScreen() {
   const { edition } = useStore();
@@ -66,15 +67,18 @@ function ModuleStrip() {
       </p>
       <div className="module-strip">
         {MODULES.map((mod) => (
-          <Link key={mod.id} href={mod.href} className={`home-card eng-card module-card ${mod.cls}`} style={{ textDecoration: "none", color: "inherit" }}>
+          <div key={mod.id} className={`home-card eng-card module-card ${mod.cls}`}>
             <span className="os-rail-n">{mod.n}</span>
             <div className={`eng-pill ${mod.cls}`}>{th ? mod.markTh : mod.mark}</div>
             <div style={{ fontWeight: 800, fontSize: 18 }}>{th ? mod.th : mod.en}</div>
             <p className="text-muted" style={{ margin: 0, fontSize: 13 }}>{th ? mod.why.t : mod.why.e}</p>
-            <span className="btn btn-primary" style={{ fontSize: 12 }}>
-              <T en="Open module" th="เปิดโมดูล" />
-            </span>
-          </Link>
+            <div className="stack-actions" style={{ marginTop: 4 }}>
+              <Link href={mod.href} className="btn btn-primary" style={{ fontSize: 12 }}>
+                <T en="Open module" th="เปิดโมดูล" />
+              </Link>
+              <ModuleDemoButton id={mod.id} compact className="btn btn-secondary" />
+            </div>
+          </div>
         ))}
       </div>
     </>

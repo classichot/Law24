@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, RotateCcw, X } from "lucide-react";
-import { DEMO_STEPS, clampStep, isNeedMet, stepForHref } from "@/lib/demo";
+import { DEMO_STEPS, MODULE_DEMOS, clampStep, isNeedMet, stepForHref } from "@/lib/demo";
 import { useStore } from "@/lib/store";
 import { T } from "@/lib/i18n";
 
@@ -41,7 +41,9 @@ export function DemoBar() {
   return (
     <div className="demo-bar no-print">
       <span className="demo-bar-kicker">
-        {th ? "สาธิตสด" : "Live demo"} {s.demoStep + 1}/{DEMO_STEPS.length}
+        {s.demoModule
+          ? (th ? MODULE_DEMOS[s.demoModule].th.btn : MODULE_DEMOS[s.demoModule].en.btn)
+          : (th ? "สาธิตสด" : "Live demo")} {s.demoStep + 1}/{DEMO_STEPS.length}
       </span>
       <div className="demo-bar-copy">
         <strong>{copy.title}</strong>

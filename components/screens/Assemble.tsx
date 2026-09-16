@@ -25,6 +25,7 @@ import { fetchAiStatus, postAi } from "@/lib/ai/client";
 import { LiveDraftView } from "@/components/LiveDraft";
 import { buildLiveDraft } from "@/lib/liveDraft";
 import { AiLiveMark } from "@/components/AiLiveMark";
+import { ModuleDemoButton } from "@/components/ModuleDemoButton";
 
 function pinDemo(rows: typeof TAX_LIST, sel: string) {
   const pinned = rows.find((r) => r.id === sel) || rows.find((r) => r.id === DEMO_TYPE_ID);
@@ -80,10 +81,13 @@ function IntakeChoice() {
           <span className="btn btn-primary"><T en="Start AI questionnaire" th="เริ่มแบบสอบถาม AI" /></span>
         </Link>
       </div>
+      <div className="stack-actions" style={{ marginTop: 20 }}>
+        <ModuleDemoButton id="assemble" />
+      </div>
       <div className="callout" style={{ marginTop: 20 }}>
         <T
-          en="Neither route signs or treats an answer as verified law. Counsel confirms the intake before clauses are assembled."
-          th="ทั้งสองทางไม่ลงนามและไม่ถือคำตอบเป็นข้อกฎหมายที่ยืนยันแล้ว ทนายต้องยืนยันข้อมูลก่อนประกอบข้อ"
+          en="Neither route signs or treats an answer as verified law. Counsel confirms the intake before clauses are assembled. Demo opens a live CT-284 draft you can adjust clause by clause."
+          th="ทั้งสองทางไม่ลงนามและไม่ถือคำตอบเป็นข้อกฎหมายที่ยืนยันแล้ว ทนายต้องยืนยันข้อมูลก่อนประกอบข้อ สาธิตเปิดร่างสด CT-284 ที่ปรับทีละข้อได้"
         />
       </div>
     </div>

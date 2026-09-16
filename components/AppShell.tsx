@@ -8,7 +8,7 @@ import { ENGAGEMENT, engagementOf } from "@/lib/firm";
 import { COMMAND_MODE, MODULES, NAV, PRACTICE_MODE, isMode, modeTrack, practiceScreenTrack, productModuleOf } from "@/lib/nav";
 import { modeHref, useStore } from "@/lib/store";
 import { OsSidebar } from "@/components/OsSidebar";
-import { DEMO_STEPS, MATTERS, matterForMode, type MatterId } from "@/lib/demo";
+import { DEMO_STEPS, MATTERS, MODULE_DEMOS, matterForMode, type MatterId } from "@/lib/demo";
 import { LangToggle } from "@/components/LangToggle";
 import { ModeToggle } from "@/components/ModeToggle";
 import { Copilot } from "@/components/Copilot";
@@ -119,8 +119,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   function startLive() {
-    s.startDemo();
-    router.push(DEMO_STEPS[0].href);
+    const id = product?.id || "review";
+    s.startModuleDemo(id);
+    router.push(MODULE_DEMOS[id].href);
   }
 
   return (

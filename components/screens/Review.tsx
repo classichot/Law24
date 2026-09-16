@@ -140,7 +140,7 @@ function Setup() {
       />
       <div className="stack-actions" style={{ margin: "8px 0 16px" }}>
         {!s.xrayReady && (
-          <button type="button" className="btn btn-primary" onClick={() => { s.startXray(); }}>
+          <button type="button" className="btn btn-primary" onClick={() => { s.startModuleDemo("review"); }}>
             <T en="Run demo on Nimbus" th="ทดลองกับนิมบัส" />
           </button>
         )}
