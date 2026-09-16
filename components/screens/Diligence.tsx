@@ -23,6 +23,7 @@ import {
   type DealView,
 } from "@/lib/deal";
 import { ddContextOf } from "@/lib/firm";
+import { ModuleDemoButton } from "@/components/ModuleDemoButton";
 
 const WOW = [
   { href: "/diligence?s=deal", en: "Deal X-Ray", th: "Deal X-Ray" },
@@ -144,8 +145,9 @@ function DealIntake() {
             ))}
           </select>
         </div>
-        <div style={{ gridColumn: "1 / -1" }}>
+        <div style={{ gridColumn: "1 / -1" }} className="stack-actions">
           <button type="submit" className="btn btn-primary"><T en="Open Deal X-Ray" th="เปิด Deal X-Ray" /></button>
+          <ModuleDemoButton id="diligence" compact className="btn btn-secondary" />
         </div>
       </form>
     </div>

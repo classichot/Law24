@@ -6,11 +6,13 @@ import { FIRM_USER, type Edition, type Lang, type ModeKey, type ScreenKey } from
 import { defaultScreen } from "./nav";
 import {
   DEMO_TYPE_ID,
+  applyModuleDemo,
   defaultLive,
   type FlagStatus,
   type FindingStatus,
   type LiveState,
   type MatterId,
+  type ModuleDemoId,
   type PositionStatus,
   type RequestStatus,
   type UploadFile,
@@ -98,9 +100,11 @@ type Store = {
   setConflictChoice: (v: "thai" | "waiver" | null) => void;
   demoOn: boolean;
   demoStep: number;
+  demoModule: ModuleDemoId | null;
   matter: MatterId;
   setMatter: (m: MatterId) => void;
   startDemo: () => void;
+  startModuleDemo: (id: ModuleDemoId) => void;
   stopDemo: () => void;
   resetDemo: () => void;
   setDemoStep: (n: number) => void;
@@ -353,28 +357,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setQ(""); setCat(""); setRisk(""); setPrio(""); setEsign("");
   }, []);
 
-  const startDemo = useCallback(() => {
-    setLive((prev) => {
-      const next = defaultLive();
-      next.demoOn = true;
-      next.demoStep = 0;
-      next.matter = "nimbus";
-      next.sel = DEMO_TYPE_ID;
-      next.xrayReady = true;
-      next.xrayLive = null;
-      next.reviewLive = null;
-      next.ddLive = null;
-      next.negotiateLive = null;
-      next.uploads = [{ name: "Nimbus_Cloud_SaaS_CT-291.pdf", size: 842_110, bucket: "xray" }];
-      next.practice = seedPractice();
-      return next;
-    });
-    setQ("SaaS");
-    setCat("C15");
+  const startModuleDemo = useCallback((id: ModuleDemoId) => {
+    setLive(() => applyModuleDemo(id));
+    if (id === "diligence") {
+      setQ("");
+      setCat("");
+    } else {
+      setQ("SaaS");
+      setCat("C15");
+    }
     setOpenF("F-01");
   }, []);
-  const stopDemo = useCallback(() => patchLive({ demoOn: false }), [patchLive]);
-  const resetDemo = useCallback(() => startDemo(), [startDemo]);
+  const startDemo = useCallback(() => startModuleDemo("review"), [startModuleDemo]);
+  const stopDemo = useCallback(() => patchLive({ demoOn: false, demoModule: null }), [patchLive]);
+  const resetDemo = useCallback(() => {
+    const id = live.demoModule || "review";
+    startModuleDemo(id);
+  }, [live.demoModule, startModuleDemo]);
   const setDemoStep = useCallback((n: number) => patchLive({ demoStep: n }), [patchLive]);
   const setMatter = useCallback((m: MatterId) => patchLive({ matter: m }), [patchLive]);
   const setSel = useCallback((id: string) => patchLive({ sel: id }), [patchLive]);
@@ -1097,8 +1096,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     toast, flash, copilotOpen, setCopilotOpen, searchOpen, setSearchOpen, pendingAsk, pendingAskSource, ask, consumeAsk,
     sel: live.sel, setSel, openF, setOpenF, q, setQ, cat, setCat, risk, setRisk, prio, setPrio, esign, setEsign,
     gsev, setGsev, resetFilters, conflictChoice: live.conflictChoice, setConflictChoice,
-    demoOn: live.demoOn, demoStep: live.demoStep, matter: live.matter, setMatter,
-    startDemo, stopDemo, resetDemo, setDemoStep,
+    demoOn: live.demoOn, demoStep: live.demoStep, demoModule: live.demoModule, matter: live.matter, setMatter,
+    startDemo, startModuleDemo, stopDemo, resetDemo, setDemoStep,
     interviewDone: live.interviewDone, confirmInterview,
     dpoApproved: live.dpoApproved, approveDpo,
     packGenerated: live.packGenerated, generatePack,

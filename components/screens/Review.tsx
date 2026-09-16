@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CONTRACT_ACCEPT } from "@/lib/ai/files";
 import { AiLiveMark } from "@/components/AiLiveMark";
+import { ModuleDemoButton } from "@/components/ModuleDemoButton";
 
 const REC: Record<string, [string, string]> = {
   amend: ["Amend", "แก้ไข"], docs: ["Request documents", "ขอเอกสาร"], reject: ["Reject", "ปฏิเสธ"],
@@ -139,11 +140,7 @@ function Setup() {
         onAfter={() => { router.push("/review?s=xray"); }}
       />
       <div className="stack-actions" style={{ margin: "8px 0 16px" }}>
-        {!s.xrayReady && (
-          <button type="button" className="btn btn-primary" onClick={() => { s.startXray(); }}>
-            <T en="Run demo on Nimbus" th="ทดลองกับนิมบัส" />
-          </button>
-        )}
+        {!s.xrayReady && <ModuleDemoButton id="review" />}
         <Link href="/review?s=xray" className="btn btn-secondary">X-Ray</Link>
         <Link href="/review?s=find" className="btn btn-secondary"><T en="Open findings" th="เปิดข้อค้นพบ" /></Link>
       </div>

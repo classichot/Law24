@@ -5,6 +5,7 @@ import { T } from "@/lib/i18n";
 import { ENGAGEMENT, type EngagementTrack } from "@/lib/firm";
 import { firmControlFor } from "@/lib/nav";
 import { useStore } from "@/lib/store";
+import { ModuleDemoButton } from "@/components/ModuleDemoButton";
 
 export function EngPill({ track }: { track: EngagementTrack }) {
   const th = useStore().lang === "th";
@@ -38,6 +39,7 @@ export function TrackCard({ track, open }: { track: EngagementTrack; open: numbe
         <Link href={e.href} className="btn btn-ghost" style={{ fontSize: 12 }}>
           {track === "review" ? "X-Ray" : track === "assemble" ? <T en="Assemble" th="ร่าง" /> : "Deal X-Ray"}
         </Link>
+        <ModuleDemoButton id={track} compact className="btn btn-secondary" />
       </div>
     </div>
   );

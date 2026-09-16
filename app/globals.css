@@ -38,6 +38,13 @@
   --eng-review: #1c9a6a;
   --eng-draft: #2f5fd0;
   --eng-dd: #b45309;
+  --os-rail-bg: #084832;
+  --os-rail-card: #0b5f42;
+  --os-rail-ink: #f3f2f2;
+  --os-rail-mint: #7ebe9c;
+  --os-rail-bright: #4ebe8c;
+  --os-rail-muted: color-mix(in srgb, #f3f2f2 62%, transparent);
+  --os-rail-line: color-mix(in srgb, #f3f2f2 18%, #084832);
   --font-heading: "Archivo", system-ui, sans-serif;
   --font-heading-weight: 800;
   --font-body: "Archivo", system-ui, sans-serif;
@@ -79,6 +86,13 @@ html[data-theme="dark"] {
   --eng-review: #4ebe8c;
   --eng-draft: #7ba3f0;
   --eng-dd: #e8a04a;
+  --os-rail-bg: #084832;
+  --os-rail-card: #0b5f42;
+  --os-rail-ink: #f3f2f2;
+  --os-rail-mint: #7ebe9c;
+  --os-rail-bright: #4ebe8c;
+  --os-rail-muted: color-mix(in srgb, #f3f2f2 62%, transparent);
+  --os-rail-line: color-mix(in srgb, #f3f2f2 18%, #084832);
 }
 html[data-theme="light"], html[data-theme="bw"] { color-scheme: light; }
 html[data-theme="bw"] {
@@ -115,6 +129,13 @@ html[data-theme="bw"] {
   --eng-review: #111111;
   --eng-draft: #4a4a4a;
   --eng-dd: #6e6e6e;
+  --os-rail-bg: #084832;
+  --os-rail-card: #0b5f42;
+  --os-rail-ink: #f3f2f2;
+  --os-rail-mint: #7ebe9c;
+  --os-rail-bright: #4ebe8c;
+  --os-rail-muted: color-mix(in srgb, #f3f2f2 62%, transparent);
+  --os-rail-line: color-mix(in srgb, #f3f2f2 18%, #084832);
 }
 html, body {
   margin: 0;
@@ -1029,8 +1050,8 @@ html[data-theme="bw"] .map-dot.topup {
 .os-col { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
 .os-rail {
   width: 268px; flex: none; height: 100dvh; overflow: auto;
-  border-right: 2px solid var(--color-divider);
-  background: var(--color-bg); z-index: 40;
+  border-right: 2px solid var(--os-rail-line);
+  background: var(--os-rail-bg); color: var(--os-rail-ink); z-index: 40;
   display: flex; flex-direction: column; padding: 16px 14px 20px;
 }
 .os-rail-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -1040,36 +1061,44 @@ html[data-theme="bw"] .map-dot.topup {
 .os-rail-edition { margin: 12px 0 16px; }
 .os-rail-kicker {
   font: 800 9px/1 var(--font-heading); letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--color-neutral-500); margin: 18px 2px 8px;
+  color: var(--os-rail-muted); margin: 18px 2px 8px;
 }
 .os-rail-office {
   display: flex; flex-direction: column; gap: 4px;
   padding: 10px 12px; text-decoration: none; color: inherit;
-  border: 2px solid var(--color-divider); background: var(--color-surface);
+  border: 2px solid var(--os-rail-line); background: var(--os-rail-card);
 }
 .os-rail-office .os-rail-k {
   font: 800 9px/1 var(--font-heading); letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--color-neutral-500);
+  color: var(--os-rail-muted);
 }
 .os-rail-office strong { font: 800 13px/1.2 var(--font-heading); }
-.os-rail-office.on { border-color: var(--color-text); }
+.os-rail-office.on { border-color: var(--os-rail-bright); }
 .os-rail-mod {
-  border: 2px solid var(--color-divider);
-  border-left: 4px solid color-mix(in srgb, var(--eng) 40%, var(--color-divider));
-  background: var(--color-bg);
+  border: 2px solid var(--os-rail-line);
+  border-left: 4px solid color-mix(in srgb, var(--eng) 55%, var(--os-rail-line));
+  background: var(--os-rail-card);
   margin-bottom: 8px;
 }
-.os-rail-mod:not(.on) .os-rail-mod-copy strong { color: var(--color-neutral-700); }
-.os-rail-mod:not(.on) .os-rail-mod-copy em { color: color-mix(in srgb, var(--eng) 70%, var(--color-neutral-600)); }
+.os-rail-mod:not(.on) .os-rail-mod-copy strong { color: color-mix(in srgb, var(--os-rail-ink) 78%, transparent); }
+.os-rail-mod:not(.on) .os-rail-mod-copy em { color: color-mix(in srgb, var(--eng) 70%, var(--os-rail-ink)); }
 .os-rail-mod.on {
-  background: color-mix(in srgb, var(--eng) 10%, var(--color-bg));
-  border-color: color-mix(in srgb, var(--eng) 55%, var(--color-divider));
+  background: color-mix(in srgb, var(--os-rail-bright) 16%, var(--os-rail-card));
+  border-color: color-mix(in srgb, var(--os-rail-bright) 42%, var(--os-rail-line));
   border-left-color: var(--eng);
 }
 .os-rail-mod-head {
   display: flex; align-items: flex-start; gap: 10px;
   padding: 11px 11px 10px; text-decoration: none; color: inherit;
 }
+.os-rail-demo-row { padding: 0 10px 10px 36px; }
+.os-rail-demo {
+  appearance: none; cursor: pointer;
+  font: 800 10px/1 var(--font-heading); letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 6px 9px; border: 1px solid var(--os-rail-mint);
+  background: transparent; color: var(--os-rail-ink);
+}
+.os-rail-demo:hover { background: color-mix(in srgb, var(--os-rail-bright) 18%, transparent); }
 .os-rail-n {
   font: 800 11px/1 var(--font-heading); letter-spacing: 0.08em;
   color: var(--eng); flex: none; padding-top: 2px;
@@ -1084,16 +1113,36 @@ html[data-theme="bw"] .map-dot.topup {
 }
 .os-rail-engines { display: flex; flex-direction: column; padding: 0 8px 8px 36px; }
 .os-rail-engines a {
-  font-size: 12px; color: var(--color-neutral-600); text-decoration: none;
+  font-size: 12px; color: var(--os-rail-muted); text-decoration: none;
   padding: 5px 0; border-bottom: 1px solid transparent;
 }
-.os-rail-engines a:hover { color: var(--color-text); }
+.os-rail-engines a:hover { color: var(--os-rail-ink); }
 .os-rail-engines a.on { color: var(--eng); font-weight: 700; }
 .os-rail-link {
-  display: block; padding: 8px 12px; text-decoration: none; color: var(--color-neutral-700);
+  display: block; padding: 8px 12px; text-decoration: none; color: var(--os-rail-muted);
   font: 800 11px/1 var(--font-heading); letter-spacing: 0.1em; text-transform: uppercase;
 }
-.os-rail-link.on { color: var(--color-text); }
+.os-rail-link.on { color: var(--os-rail-ink); }
+.os-rail .os-brand-24 { color: var(--os-rail-bright); }
+.os-rail .os-os-badge {
+  color: var(--os-rail-muted);
+  border-color: var(--os-rail-line);
+}
+.os-rail .icon-btn { color: var(--os-rail-ink); }
+.os-rail .os-edition {
+  border-color: var(--os-rail-line);
+  color: var(--os-rail-ink);
+}
+.os-rail .os-edition.corporate {
+  background: var(--os-rail-bright);
+  color: var(--os-rail-bg);
+  border-color: var(--os-rail-bright);
+}
+.os-rail .os-edition.advisor {
+  background: transparent;
+  color: var(--os-rail-bright);
+  border-color: var(--os-rail-mint);
+}
 .os-rail-backdrop { display: none; }
 .os-brand-compact { display: none; }
 .module-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 0 0 28px; }

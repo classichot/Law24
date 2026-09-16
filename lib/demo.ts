@@ -1,8 +1,10 @@
 import type { Lang, ModeKey } from "./model";
+import { FIRM_USER } from "./model";
 import { NAV } from "./nav";
-import { seedPractice, type PracticeState } from "./firm";
+import type { ProductModule } from "./nav";
+import { nextIds, seedPractice, stampDay, stampNow, type PracticeState } from "./firm";
 import { seedDeal, type DealState } from "./deal";
-import { seedAssembly, type AssemblyState } from "./assembly";
+import { seedAssembly, type AssemblyInput, type AssemblyState } from "./assembly";
 import { PLAYBOOKS, copyTE, helpBookHref, type PlaybookKey } from "./guides";
 import type { ClauseEdit } from "./clauses";
 import type { DdLive, NegotiateLive, ReviewLive, XrayView } from "./ai/types";
@@ -195,10 +197,12 @@ export const DEMO_STEPS: DemoStep[] = [
 ];
 
 export type UploadFile = { name: string; size: number; bucket: string };
+export type ModuleDemoId = Extract<ProductModule, "review" | "assemble" | "diligence">;
 
 export type LiveState = {
   demoOn: boolean;
   demoStep: number;
+  demoModule: ModuleDemoId | null;
   matter: MatterId;
   sel: string;
   interviewDone: boolean;
@@ -230,10 +234,220 @@ export type LiveState = {
   assembly: AssemblyState;
 };
 
+const P = (t: string, e: string) => ({ t, e });
+
+export const MODULE_DEMOS: Record<ModuleDemoId, {
+  href: string;
+  matter: MatterId;
+  step: number;
+  en: { btn: string; flash: string };
+  th: { btn: string; flash: string };
+}> = {
+  review: {
+    href: "/review?s=xray",
+    matter: "nimbus",
+    step: 0,
+    en: { btn: "Demo Review", flash: "Review demo — Nimbus SaaS CT-291. The engine never signs." },
+    th: { btn: "สาธิตตรวจสัญญา", flash: "สาธิตตรวจสัญญา — นิมบัส SaaS CT-291 เครื่องยนต์ไม่ลงนาม" },
+  },
+  assemble: {
+    href: "/assemble?s=asm",
+    matter: "nimbus",
+    step: 3,
+    en: { btn: "Demo Assembly", flash: "Assembly demo — live draft for CT-284. Adjust a clause. The engine never signs." },
+    th: { btn: "สาธิตร่างสัญญา", flash: "สาธิตร่างสัญญา — ร่างสด CT-284 ปรับข้อได้ เครื่องยนต์ไม่ลงนาม" },
+  },
+  diligence: {
+    href: "/diligence?s=deal",
+    matter: "charoen",
+    step: 10,
+    en: { btn: "Demo DD", flash: "DD demo — Charoen Logistics room is open. The engine never signs." },
+    th: { btn: "สาธิตตรวจสอบสถานะ", flash: "สาธิต DD — เปิดห้องเจริญโลจิสติกส์แล้ว เครื่องยนต์ไม่ลงนาม" },
+  },
+};
+
+function demoPractice(kind: ModuleDemoId): PracticeState {
+  const empty = seedPractice();
+  const ids = nextIds(empty);
+  if (kind === "review") {
+    return {
+      activeClientId: ids.clientId,
+      activeAssignmentId: ids.assignmentId,
+      clients: [{
+        id: ids.clientId,
+        name: "Nimbus Cloud",
+        nameTh: "นิมบัส คลาวด์",
+        sector: "SaaS",
+        owner: FIRM_USER.name,
+        opened: stampDay(),
+        status: "active",
+      }],
+      assignments: [{
+        id: ids.assignmentId,
+        clientId: ids.clientId,
+        title: "SaaS paper CT-291",
+        titleTh: "สัญญา SaaS CT-291",
+        type: "review",
+        stage: "work",
+        lead: FIRM_USER.name,
+        due: stampDay("2026-09-30"),
+        fee: "THB 180,000",
+        href: "/review?s=xray",
+      }],
+      movements: [],
+      pool: [],
+    };
+  }
+  if (kind === "assemble") {
+    return {
+      activeClientId: ids.clientId,
+      activeAssignmentId: ids.assignmentId,
+      clients: [{
+        id: ids.clientId,
+        name: "Nimbus Cloud",
+        nameTh: "นิมบัส คลาวด์",
+        sector: "SaaS",
+        owner: FIRM_USER.name,
+        opened: stampDay(),
+        status: "active",
+      }],
+      assignments: [{
+        id: ids.assignmentId,
+        clientId: ids.clientId,
+        title: "Assemble SaaS house draft CT-284",
+        titleTh: "ร่างมาตรฐาน SaaS CT-284",
+        type: "assemble",
+        stage: "work",
+        lead: FIRM_USER.name,
+        due: stampDay("2026-09-30"),
+        fee: "THB 95,000",
+        href: "/assemble?s=asm",
+      }],
+      movements: [],
+      pool: [],
+    };
+  }
+  return {
+    activeClientId: ids.clientId,
+    activeAssignmentId: ids.assignmentId,
+    clients: [{
+      id: ids.clientId,
+      name: "Orchid Ventures",
+      nameTh: "ออร์คิด เวนเจอร์ส",
+      sector: "Logistics M&A",
+      owner: FIRM_USER.name,
+      opened: stampDay(),
+      status: "active",
+    }],
+    assignments: [{
+      id: ids.assignmentId,
+      clientId: ids.clientId,
+      title: "Buy-side legal DD — Charoen Logistics",
+      titleTh: "ตรวจสอบสถานะฝั่งผู้ซื้อ — เจริญโลจิสติกส์",
+      type: "diligence",
+      stage: "work",
+      lead: FIRM_USER.name,
+      due: stampDay("2026-09-30"),
+      fee: "THB 1,200,000",
+      href: "/diligence?s=deal",
+    }],
+    movements: [],
+    pool: [],
+  };
+}
+
+function demoAssemblyInputs(): AssemblyInput[] {
+  return [
+    {
+      id: "AQ-PARTIES",
+      kind: "fact",
+      title: P("คู่สัญญา", "Parties"),
+      value: P("นิมบัส คลาวด์ จำกัด และ สยาม ดิจิทัล จำกัด (มหาชน)", "Nimbus Cloud Co., Ltd. and Siam Digital Plc"),
+      source: P("สาธิตประกอบสัญญา — ทนายยืนยัน", "Assembly demo — counsel confirms"),
+      href: "/assemble?s=aiq",
+      priority: "must",
+    },
+    {
+      id: "AQ-PURPOSE",
+      kind: "fact",
+      title: P("วัตถุประสงค์", "Purpose"),
+      value: P("บริการ SaaS มูลค่า 24.6 ล้านบาท", "SaaS go-to-market · THB 24.6M"),
+      source: P("สาธิตประกอบสัญญา — ทนายยืนยัน", "Assembly demo — counsel confirms"),
+      href: "/assemble?s=aiq",
+      priority: "must",
+    },
+    {
+      id: "AQ-LAW",
+      kind: "instruction",
+      title: P("กฎหมายที่ใช้บังคับ", "Governing law"),
+      value: P("กฎหมายไทย / ศาลไทย", "Thai law / Thai courts"),
+      source: P("สาธิตประกอบสัญญา — ทนายยืนยัน", "Assembly demo — counsel confirms"),
+      href: "/assemble?s=aiq",
+      priority: "must",
+    },
+  ];
+}
+
+/** Seed a walkable demo for one of the three product modules. */
+export function applyModuleDemo(id: ModuleDemoId): LiveState {
+  const spec = MODULE_DEMOS[id];
+  const practice = demoPractice(id);
+  const next = defaultLive();
+  next.demoOn = true;
+  next.demoStep = spec.step;
+  next.demoModule = id;
+  next.matter = spec.matter;
+  next.sel = DEMO_TYPE_ID;
+  next.practice = practice;
+
+  if (id === "review") {
+    next.xrayReady = true;
+    next.uploads = [NIMBUS_FILE];
+  }
+
+  if (id === "assemble") {
+    next.interviewDone = true;
+    next.conflictChoice = "thai";
+    next.uploads = [{ name: "Nimbus_term_sheet.pdf", size: 210_400, bucket: "assemble" }];
+    next.assembly = {
+      ...seedAssembly(),
+      sourceRef: "Assembly demo · CT-284",
+      acceptedInputs: demoAssemblyInputs(),
+      ingestedAt: stampNow(),
+      questionnaire: {
+        ...seedAssembly().questionnaire,
+        typeId: DEMO_TYPE_ID,
+        round: 1,
+        ready: true,
+        answers: {
+          "AQ-PARTIES": "Nimbus Cloud Co., Ltd. and Siam Digital Plc",
+          "AQ-PURPOSE": "SaaS go-to-market · THB 24.6M",
+          "AQ-LAW": "Thai law / Thai courts",
+        },
+      },
+    };
+  }
+
+  if (id === "diligence") {
+    next.uploads = CHAROEN_FILES;
+    next.deal = {
+      ...seedDeal(),
+      assignmentId: practice.activeAssignmentId,
+      clientId: practice.activeClientId,
+      transaction: "share",
+      scenario: "share100",
+      verified: true,
+    };
+  }
+
+  return next;
+}
+
 export function defaultLive(): LiveState {
   return {
     demoOn: false,
     demoStep: 0,
+    demoModule: null,
     matter: "nimbus",
     sel: DEMO_TYPE_ID,
     interviewDone: false,

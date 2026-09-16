@@ -2,6 +2,7 @@
 
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Kicker, Title } from "@/components/ui";
 import { Dropzone } from "@/components/Dropzone";
 import { useStore } from "@/lib/store";
@@ -15,9 +16,11 @@ import { XRAY_ENGINE_HOPS, XRAY_HOPS, XRAY_REVIEW_HOPS } from "@/lib/nav";
 import { assignmentOf, clientOf, engagementOf, xrayContextOf } from "@/lib/firm";
 import { withLiveMatter } from "@/lib/ai/fromMap";
 import { EngPill } from "@/components/EngagementMark";
+import { ModuleDemoButton } from "@/components/ModuleDemoButton";
 
 export function XRayScreen() {
   const s = useStore();
+  const router = useRouter();
   const th = s.lang === "th";
   const [mapping, setMapping] = useState(false);
   const [drop, setDrop] = useState(0);
@@ -57,11 +60,10 @@ export function XRayScreen() {
     s.flash(th ? "เปิดลูกค้าและงานตรวจแล้ว — พร้อมรับเอกสาร" : "Client and review engagement opened — ready for the document");
   }
 
-  async function runDemo() {
-    setMapping(true);
-    await s.runXray({ demo: true });
-    setMapping(false);
-    s.flash(th ? "แผนที่สัญญาเสร็จ — คำตัดสิน: เจรจา" : "Contract mapped — verdict: Negotiate");
+  function runDemo() {
+    s.startModuleDemo("review");
+    s.flash(th ? "สาธิตตรวจสัญญา — นิมบัส CT-291 เครื่องยนต์ไม่ลงนาม" : "Review demo — Nimbus CT-291. The engine never signs.");
+    router.push("/review?s=xray");
   }
 
   async function retryMap() {
@@ -126,6 +128,7 @@ export function XRayScreen() {
               <button className="btn btn-primary" type="submit">
                 <T en="Open engagement and continue" th="เปิดงานและดำเนินการต่อ" />
               </button>
+              <ModuleDemoButton id="review" compact className="btn btn-secondary" />
               <Link href="/practice?s=clients" className="btn btn-secondary">
                 <T en="Open Firm clients" th="เปิดบัญชีลูกค้า" />
               </Link>
