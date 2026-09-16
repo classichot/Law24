@@ -1,5 +1,16 @@
 export type ThemeKey = "light" | "dark" | "bw";
 
+/** Left rail stays accent-family dark green in every theme. */
+const OS_RAIL = {
+  "--os-rail-bg": "#084832",
+  "--os-rail-card": "#0b5f42",
+  "--os-rail-ink": "#f3f2f2",
+  "--os-rail-mint": "#7ebe9c",
+  "--os-rail-bright": "#4ebe8c",
+  "--os-rail-muted": "color-mix(in srgb, #f3f2f2 62%, transparent)",
+  "--os-rail-line": "color-mix(in srgb, #f3f2f2 18%, #084832)",
+} as const;
+
 export const THEMES = {
   light: {
     name: "Light",
@@ -41,6 +52,7 @@ export const THEMES = {
       "--color-intel": "#2f5fd0",
       "--shadow-md": "0 3px 10px color-mix(in srgb, #2d2b2b 16%, transparent)",
       "--shadow-lg": "0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent)",
+      ...OS_RAIL,
     },
   },
   dark: {
@@ -83,6 +95,7 @@ export const THEMES = {
       "--color-intel": "#7ba3f0",
       "--shadow-md": "0 3px 10px color-mix(in srgb, #000 40%, transparent)",
       "--shadow-lg": "0 12px 32px color-mix(in srgb, #000 50%, transparent)",
+      ...OS_RAIL,
     },
   },
   bw: {
@@ -125,6 +138,7 @@ export const THEMES = {
       "--color-intel": "#111111",
       "--shadow-md": "0 3px 10px color-mix(in srgb, #111 16%, transparent)",
       "--shadow-lg": "0 12px 32px color-mix(in srgb, #111 22%, transparent)",
+      ...OS_RAIL,
     },
   },
 } as const;
