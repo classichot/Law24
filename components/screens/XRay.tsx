@@ -2,6 +2,7 @@
 
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Kicker, Title } from "@/components/ui";
 import { Dropzone } from "@/components/Dropzone";
 import { useStore } from "@/lib/store";
@@ -19,6 +20,7 @@ import { ModuleDemoButton } from "@/components/ModuleDemoButton";
 
 export function XRayScreen() {
   const s = useStore();
+  const router = useRouter();
   const th = s.lang === "th";
   const [mapping, setMapping] = useState(false);
   const [drop, setDrop] = useState(0);
@@ -61,6 +63,7 @@ export function XRayScreen() {
   function runDemo() {
     s.startModuleDemo("review");
     s.flash(th ? "สาธิตตรวจสัญญา — นิมบัส CT-291 เครื่องยนต์ไม่ลงนาม" : "Review demo — Nimbus CT-291. The engine never signs.");
+    router.push("/review?s=xray");
   }
 
   async function retryMap() {

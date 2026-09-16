@@ -70,7 +70,11 @@ export function DemoBar() {
             <T en="Next" th="ขั้นถัดไป" /> <ChevronRight size={14} />
           </button>
         )}
-        <button className="icon-btn" title={th ? "เริ่มใหม่" : "Reset"} onClick={() => { s.resetDemo(); router.push(DEMO_STEPS[0].href); }}>
+        <button className="icon-btn" title={th ? "เริ่มใหม่" : "Reset"} onClick={() => {
+          const href = s.demoModule ? MODULE_DEMOS[s.demoModule].href : DEMO_STEPS[0].href;
+          s.resetDemo();
+          router.push(href);
+        }}>
           <RotateCcw size={14} />
         </button>
         <button className="icon-btn" title={th ? "ซ่อน" : "Hide"} onClick={s.stopDemo}><X size={14} /></button>

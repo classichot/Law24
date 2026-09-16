@@ -33,6 +33,7 @@ import { L } from "@/lib/model";
 import { NeedMap } from "@/components/NeedMap";
 import { clientRoomOf, firmBrainOf, withLiveMatter } from "@/lib/ai/fromMap";
 import { EngPill, TrackCard } from "@/components/EngagementMark";
+import { ModuleDemoButton } from "@/components/ModuleDemoButton";
 
 const STAGE_CLASS: Record<AssignmentStage, string> = {
   intake: "status-prep",
@@ -312,10 +313,27 @@ function Dash() {
           <T en="Open a client, then start one of the three engagements — or map a contract on X-Ray to open a review assignment." th="เพิ่มลูกค้า แล้วเปิดงานหนึ่งในสามประเภท — หรือวางแผนที่ที่ X-Ray เพื่อเปิดงานตรวจ" />
           <div className="stack-actions" style={{ marginTop: 10 }}>
             <Link href="/review?s=xray" className="btn btn-primary">X-Ray</Link>
+            <ModuleDemoButton id="review" compact className="btn btn-secondary" />
+            <ModuleDemoButton id="assemble" compact className="btn btn-secondary" />
+            <ModuleDemoButton id="diligence" compact className="btn btn-secondary" />
             <Link href="/practice?s=clients" className="btn btn-secondary"><T en="Add a client first" th="เพิ่มลูกค้าก่อน" /></Link>
           </div>
         </div>
       )}
+      <h5 style={{ marginTop: 28 }}>
+        <T en="Walk a seeded demo" th="เดินสาธิตที่เติมข้อมูลแล้ว" />
+      </h5>
+      <p className="text-muted" style={{ fontSize: 13, margin: "-4px 0 10px" }}>
+        <T
+          en="Each module opens a walkable matter. The engine never signs — counsel confirms."
+          th="แต่ละโมดูลเปิดงานที่เดินได้ เครื่องยนต์ไม่ลงนาม — ทนายเป็นผู้ยืนยัน"
+        />
+      </p>
+      <div className="stack-actions" style={{ marginBottom: 8 }}>
+        <ModuleDemoButton id="review" />
+        <ModuleDemoButton id="assemble" />
+        <ModuleDemoButton id="diligence" />
+      </div>
       <h5 style={{ marginTop: 28 }}>
         <T en="Engagements — control and record" th="ประเภทงาน — ควบคุมและบันทึก" />
       </h5>
@@ -488,6 +506,7 @@ function EngagementHub({ track }: { track: EngagementTrack }) {
       </div>
       <div className="stack-actions" style={{ marginTop: 16 }}>
         <Link href={e.href} className="btn btn-primary">{startCopy(track, th)}</Link>
+        <ModuleDemoButton id={track} />
         <Link href="/practice?s=dash" className="btn btn-secondary"><T en="Firm control" th="ศูนย์ควบคุม" /></Link>
       </div>
 
