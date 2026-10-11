@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Check, Link2, LogOut, Menu, Search, Timer } from "lucide-react";
 import { CORPORATE_USER, FIRM_USER } from "@/lib/model";
 import { ENGAGEMENT, engagementOf } from "@/lib/firm";
-import { COMMAND_MODE, MODULES, NAV, PRACTICE_MODE, isMode, modeTrack, practiceScreenTrack, productModuleOf } from "@/lib/nav";
+import { COMMAND_MODE, EXPERIENCE_NAV, MODULES, NAV, PRACTICE_MODE, isMode, modeTrack, practiceScreenTrack, productModuleOf } from "@/lib/nav";
 import { modeHref, useStore } from "@/lib/store";
 import { OsSidebar } from "@/components/OsSidebar";
 import { DEMO_STEPS, MATTERS, MODULE_DEMOS, matterForMode, type MatterId } from "@/lib/demo";
@@ -19,6 +19,7 @@ import { GuideRail } from "@/components/GuideRail";
 import { T } from "@/lib/i18n";
 import { PlaybookMark } from "@/components/PlaybookMark";
 import { AiLiveMark } from "@/components/AiLiveMark";
+import { ComplexityGuard, UxModeToggle } from "@/components/vibe24/primitives";
 import { formatExpiry, hoursLeft, isInviteAuth, readInviteSession } from "@/lib/invite";
 import { withLiveMatter } from "@/lib/ai/fromMap";
 import type { ReactNode } from "react";
@@ -67,6 +68,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       router.replace("/home");
     }
   }, [mode, s.edition, router]);
+
+  useEffect(() => {
+    if (mode !== "home") s.bumpNav();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path]);
 
   useEffect(() => {
     if (s.xrayLive) return;
@@ -152,6 +158,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <span className="os-online header-hide-sm"><span className="os-dot" /> <T en="Online" th="ออนไลน์" /></span>
         <LangToggle />
         <ModeToggle compact />
+        <div className="header-hide-sm"><UxModeToggle /></div>
         {!invite && (
           <Link href="/host" className="btn btn-ghost header-hide-sm" style={{ fontSize: 12, padding: "6px 10px" }}>
             <Link2 size={14} /> <T en="Host desk" th="โต๊ะโฮสต์" />
@@ -244,16 +251,25 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="os-body">
         <main className="page-main">
           {children}
-          {notHome && <ScreenNav mode={mode} screen={screen} />}
+          {notHome && s.uxMode === "professional" && <ScreenNav mode={mode} screen={screen} />}
+          <ComplexityGuard />
         </main>
         <Copilot />
       </div>
 
       <nav className="bottom-nav no-print">
-        {s.edition === "firm"
-          ? <Link href="/practice?s=dash" className={mode === "practice" ? "active" : ""}>Firm</Link>
-          : <Link href="/command?s=desk" className={mode === "command" ? "active" : ""}>Control</Link>}
-        {MODULES.map((mod) => (
+        {EXPERIENCE_NAV.map((item) => (
+          <Link key={item.href} href={item.href} className={mode === item.mode ? "active" : ""}>
+            {s.lang === "th" ? item.th : item.en}
+          </Link>
+        ))}
+        <Link
+          href={s.edition === "firm" ? "/practice?s=dash" : "/command?s=desk"}
+          className={mode === "practice" || mode === "command" ? "active" : ""}
+        >
+          {s.lang === "th" ? "งานของฉัน" : "My work"}
+        </Link>
+        {s.uxMode === "professional" && MODULES.map((mod) => (
           <Link
             key={mod.id}
             href={mod.href}

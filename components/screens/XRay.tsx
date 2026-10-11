@@ -17,6 +17,7 @@ import { assignmentOf, clientOf, engagementOf, xrayContextOf } from "@/lib/firm"
 import { withLiveMatter } from "@/lib/ai/fromMap";
 import { EngPill } from "@/components/EngagementMark";
 import { ModuleDemoButton } from "@/components/ModuleDemoButton";
+import { ExplainThis, ResultInterpreter } from "@/components/vibe24/primitives";
 
 export function XRayScreen() {
   const s = useStore();
@@ -242,6 +243,24 @@ export function XRayScreen() {
         </div>
       </div>
       <p style={{ maxWidth: "72ch", margin: "0 0 22px" }}>{L(s.lang, X.verdictWhy)}</p>
+      <ExplainThis
+        term={<T en="Overall verdict" th="คำตัดสินรวม" />}
+        what={<T en="A house posture: accept, negotiate, or do not sign." th="ท่าทีบ้าน: ยอมรับ เจรจา หรือห้ามลงนาม" />}
+        why={<T en="It tells management whether the paper is safe enough to continue." th="บอกผู้บริหารว่าฉบับนี้ปลอดภัยพอจะเดินต่อหรือไม่" />}
+        meaning={L(s.lang, X.verdictWhy)}
+        action={<T en="Counsel confirms, then open the management brief in Report Studio." th="ทนายยืนยัน แล้วเปิดสรุปผู้บริหารในห้องรายงาน" />}
+      />
+      <ResultInterpreter
+        result={L(s.lang, X.verdictLabel)}
+        happened={<T en="The map classified this paper against the house playbook." th="แผนที่จัดฉบับนี้เทียบเพลย์บุ๊กบ้าน" />}
+        meaning={L(s.lang, X.verdictWhy)}
+        goodBad={<T en="Negotiate means material rights still move against you." th="เจรจาหมายถึงสิทธิสำคัญยังเอียงไปทางคู่" />}
+        compare={<T en="Compared with house standards, not with a chatbot score." th="เทียบมาตรฐานบ้าน ไม่ใช่คะแนนแชตบอท" />}
+        why={<T en="Open must-haves, unusual clauses and missing annexes drive the posture." th="ข้อต้องได้ที่ยังเปิด ข้อผิดปกติ และเอกสารแนบที่ขาดกำหนดท่าที" />}
+        next={<T en="Walk findings, then draft the management brief." th="เดินข้อค้นพบ แล้วร่างสรุปผู้บริหาร" />}
+        fixHref="/outputs?s=studio&pack=xray-brief"
+        fixLabel={<T en="Draft the management brief" th="ร่างสรุปผู้บริหาร" />}
+      />
 
       {s.xrayLive && (matterC || matterA) && (
         <div className="xray-layer eng-card eng-review" style={{ marginBottom: 22 }}>

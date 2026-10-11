@@ -20,9 +20,11 @@ import { CONTRACT_ACCEPT } from "@/lib/ai/files";
 import { formatExpiry, readInviteSession } from "@/lib/invite";
 import { GuestBriefing } from "@/components/GuestBriefing";
 import { ModuleDemoButton } from "@/components/ModuleDemoButton";
+import { ExperienceHome } from "@/components/vibe24/ExperienceHome";
 
 export function HomeScreen() {
-  const { edition } = useStore();
+  const { edition, uxMode } = useStore();
+  if (uxMode !== "professional") return <ExperienceHome />;
   return edition === "firm" ? <FirmHome /> : <CorporateHome />;
 }
 

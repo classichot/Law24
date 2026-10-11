@@ -13,15 +13,15 @@ export const LEIO = {
 };
 
 export const LEIO_SUGGESTIONS_EN = [
-  "How do I use LAW24?",
+  "Counterparty sent a cloud MSA. Can we sign?",
+  "How do I start a mission without the menu?",
   "What changed in PDPA this month?",
-  "Research: transferring personal data to Singapore",
 ];
 
 export const LEIO_SUGGESTIONS_TH = [
-  "วิธีใช้ LAW24 อย่างไร",
+  "ลูกค้าส่ง MSA คลาวด์มา ลงนามได้ไหม",
+  "เริ่มภารกิจโดยไม่ต้องรู้จักเมนูได้อย่างไร",
   "PDPA เดือนนี้มีอะไรเปลี่ยน",
-  "วิจัย: โอนข้อมูลส่วนบุคคลไปสิงคโปร์",
 ];
 
 export type RegUpdate = {

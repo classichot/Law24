@@ -1858,3 +1858,57 @@ button.xray-layer { font: inherit; text-align: left; cursor: pointer; width: 100
   .table-resizable { table-layout: auto !important; width: 100% !important; }
   .reports-detail { padding: 16px 16px 20px !important; }
 }
+
+.vibe-home-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: start; margin-bottom: 28px; }
+.vibe-home-modes { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.vibe-seg { display: inline-flex; border: 1px solid var(--color-divider); }
+.vibe-seg button {
+  appearance: none; border: 0; background: transparent; color: inherit; cursor: pointer;
+  font: 700 11px/1 var(--font-heading); letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 7px 10px;
+}
+.vibe-seg button.on { background: var(--color-accent-800); color: var(--color-on-accent); }
+.vibe-seg-wide { flex-wrap: wrap; }
+.vibe-ask { margin: 8px 0 28px; }
+.vibe-ask-form { display: grid; gap: 10px; max-width: 72ch; }
+.vibe-goals, .vibe-mission-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.vibe-goal, .vibe-mission, .vibe-nba {
+  display: flex; flex-direction: column; gap: 8px; align-items: flex-start; text-align: left;
+  padding: 16px; border: 1px solid var(--color-divider); background: var(--color-bg); color: inherit;
+  text-decoration: none; cursor: pointer;
+}
+.vibe-goal strong, .vibe-mission h3, .vibe-nba strong { font: 800 16px/1.3 var(--font-heading); }
+.vibe-mission-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; }
+.vibe-requires { margin: 0; padding-left: 18px; font-size: 12px; }
+.vibe-journey { padding: 16px; border: 1px solid var(--color-divider); margin-bottom: 18px; }
+.vibe-journey-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.vibe-journey-rail { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; }
+.vibe-journey-rail li { font: 700 11px/1 var(--font-heading); letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-neutral-600); }
+.vibe-journey-rail li.on { color: var(--color-accent-700); }
+.vibe-journey-rail li.done { color: var(--color-ok); }
+.vibe-explain { display: inline-block; margin: 0 0 14px; }
+.vibe-explain-btn { appearance: none; border: 0; background: transparent; color: var(--color-accent-700); cursor: pointer; font: 700 12px/1 var(--font-heading); }
+.vibe-explain-card { margin-top: 8px; padding: 14px; border: 1px solid var(--color-divider); max-width: 68ch; }
+.vibe-explain-card p { margin: 8px 0 0; }
+.vibe-result { margin: 16px 0 22px; padding: 16px; border: 1px solid var(--color-divider); }
+.vibe-result-head { font: 800 20px/1.25 var(--font-heading); margin-bottom: 10px; }
+.vibe-result dl { display: grid; gap: 8px; margin: 0 0 12px; }
+.vibe-result dt { font: 700 11px/1 var(--font-heading); letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-neutral-600); }
+.vibe-result dd { margin: 2px 0 0; }
+.vibe-gates { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin: 12px 0 20px; }
+.vibe-gate { padding: 12px; border: 1px solid var(--color-divider); display: flex; flex-direction: column; gap: 4px; }
+.vibe-gate.pass { border-color: var(--color-ok); }
+.vibe-gate.fail { border-color: var(--color-hot); }
+.vibe-gate.pending { border-color: var(--color-warn); }
+.vibe-gate em { font-style: normal; font-size: 12px; color: var(--color-neutral-600); }
+.vibe-section { padding: 14px 0; border-bottom: 1px solid var(--color-divider); }
+.vibe-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0 20px; }
+.vibe-table th, .vibe-table td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--color-divider); vertical-align: top; }
+.vibe-guard { margin: 22px 0; padding: 16px; border: 1px solid var(--color-accent-400); background: var(--color-accent-100); }
+.vibe-attention { padding: 14px; border: 1px solid var(--color-divider); }
+.vibe-advanced { margin: 14px 0; }
+.vibe-advanced-body { margin-top: 8px; padding: 12px; border: 1px solid var(--color-divider); }
+@media (max-width: 800px) {
+  .vibe-home-head { grid-template-columns: 1fr; }
+  .vibe-home-modes { align-items: flex-start; }
+}

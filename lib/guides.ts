@@ -224,9 +224,39 @@ export const MODULE_GUIDES: Record<Exclude<ModeKey, "home">, {
     purpose: P("ศูนย์บัญชาการกฎหมายของบริษัท — คำขอ อนุมัติ ที่ปรึกษาภายนอก และรายงานคณะกรรมการ", "The company's legal command center — requests, approvals, outside counsel and board reports"),
     osFlow: P("รับคำขอ → อนุมัติตามนโยบาย → ส่งเครื่องยนต์ (X-Ray / Twin) → รายงานคณะกรรมการ", "Intake → approve under policy → run the engine (X-Ray / Twin) → board report"),
   },
+  missions: {
+    playbook: "router",
+    purpose: P("ภารกิจคือสะพานจากเป้าหมายสู่โมดูลที่มีอยู่ — ไม่สร้างแอปใหม่", "A mission is the bridge from a goal to an existing module — not a new product"),
+    osFlow: P("บอกเป้าหมาย → ได้ภารกิจ → เดินขั้น → คนอนุมัติข้อยกเว้น", "State the goal → receive a mission → walk the steps → humans approve exceptions"),
+  },
+  outputs: {
+    playbook: "decision",
+    purpose: P("ห้องรายงานร่วม — ร่างคลิกเดียวและทีละตอนใช้หลักฐานและเกณฑ์ชุดเดียวกัน", "Shared report studio — one-click and section drafts share evidence and gates"),
+    osFlow: P("ตั้งขอบเขต → ผูกหลักฐาน → ร่าง → ปิดช่องว่าง → อนุมัติแล้วส่งออก", "Set the brief → bind evidence → draft → close gaps → approve then export"),
+  },
 };
 
 export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
+  "missions/desk": {
+    why: P("ภารกิจที่เปิดอยู่และภารกิจที่แนะนำจากเป้าหมาย", "Open missions and the missions recommended from the goal"),
+    do: P("เลือกภารกิจ แล้วเดินขั้นถัดไปที่ระบบชี้", "Pick a mission, then take the next step the OS names"),
+    rule: P("เอเจนต์ร่างได้ ทนายยืนยัน เครื่องยนต์ไม่ลงนาม", "Agents may draft. Counsel confirms. The engine never signs."),
+  },
+  "missions/journey": {
+    why: P("เส้นทางภารกิจบอกว่าอยู่ขั้นไหน และ AI ต้องการอะไรจากคุณ", "The journey says where you are and what AI needs from you"),
+    do: P("ทำขั้นปัจจุบัน แล้วทำเครื่องหมายเมื่อคนตัดสินแล้ว", "Do the current step, then mark it when the human decision is made"),
+    rule: P("คนจัดการการตัดสินใจและข้อยกเว้น ไม่ไล่เมนู", "Humans manage decisions and exceptions — they do not chase menus"),
+  },
+  "outputs/studio": {
+    why: P("ห้องรายงานตรวจข้อเท็จจริง ตัวเลข การอ้างอิง และเกณฑ์ก่อนอนุมัติ", "The studio checks facts, numbers, citations and gates before approval"),
+    do: P("ร่างคลิกเดียว ปิดช่องว่าง แล้วให้ผู้อนุมัติที่มีชื่อล็อกฉบับ", "One-click draft, close gaps, then a named approver locks the revision"),
+    rule: P("คลิกเดียวไม่ใช่การอนุมัติ และข้อมูลสาธิตเข้าไปในรายงานจริงไม่ได้", "One click is not approval, and demo data cannot enter a real report"),
+  },
+  "outputs/brief": {
+    why: P("ขอบเขตรายงานกำหนดผู้รับ ชุด และสิ่งที่ห้ามแต่ง", "The brief names the audience, the pack and what must never be invented"),
+    do: P("ยืนยันผู้รับ ช่วงเวลา ภาษา แล้วเข้าห้องรายงาน", "Confirm audience, period and language, then open the studio"),
+    rule: P("ขาดขอบเขตสำคัญห้ามร่างข้อเท็จจริง", "Missing essential scope cannot support factual drafting"),
+  },
   "assist/ask": {
     why: P("ผู้ช่วยจัดเส้นทางเมื่อยังไม่รู้ว่าจะเปิดโมดูลใด", "The router when it is not yet obvious which module to open"),
     do: P("อธิบายบทบาทและคำสั่ง แล้วเปิดฟังก์ชันที่ถูกชี้เป็นอันดับแรก", "Describe the role and the assignment, then open the top-ranked function"),
@@ -625,7 +655,8 @@ export const SCREEN_GUIDES: Record<string, { why: TE; do: TE; rule: TE }> = {
 };
 
 export function playbookKeyFor(mode: string, matter?: string): PlaybookKey {
-  if (mode === "assist") return "router";
+  if (mode === "assist" || mode === "missions") return "router";
+  if (mode === "outputs") return "decision";
   if (mode === "help") return "help";
   if (mode === "practice") return "practice";
   if (mode === "diligence") return "dd";

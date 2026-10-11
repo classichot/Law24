@@ -183,6 +183,9 @@ function Memo() {
           {s.memoIssued ? <T en="Memo issued — download again" th="ออกบันทึกแล้ว — ดาวน์โหลดอีกครั้ง" /> : <T en="Export for management" th="ส่งออกให้ผู้บริหาร" />}
         </button>
         <button type="button" className="btn btn-secondary" onClick={() => window.print()}><T en="Print" th="พิมพ์" /></button>
+        <Link href="/outputs?s=studio&pack=decision-memo" className="btn btn-ghost">
+          <T en="Open in Report Studio" th="เปิดในห้องรายงาน" />
+        </Link>
       </div>
     </div>
   );

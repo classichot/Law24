@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { DEMO_STEPS, catalogHits, type SearchHit } from "@/lib/demo";
+import { catalogHits, type SearchHit } from "@/lib/demo";
 import { practiceHits } from "@/lib/firm";
 import { TAX_LIST } from "@/lib/taxonomy";
 import { useStore } from "@/lib/store";
@@ -12,6 +12,7 @@ import { T } from "@/lib/i18n";
 import { PLAYBOOKS, modeFromHref, playbookKeyFor } from "@/lib/guides";
 import { isMode } from "@/lib/nav";
 import { readInviteSession } from "@/lib/invite";
+import { detectIntent, missionsFor, type MissionId } from "@/lib/vibe24";
 
 export function CommandPalette() {
   const s = useStore();
@@ -31,34 +32,27 @@ export function CommandPalette() {
     const th = s.lang === "th";
     const invite = readInviteSession();
     if (!needle) {
+      const goals = missionsFor(s.edition, s.uxRole).slice(0, 4).map((m) => ({
+        id: `mission-${m.id}`,
+        href: m.steps[0]?.href || "/assist?s=ask",
+        kind: th ? "ภารกิจ" : "Mission",
+        title: L(s.lang, m.name),
+        sub: L(s.lang, m.goal),
+      }));
       const starter: SearchHit[] = [
-        { id: "xray", href: "/review?s=xray", kind: th ? "ตรวจสัญญา" : "Contract Review", title: th ? "Contract X-Ray" : "Contract X-Ray" },
+        { id: "ask24", href: "/assist?s=ask", kind: th ? "ถาม 24" : "Ask 24", title: th ? "ต้องการบรรลุอะไร" : "What would you like to achieve?" },
+        { id: "missions-desk", href: "/missions?s=desk", kind: th ? "ภารกิจ" : "Mission", title: th ? "ภารกิจของฉัน" : "My missions" },
+        { id: "outputs-studio", href: "/outputs?s=studio", kind: th ? "รายงาน" : "Report", title: th ? "สตูดิโอรายงาน" : "Report Studio" },
+        ...goals,
+        { id: "xray", href: "/review?s=xray", kind: th ? "ตรวจสัญญา" : "Contract Review", title: "Contract X-Ray" },
         { id: "assemble", href: "/assemble?s=intake", kind: th ? "ร่างสัญญา" : "Contract Assembly", title: th ? "ทางรับข้อมูลร่าง" : "Assembly intake" },
         { id: "deal", href: "/diligence?s=deal", kind: th ? "ตรวจสอบสถานะ" : "Legal Due Diligence", title: "Deal X-Ray" },
-        { id: "assist-ask", href: "/assist?s=ask", kind: th ? "ผู้ช่วย" : "Assist", title: th ? "อธิบายงานและคำสั่ง" : "Describe job & assignment" },
-        { id: "help-trust", href: "/help?s=trust", kind: th ? "คู่มือ" : "Help", title: th ? "ความเชื่อถือที่มองเห็น" : "Visible trust" },
         ...(!invite ? [{ id: "host", href: "/host", kind: th ? "โต๊ะโฮสต์" : "Host desk", title: th ? "สร้างลิงก์สาธิต" : "Mint a demo link" }] : []),
         ...(s.edition === "firm"
-          ? [
-              { id: "practice-dash", href: "/practice?s=dash", kind: "Firm", title: th ? "แดชบอร์ดสำนักงาน" : "Firm dashboard" },
-              { id: "practice-brain", href: "/practice?s=brain", kind: "Firm", title: "Firm Brain" },
-              { id: "practice-room", href: "/practice?s=room", kind: "Firm", title: th ? "ห้องตรวจลูกค้า" : "Client Review Room" },
-            ]
-          : [
-              { id: "command-desk", href: "/command?s=desk", kind: th ? "ควบคุม" : "Control", title: th ? "ศูนย์บัญชาการกฎหมาย" : "Legal command center" },
-            ]),
+          ? [{ id: "practice-dash", href: "/practice?s=dash", kind: "Firm", title: th ? "แดชบอร์ดสำนักงาน" : "Firm dashboard" }]
+          : [{ id: "command-desk", href: "/command?s=desk", kind: th ? "ควบคุม" : "Control", title: th ? "ศูนย์บัญชาการกฎหมาย" : "Legal command center" }]),
       ];
-      return [
-        ...starter,
-        ...DEMO_STEPS.map((st, i) => ({
-          id: `step-${i}`,
-          href: st.href,
-          kind: th ? `ขั้น ${i + 1}` : `Step ${i + 1}`,
-          title: th ? st.th.title : st.en.title,
-          sub: th ? st.th.action : st.en.action,
-        })),
-        ...catalogHits(s.lang).filter((h) => h.id === "home").slice(0, 4),
-      ].slice(0, 10);
+      return starter.slice(0, 10);
     }
     const extra: SearchHit[] = [];
     if (s.edition === "firm") extra.push(...practiceHits(withLiveMatter(s.practice, s.xrayLive, s.reviewLive), s.lang));
@@ -89,14 +83,21 @@ export function CommandPalette() {
         title: `${f.id} · ${L(s.lang, f.t)}`,
       });
     });
-    return [...catalogHits(s.lang), ...extra]
+    const intents = detectIntent(q, s.edition, s.uxRole).map((h) => ({
+      id: `mission-${h.mission.id}`,
+      href: h.mission.steps[0]?.href || "/assist?s=ask",
+      kind: th ? "ภารกิจ" : "Mission",
+      title: L(s.lang, h.mission.name),
+      sub: L(s.lang, h.why),
+    }));
+    return [...intents, ...catalogHits(s.lang), ...extra]
       .filter((h) => s.edition === "firm" || !h.href.startsWith("/practice"))
       .filter((h) => s.edition !== "firm" || !h.href.startsWith("/command"))
       .filter((h) => !s.xrayLive || !h.id.startsWith("matter-"))
       .filter((h) => !invite || (h.href !== "/host" && h.id !== "host"))
-      .filter((h) => `${h.kind} ${h.title} ${h.sub || ""}`.toLowerCase().includes(needle))
+      .filter((h) => h.id.startsWith("mission-") || `${h.kind} ${h.title} ${h.sub || ""}`.toLowerCase().includes(needle))
       .slice(0, 12);
-  }, [q, s.lang, s.edition, s.practice, s.xrayLive, s.reviewLive, s.ddLive]);
+  }, [q, s.lang, s.edition, s.uxRole, s.practice, s.xrayLive, s.reviewLive, s.ddLive]);
 
   if (!s.searchOpen) return null;
 
@@ -106,11 +107,30 @@ export function CommandPalette() {
     if (h.id === "demo") s.startDemo();
     if (h.id.startsWith("assign-")) s.setActiveAssignment(h.id.replace("assign-", ""));
     if (h.id.startsWith("client-")) s.setActiveClient(h.id.replace("client-", ""));
+    if (h.id.startsWith("mission-")) {
+      const id = h.id.replace("mission-", "");
+      s.setGoal(q.trim() || h.title);
+      router.push(s.startUxMission(id as MissionId));
+      s.setSearchOpen(false);
+      return;
+    }
     s.setSearchOpen(false);
     router.push(h.href);
   }
 
-  function askNow() {
+  function startGoal() {
+    const text = q.trim();
+    s.setSearchOpen(false);
+    if (!text) {
+      router.push("/assist?s=ask");
+      return;
+    }
+    s.setGoal(text);
+    const hit = detectIntent(text, s.edition, s.uxRole)[0];
+    router.push(hit && hit.mission.id !== "dont-know" ? s.startUxMission(hit.mission.id) : "/assist?s=ask");
+  }
+
+  function askLeio() {
     const text = q.trim();
     s.setSearchOpen(false);
     if (text) s.ask(text);
@@ -120,13 +140,13 @@ export function CommandPalette() {
   return (
     <div className="cmdk no-print" onClick={() => s.setSearchOpen(false)}>
       <div className="cmdk-panel" onClick={(e) => e.stopPropagation()}>
-        <form onSubmit={(e) => { e.preventDefault(); if (hits[0]) go(hits[0]); else askNow(); }}>
+        <form onSubmit={(e) => { e.preventDefault(); if (hits[0]) go(hits[0]); else startGoal(); }}>
           <input
             ref={input}
             className="cmdk-input"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder={s.lang === "th" ? "ค้นหาโมดูล ข้อค้นพบ ประเภทสัญญา หรือถามเลโอ…" : "Search modules, findings, types, or ask Leio…"}
+            placeholder={s.lang === "th" ? "บอกเป้าหมาย ค้นหาภารกิจ รายงาน หรือถามเลโอ…" : "Name a goal, find a mission or report, or ask Leio…"}
           />
         </form>
         <div className="cmdk-list">
@@ -144,15 +164,15 @@ export function CommandPalette() {
             );
           })}
           {q.trim() && (
-            <button className="cmdk-row" type="button" onClick={askNow}>
+            <button className="cmdk-row" type="button" onClick={startGoal}>
               <span className="cmdk-kind">✦</span>
-              <span><strong><T en="Ask Leio" th="ถามเลโอ" /></strong> “{q.trim()}”</span>
+              <span><strong><T en="Understand this goal" th="เข้าใจเป้าหมายนี้" /></strong> “{q.trim()}”</span>
             </button>
           )}
         </div>
         <div className="cmdk-foot">
           <span><T en="Enter to open · Esc to close" th="Enter เพื่อเปิด · Esc เพื่อปิด" /></span>
-          <button type="button" className="btn btn-secondary" onClick={askNow}><T en="Ask Leio" th="ถามเลโอ" /></button>
+          <button type="button" className="btn btn-secondary" onClick={askLeio}><T en="Ask Leio" th="ถามเลโอ" /></button>
         </div>
       </div>
     </div>

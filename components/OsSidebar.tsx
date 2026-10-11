@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { X } from "lucide-react";
-import { ASSIST_MODE, HELP_MODE, MODULES, productModuleOf } from "@/lib/nav";
+import { ASSIST_MODE, EXPERIENCE_NAV, HELP_MODE, MODULES, productModuleOf } from "@/lib/nav";
 import { modeHref, useStore } from "@/lib/store";
 import { T } from "@/lib/i18n";
 import { EditionBadge } from "@/components/EditionBadge";
@@ -43,12 +43,26 @@ export function OsSidebar({
         <div className="os-rail-edition"><EditionBadge /></div>
 
         <Link href={officeHref} className={`os-rail-office${officeOn ? " on" : ""}`} onClick={onClose}>
-          <span className="os-rail-k">{th ? "สำนักงาน" : "Office"}</span>
+          <span className="os-rail-k">{th ? "งานของฉัน" : "My work"}</span>
           <strong>{officeLabel}</strong>
         </Link>
 
         <div className="os-rail-kicker">
-          <T en="Three modules" th="สามโมดูลหลัก" />
+          <T en="Intent" th="เป้าหมาย" />
+        </div>
+        {EXPERIENCE_NAV.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`os-rail-link${mode === item.mode ? " on" : ""}`}
+            onClick={onClose}
+          >
+            {th ? item.th : item.en}
+          </Link>
+        ))}
+
+        <div className="os-rail-kicker">
+          <T en="All modules" th="โมดูลทั้งหมด" />
         </div>
 
         {MODULES.map((mod) => {
