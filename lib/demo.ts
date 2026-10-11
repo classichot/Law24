@@ -701,7 +701,10 @@ export type SearchHit = {
 export function catalogHits(lang: Lang): SearchHit[] {
   const th = lang === "th";
   const hits: SearchHit[] = [
-    { id: "home", href: "/home", kind: th ? "หน้า" : "Screen", title: th ? "หน้าแรกโมดูล" : "Module home" },
+    { id: "home", href: "/home", kind: th ? "ถาม 24" : "Ask 24", title: th ? "ต้องการบรรลุอะไร" : "What would you like to achieve?" },
+    { id: "missions-desk", href: "/missions?s=desk", kind: th ? "ภารกิจ" : "Mission", title: th ? "ภารกิจของฉัน" : "My missions" },
+    { id: "outputs-studio", href: "/outputs?s=studio", kind: th ? "รายงาน" : "Report", title: th ? "สตูดิโอรายงาน" : "Report Studio" },
+    { id: "outputs-brief", href: "/outputs?s=brief", kind: th ? "รายงาน" : "Report", title: th ? "ร่างคลิกเดียว" : "One Click Draft" },
     { id: "demo", href: "/review?s=xray", kind: th ? "สาธิต" : "Demo", title: th ? "เริ่มสาธิตสด" : "Start live demo" },
     { id: "host", href: "/host", kind: th ? "โต๊ะโฮสต์" : "Host desk", title: th ? "สร้างลิงก์สาธิต" : "Mint a demo link" },
   ];
