@@ -11,6 +11,8 @@ import { PracticeScreen } from "./Practice";
 import { AssistScreen } from "./Assist";
 import { HelpScreen } from "./Help";
 import { CommandScreen } from "./Command";
+import { MissionsDesk } from "@/components/vibe24/MissionsDesk";
+import { ReportBriefScreen, ReportStudio } from "@/components/vibe24/ReportStudio";
 import type { ModeKey } from "@/lib/model";
 
 export function ScreenRouter({ mode, screen }: { mode: ModeKey; screen: string }) {
@@ -18,6 +20,8 @@ export function ScreenRouter({ mode, screen }: { mode: ModeKey; screen: string }
   if (mode === "practice") return <PracticeScreen screen={screen} />;
   if (mode === "command") return <CommandScreen screen={screen} />;
   if (mode === "assist") return <AssistScreen />;
+  if (mode === "missions") return <MissionsDesk />;
+  if (mode === "outputs") return screen === "brief" ? <ReportBriefScreen /> : <ReportStudio />;
   if (mode === "help") return <HelpScreen screen={screen} />;
   if (mode === "assemble") return <AssembleScreen screen={screen} />;
   if (mode === "review") return <ReviewScreen screen={screen} />;

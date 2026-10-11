@@ -824,6 +824,9 @@ function Rep({ view }: { view: DealView }) {
       >
         <T en="Download report" th="ดาวน์โหลดรายงาน" />
       </button>
+      <Link href="/outputs?s=studio&pack=dd-ic" className="btn btn-secondary" style={{ marginLeft: 8 }}>
+        <T en="Open in Report Studio" th="เปิดในห้องรายงาน" />
+      </Link>
     </Chrome>
   );
 }

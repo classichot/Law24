@@ -83,6 +83,9 @@ function IntakeChoice() {
       </div>
       <div className="stack-actions" style={{ marginTop: 20 }}>
         <ModuleDemoButton id="assemble" />
+        <Link href="/outputs?s=studio&pack=assemble-pack" className="btn btn-secondary">
+          <T en="Report studio" th="ห้องรายงาน" />
+        </Link>
       </div>
       <div className="callout" style={{ marginTop: 20 }}>
         <T

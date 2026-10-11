@@ -11,6 +11,8 @@ import { copyTE, helpBookHref } from "@/lib/guides";
 import { TYPE_LABEL } from "@/lib/firm";
 import { ASSIST_EXAMPLES, assistTitle, playbookName, routeAssist } from "@/lib/assist";
 import { AiLiveMark } from "@/components/AiLiveMark";
+import { Ask24 } from "@/components/vibe24/Ask24";
+import { AssistLevelSwitch } from "@/components/vibe24/primitives";
 
 export function AssistScreen() {
   const s = useStore();
@@ -53,14 +55,17 @@ export function AssistScreen() {
 
   return (
     <div className="pad-page">
-      <Kicker>assist · intake</Kicker>
-      <Title><T en="Describe the job and the assignment" th="อธิบายงานและคำสั่ง" /> <AiLiveMark compact /></Title>
+      <Kicker>ask 24 · copilot</Kicker>
+      <Title><T en="What do you need help with?" th="ต้องการความช่วยเหลือเรื่องอะไร" /> <AiLiveMark compact /></Title>
       <p className="page-sub">
         <T
           en="Tell LAW24 who you are and what must be done. It names the module and the function that should run the work — the lawyer still decides."
           th="บอกว่าคุณเป็นใครและต้องทำอะไร ระบบจะชี้โมดูลและฟังก์ชันที่ควรรันงานนี้ — ทนายเป็นผู้ตัดสิน"
         />
       </p>
+      <AssistLevelSwitch />
+      <div style={{ margin: "16px 0 28px" }}><Ask24 compact /></div>
+      <h5><T en="Or describe the job in professional terms" th="หรืออธิบายงานด้วยภาษามืออาชีพ" /></h5>
 
       <form className="assist-form" onSubmit={onAsk}>
         <div className="field">

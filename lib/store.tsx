@@ -22,6 +22,8 @@ import { applyMapToPractice, isDemoFixturePractice } from "./ai/fromMap";
 import {
   ENGAGEMENT,
   HREF_FOR_TYPE,
+  assignmentOf,
+  clientOf,
   ddContextOf,
   engagementOf,
   nextIds,
@@ -41,12 +43,30 @@ import { clearInviteSession } from "./invite";
 import { fetchAiStatus, postAi } from "./ai/client";
 import { peekFile } from "./ai/files";
 import type { DdLive, NegotiateLive, ReviewLive, XrayLivePayload, XrayView } from "./ai/types";
+import {
+  approveRevision,
+  defaultAssist,
+  defaultExperience,
+  draftLaw24Report,
+  hydrateExperience,
+  MISSIONS,
+  startMissionState,
+  upsertReport,
+  type AgiTeam,
+  type AssistLevel,
+  type ExperienceState,
+  type MissionId,
+  type ReportPackId,
+  type UxMode,
+  type UxRole,
+} from "./vibe24";
 
 const AUTH_KEY = "law24-auth";
 const THEME_KEY = "law24-theme";
 const LANG_KEY = "law24-lang";
 const EDITION_KEY = "law24-edition";
 const LIVE_KEY = "law24-live";
+const UX_KEY = "law24-ux24";
 /** Stays under the route's maxDuration so the user gets our message, not a gateway timeout. */
 const AI_STAGE_MS = 70_000;
 /**
@@ -182,6 +202,24 @@ type Store = {
   setRoomVote: (id: string, v: "approve" | "reject") => void;
   quotePkg: string;
   setQuotePkg: (id: string) => void;
+  uxMode: UxMode;
+  setUxMode: (m: UxMode) => void;
+  assistLevel: AssistLevel;
+  setAssistLevel: (l: AssistLevel) => void;
+  uxRole: UxRole;
+  setUxRole: (r: UxRole) => void;
+  agiTeam: AgiTeam;
+  setAgiTeam: (t: AgiTeam) => void;
+  experience: ExperienceState;
+  setGoal: (g: string) => void;
+  startUxMission: (id: MissionId) => string;
+  setMissionStep: (id: string, step: number) => void;
+  oneClickDraft: (pack: ReportPackId) => void;
+  approveReport: (id: string, actor: string) => void;
+  bumpNav: () => void;
+  dismissGuard: () => void;
+  guardDismissed: boolean;
+  navHits: number;
 };
 
 const Ctx = createContext<Store | null>(null);
@@ -293,6 +331,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [esign, setEsign] = useState("");
   const [gsev, setGsev] = useState("");
   const [live, setLive] = useState<LiveState>(defaultLive);
+  const [experience, setExperience] = useState<ExperienceState>(() => defaultExperience("corporate"));
 
   useEffect(() => {
     setAuthed(localStorage.getItem(AUTH_KEY) === "1");
@@ -302,6 +341,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const e = localStorage.getItem(EDITION_KEY);
     if (e === "firm" || e === "corporate") setEditionState(e);
     setLive(readLive());
+    try {
+      const raw = localStorage.getItem(UX_KEY);
+      const ed = (localStorage.getItem(EDITION_KEY) as Edition | null) || "corporate";
+      setExperience(hydrateExperience(raw ? JSON.parse(raw) as Partial<ExperienceState> : null, ed));
+    } catch {
+      setExperience(defaultExperience("corporate"));
+    }
     setReady(true);
     fetchAiStatus().then(setAiLive);
   }, []);
@@ -310,6 +356,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!ready) return;
     localStorage.setItem(LIVE_KEY, JSON.stringify(live));
   }, [live, ready]);
+
+  useEffect(() => {
+    if (!ready) return;
+    localStorage.setItem(UX_KEY, JSON.stringify(experience));
+  }, [experience, ready]);
+
+  const patchUx = useCallback((partial: Partial<ExperienceState> | ((prev: ExperienceState) => ExperienceState)) => {
+    setExperience((prev) => (typeof partial === "function" ? partial(prev) : { ...prev, ...partial }));
+  }, []);
 
   const patchLive = useCallback((partial: Partial<LiveState> | ((prev: LiveState) => LiveState)) => {
     setLive((prev) => (typeof partial === "function" ? partial(prev) : { ...prev, ...partial }));
@@ -332,7 +387,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setEdition(ed);
     setAuthed(true);
     localStorage.setItem(AUTH_KEY, "1");
-  }, [setEdition]);
+    patchUx((p) => ({ ...p, role: ed === "firm" ? "specialist" : "management" }));
+  }, [patchUx, setEdition]);
   const logout = useCallback(() => {
     setAuthed(false);
     localStorage.removeItem(AUTH_KEY);
@@ -1089,6 +1145,69 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     patchLive((p) => ({ ...p, quotePkg: id }));
   }, [patchLive]);
 
+  const setUxMode = useCallback((m: UxMode) => {
+    patchUx((p) => ({ ...p, uxMode: m, assistLevel: defaultAssist(m) }));
+  }, [patchUx]);
+  const setAssistLevel = useCallback((l: AssistLevel) => patchUx({ assistLevel: l }), [patchUx]);
+  const setUxRole = useCallback((r: UxRole) => patchUx({ role: r }), [patchUx]);
+  const setAgiTeam = useCallback((t: AgiTeam) => patchUx({ agiTeam: t }), [patchUx]);
+  const setGoal = useCallback((g: string) => patchUx({ goal: g }), [patchUx]);
+  const dismissGuard = useCallback(() => patchUx({ guardDismissed: true }), [patchUx]);
+  const bumpNav = useCallback(() => patchUx((p) => ({ ...p, navHits: p.navHits + 1 })), [patchUx]);
+  const startUxMission = useCallback((id: MissionId) => {
+    const def = MISSIONS[id];
+    patchUx((p) => startMissionState(p, id, stampNow()));
+    if ((experience.assistLevel === "forMe" || experience.uxMode === "agi") && def.demo) {
+      startModuleDemo(def.demo);
+    }
+    flash(lang === "th" ? def.goal.t : def.goal.e);
+    return def.steps[0]?.href || "/home";
+  }, [experience.assistLevel, experience.uxMode, flash, lang, patchUx, startModuleDemo]);
+  const setMissionStep = useCallback((id: string, step: number) => {
+    patchUx((p) => ({
+      ...p,
+      missions: p.missions.map((m) => {
+        if (m.id !== id) return m;
+        const last = MISSIONS[m.defId].steps.length - 1;
+        const next = Math.max(0, Math.min(step, last));
+        return { ...m, step: next, status: next >= last ? "complete" : "in-progress" };
+      }),
+    }));
+  }, [patchUx]);
+  const oneClickDraft = useCallback((pack: ReportPackId) => {
+    const actor = edition === "firm" ? FIRM_USER.name : "P. Rojana";
+    const a = assignmentOf(live.practice, live.practice.activeAssignmentId);
+    const c = a ? clientOf(live.practice, a.clientId) : undefined;
+    const entity = c?.name || (edition === "firm" ? "Firm workspace" : "Corporate workspace");
+    const demo = Boolean(live.demoOn) || (!live.xrayLive && pack !== "assemble-pack" && pack !== "dd-ic");
+    const report = draftLaw24Report({
+      packId: pack,
+      lang,
+      actor,
+      demo: live.demoOn || demo,
+      entity,
+      xray: live.xrayLive,
+      assembly: live.assembly,
+      deal: live.deal,
+    });
+    patchUx((p) => upsertReport(p, report));
+    flash(lang === "th"
+      ? (report.findings.length ? "ร่างพร้อมแล้ว — ช่องว่างถูกชี้ ไม่ได้แต่งค่า" : "ร่างพร้อมแล้ว รอผู้อนุมัติที่มีชื่อ")
+      : (report.findings.length ? "Draft ready — gaps are listed, nothing was invented" : "Draft ready. A named approver is still required."));
+  }, [edition, flash, lang, live.assembly, live.deal, live.demoOn, live.practice, live.xrayLive, patchUx]);
+  const approveReport = useCallback((id: string, actor: string) => {
+    patchUx((p) => {
+      const cur = p.reports.find((r) => r.id === id);
+      if (!cur) return p;
+      const next = approveRevision(cur, actor);
+      const ok = next.status === "approved";
+      flash(ok
+        ? (lang === "th" ? `อนุมัติฉบับ ${next.id} แล้ว` : `Revision ${next.id} approved`)
+        : (lang === "th" ? "ยังอนุมัติไม่ได้ — เกณฑ์สำคัญยังไม่ผ่าน" : "Cannot approve — a required gate still fails"));
+      return upsertReport(p, next);
+    });
+  }, [flash, lang, patchUx]);
+
   const themeVars = useMemo(() => ({ ...THEMES[theme].vars }), [theme]);
 
   const value: Store = {
@@ -1131,6 +1250,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setNegotiateLive,
     lawyerSent: live.lawyerSent, sendToLawyer,
     roomVotes: live.roomVotes ?? {}, setRoomVote, quotePkg: live.quotePkg || "nda", setQuotePkg,
+    uxMode: experience.uxMode, setUxMode,
+    assistLevel: experience.assistLevel, setAssistLevel,
+    uxRole: experience.role, setUxRole,
+    agiTeam: experience.agiTeam, setAgiTeam,
+    experience, setGoal, startUxMission, setMissionStep, oneClickDraft, approveReport,
+    bumpNav, dismissGuard, guardDismissed: experience.guardDismissed, navHits: experience.navHits,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

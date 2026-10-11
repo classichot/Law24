@@ -3,8 +3,17 @@ import type { EngagementTrack } from "./firm";
 
 export const PRACTICE_MODE = { k: "practice" as const, en: "Firm", th: "สำนักงาน" };
 export const COMMAND_MODE = { k: "command" as const, en: "Control", th: "ควบคุม" };
-export const ASSIST_MODE = { k: "assist" as const, en: "Assist", th: "ผู้ช่วย" };
+export const ASSIST_MODE = { k: "assist" as const, en: "Ask 24", th: "ถาม 24" };
+export const MISSIONS_MODE = { k: "missions" as const, en: "My missions", th: "ภารกิจของฉัน" };
+export const OUTPUTS_MODE = { k: "outputs" as const, en: "Reports", th: "รายงาน" };
 export const HELP_MODE = { k: "help" as const, en: "Help", th: "คู่มือ" };
+
+export const EXPERIENCE_NAV: { href: string; en: string; th: string; mode: string }[] = [
+  { href: "/home", en: "Home", th: "หน้าแรก", mode: "home" },
+  { href: "/assist?s=ask", en: "Ask 24", th: "ถาม 24", mode: "assist" },
+  { href: "/missions?s=desk", en: "My missions", th: "ภารกิจของฉัน", mode: "missions" },
+  { href: "/outputs?s=studio", en: "Reports", th: "รายงาน", mode: "outputs" },
+];
 
 export const ENGINE: { k: Exclude<ModeKey, "home" | "practice" | "command" | "assist" | "help">; en: string; th: string }[] = [
   { k: "review", en: "X-Ray", th: "X-Ray" },
@@ -138,7 +147,15 @@ export const NAV: Record<Exclude<ModeKey, "home">, [ScreenKey, string, string][]
     ["board", "รายงานคณะกรรมการ", "Board reports"],
   ],
   assist: [
-    ["ask", "งานและคำสั่ง", "Job & assignment"],
+    ["ask", "ถาม 24", "Ask 24"],
+  ],
+  missions: [
+    ["desk", "ภารกิจของฉัน", "My missions"],
+    ["journey", "เส้นทางภารกิจ", "Mission journey"],
+  ],
+  outputs: [
+    ["studio", "ห้องรายงาน", "Report studio"],
+    ["brief", "ขอบเขตรายงาน", "Report brief"],
   ],
   help: [
     ["use", "วิธีใช้ระบบ", "How to use LAW24"],
@@ -327,12 +344,12 @@ export const WORK_HREF = "/review?s=xray";
 export const PRACTICE_HREF = "/practice?s=dash";
 export const CORPORATE_HREF = "/home";
 
-export function landingHref(edition: Edition) {
-  return edition === "firm" ? PRACTICE_HREF : CORPORATE_HREF;
+export function landingHref(_edition: Edition) {
+  return CORPORATE_HREF;
 }
 
 export function isMode(v: string): v is Exclude<ModeKey, "home"> {
-  return v === "practice" || v === "command" || v === "assist" || v === "help" || ENGINE.some((m) => m.k === v);
+  return v === "practice" || v === "command" || v === "assist" || v === "help" || v === "missions" || v === "outputs" || ENGINE.some((m) => m.k === v);
 }
 
 export function screenSiblings(mode: string, screen: string) {
