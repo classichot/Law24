@@ -53,9 +53,9 @@ export function defaultBrief(packId: ReportPackId, entity: string, lang: Lang, a
 }
 
 function scoreGates(rev: Omit<ReportRevision, "gates">): QualityGate[] {
-  const demoInReal = rev.fields.some((f) => f.validation === "demo" && f.use === "allowed") && !rev.demo;
+  const demoInReal = rev.fields.some((f) => f.validation === "demo" && !rev.demo);
   const missing = rev.fields.filter((f) => f.validation === "missing");
-  const blocked = rev.fields.filter((f) => f.use === "blocked");
+  const leaked = rev.fields.filter((f) => f.use === "blocked" && f.validation !== "missing" && f.validation !== "demo");
   const unsupported = rev.claims.filter((c) => c.kind !== "gap" && c.support !== "supported" && c.support !== "not-applicable");
   const gaps = rev.claims.filter((c) => c.kind === "gap" || c.support === "unresolved");
   const fabricated = rev.claims.filter((c) => c.sourceIds.length === 0 && c.kind === "sourced");
@@ -63,10 +63,12 @@ function scoreGates(rev: Omit<ReportRevision, "gates">): QualityGate[] {
   const approved = rev.status === "approved" || rev.status === "submitted";
 
   return [
-    gate("boundary", demoInReal || blocked.length ? "fail" : "pass",
+    gate("boundary", demoInReal || leaked.length ? "fail" : "pass",
       demoInReal
         ? P("ข้อมูลสาธิตปนในรายงานจริง", "Demo data entered a real report")
-        : P("ใช้เฉพาะฟิลด์ที่อนุญาต", "Only allowlisted fields are in scope")),
+        : leaked.length
+          ? P("มีข้อมูลนอกสัญญาที่อนุญาต", "A field outside the allowlisted contract is in scope")
+          : P("ใช้เฉพาะฟิลด์ที่อนุญาต", "Only allowlisted fields are in scope")),
     gate("evidence", unsupported.length || missing.length ? "fail" : "pass",
       unsupported.length
         ? P(`${unsupported.length} ข้ออ้างยังไม่มีหลักฐานครบ`, `${unsupported.length} claims lack valid support`)
